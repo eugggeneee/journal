@@ -1,0 +1,28 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+.metadata
+
+# IDE / ОС
+*.iml
+.idea/
+.vscode/
+.DS_Store
+
+# Платформенные папки генерируются в CI (flutter create), см. .github/workflows.
+# Если хотите хранить их в репозитории — удалите эти две строки.
+/android/
+/ios/
+
+# Ключи и секреты — НИКОГДА не коммитить
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+key.properties
+keystore.base64
+.env

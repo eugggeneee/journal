@@ -1,0 +1,36 @@
+name: journal
+description: "Journal — МГТЭК · Дневник: расписание, оценки и пропуски."
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.13.0 <4.0.0'
+  flutter: '>=3.47.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Официальная библиотека Material от команды Flutter (с Flutter 3.47 живёт отдельным пакетом).
+  # Локализации Material/Widgets/Cupertino теперь тоже внутри неё.
+  material_ui: ^1.5.0
+  dynamic_color: ^2.1.0
+  http: ^1.2.2
+  shared_preferences: ^2.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icon/icon.png            # Android (старые версии) — скруглённая
+  image_path_ios: assets/icon/icon_ios.png    # iOS — квадрат без прозрачности
+  remove_alpha_ios: true
+  adaptive_icon_background: assets/icon/icon_bg.png
+  adaptive_icon_foreground: assets/icon/icon_fg.png
+  adaptive_icon_monochrome: assets/icon/icon_mono.png   # Android 13+ «тематические значки»
+
+flutter:
+  uses-material-design: true

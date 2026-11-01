@@ -1,0 +1,37 @@
+name: CI
+
+# Быстрая проверка кода: анализ + тесты. Сборка приложений — в release.yml.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  APP_ORG: by.mgtek
+  APP_PROJECT: journal
+
+jobs:
+  test:
+    name: Анализ и тесты
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Платформенные папки (генерируются в CI)
+        run: flutter create --platforms=android,ios --org "$APP_ORG" --project-name "$APP_PROJECT" .
+      - run: rm -f test/widget_test.dart
+      - run: flutter --version
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - run: flutter test

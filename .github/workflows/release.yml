@@ -1,0 +1,277 @@
+name: Release
+
+# Релиз запускается тегом вида v1.0.0:
+#   git tag v1.0.0 && git push origin v1.0.0
+# Либо вручную: Actions → Release → Run workflow (указать тег).
+# Итог: Journal-<тег>-android.apk и Journal-<тег>-ios.ipa появляются во вкладке Releases
+# вместе с SHA256SUMS.txt и подписью-аттестацией GitHub.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Тег релиза, например v1.0.0'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  APP_NAME: Journal
+  APP_ORG: by.mgtek
+  APP_PROJECT: journal
+
+jobs:
+  meta:
+    name: Версия
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - id: v
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          TAG="${INPUT_TAG:-$REF_NAME}"
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::Тег должен выглядеть как v1.0.0 (получено: $TAG)"
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Анализ и тесты
+    needs: meta
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter create --platforms=android,ios --org "$APP_ORG" --project-name "$APP_PROJECT" .
+      - run: rm -f test/widget_test.dart
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - run: flutter test
+
+  android:
+    name: Сборка Android
+    needs: [meta, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Платформенные папки (генерируются в CI)
+        run: flutter create --platforms=android,ios --org "$APP_ORG" --project-name "$APP_PROJECT" .
+
+      - name: Манифест Android (интернет, название Journal)
+        run: |
+          python3 - <<'PY'
+          import re
+          p = 'android/app/src/main/AndroidManifest.xml'
+          s = open(p, encoding='utf-8').read()
+          if 'android.permission.INTERNET' not in s:
+              s = s.replace('<application', '<uses-permission android:name="android.permission.INTERNET"/>\n    <application', 1)
+          s = re.sub(r'android:label="[^"]*"', 'android:label="Journal"', s, count=1)
+          open(p, 'w', encoding='utf-8').write(s)
+          PY
+
+      - run: flutter pub get
+      - run: dart run flutter_launcher_icons
+
+      - name: Сборка APK
+        run: |
+          flutter build apk --release \
+            --build-name "${{ needs.meta.outputs.version }}" \
+            --build-number "${{ github.run_number }}"
+
+      - name: Подпись APK
+        env:
+          TAG: ${{ needs.meta.outputs.tag }}
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          SRC=build/app/outputs/flutter-apk/app-release.apk
+          OUT="dist/Journal-${TAG}-android.apk"
+
+          if [ -n "${KEYSTORE_B64:-}" ] && [ -n "${KEYSTORE_PASSWORD:-}" ] && [ -n "${KEY_ALIAS:-}" ]; then
+            BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+            echo "Build-tools: $BT"
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            # 16 КБ-выравнивание (build-tools ≥ 35), иначе обычное страничное
+            "$BT/zipalign" -f -P 16 4 "$SRC" "$RUNNER_TEMP/aligned.apk" \
+              || "$BT/zipalign" -f -p 4 "$SRC" "$RUNNER_TEMP/aligned.apk"
+            KEY_PASSWORD="${KEY_PASSWORD:-$KEYSTORE_PASSWORD}" \
+            KS_PASS="$KEYSTORE_PASSWORD" \
+            "$BT/apksigner" sign \
+              --ks "$RUNNER_TEMP/release.jks" \
+              --ks-pass env:KS_PASS \
+              --ks-key-alias "$KEY_ALIAS" \
+              --key-pass env:KEY_PASSWORD \
+              --out "$OUT" "$RUNNER_TEMP/aligned.apk"
+            "$BT/apksigner" verify --verbose --print-certs "$OUT" | head -20
+            rm -f "$RUNNER_TEMP/release.jks"
+            echo "release-key" > dist/android-signing.txt
+          else
+            echo "::warning::Секреты ANDROID_KEYSTORE_* не заданы — APK подписан отладочным ключом. См. RELEASING.md"
+            cp "$SRC" "$OUT"
+            echo "debug-key" > dist/android-signing.txt
+          fi
+          ls -lh dist
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: android
+          path: dist/*
+          if-no-files-found: error
+
+  ios:
+    name: Сборка iOS
+    needs: [meta, test]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Платформенные папки (генерируются в CI)
+        run: flutter create --platforms=android,ios --org "$APP_ORG" --project-name "$APP_PROJECT" .
+
+      - name: Название Journal на iOS
+        run: |
+          P=ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Journal" "$P" || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Journal" "$P"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleName Journal" "$P" || /usr/libexec/PlistBuddy -c "Add :CFBundleName string Journal" "$P"
+
+      - run: xcodebuild -version
+      - run: flutter pub get
+      - run: dart run flutter_launcher_icons
+
+      - name: Сборка (без подписи)
+        run: |
+          flutter build ios --release --no-codesign --config-only \
+            --build-name "${{ needs.meta.outputs.version }}" \
+            --build-number "${{ github.run_number }}"
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
+            -configuration Release -sdk iphoneos \
+            -derivedDataPath build/ios_build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" build
+
+      - name: Упаковка IPA (для AltStore / Sideloadly)
+        env:
+          TAG: ${{ needs.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p Payload dist
+          cp -R build/ios_build/Build/Products/Release-iphoneos/Runner.app Payload/Runner.app
+          zip -qry "dist/Journal-${TAG}-ios.ipa" Payload
+          ls -lh dist
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: ios
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: Публикация релиза
+    needs: [meta, android, ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # создать релиз и загрузить файлы
+      id-token: write        # подпись-аттестация сборок
+      attestations: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ needs.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v5
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Контрольные суммы
+        run: |
+          cd dist
+          sha256sum Journal-*.apk Journal-*.ipa | tee SHA256SUMS.txt
+          ls -lh
+
+      - name: Подпись-аттестация GitHub (provenance)
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            dist/Journal-*.apk
+            dist/Journal-*.ipa
+
+      - name: Описание релиза
+        run: |
+          PREV="$(git tag --sort=-v:refname | grep -vx "$TAG" | head -1 || true)"
+          if [ -n "$PREV" ]; then
+            git log --no-merges --pretty='- %s' "$PREV..HEAD" > changes.txt
+          else
+            echo "- Первый публичный релиз" > changes.txt
+          fi
+          [ -s changes.txt ] || echo "- Мелкие улучшения и исправления" > changes.txt
+          python3 - <<'PY'
+          import os
+          tpl = open('.github/release-notes.md', encoding='utf-8').read()
+          signing = open('dist/android-signing.txt').read().strip()
+          sign_text = ('подписана **релизным ключом** — обновляется поверх предыдущей версии'
+                       if signing == 'release-key' else
+                       'подписана **тестовым ключом** (релизный ключ не настроен)')
+          out = (tpl.replace('{{TAG}}', os.environ['TAG'])
+                    .replace('{{ANDROID_SIGNING}}', sign_text)
+                    .replace('{{CHANGES}}', open('changes.txt', encoding='utf-8').read().strip())
+                    .replace('{{SUMS}}', open('dist/SHA256SUMS.txt', encoding='utf-8').read().strip())
+                    .replace('{{REPO}}', os.environ['GITHUB_REPOSITORY']))
+          open('notes.md', 'w', encoding='utf-8').write(out)
+          PY
+          cat notes.md
+
+      - name: Создать релиз и приложить файлы
+        env:
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          FILES=(dist/Journal-*.apk dist/Journal-*.ipa dist/SHA256SUMS.txt)
+          FLAGS=()
+          if [[ "$TAG" == *-* ]]; then FLAGS+=(--prerelease); else FLAGS+=(--latest); fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "Journal $TAG" --notes-file notes.md
+            gh release upload "$TAG" "${FILES[@]}" --clobber
+          else
+            gh release create "$TAG" "${FILES[@]}" \
+              --title "Journal $TAG" \
+              --notes-file notes.md \
+              --target "$GITHUB_SHA" \
+              "${FLAGS[@]}"
+          fi
