@@ -117,7 +117,20 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   // ───────────── страницы ─────────────
 
-  Widget _scrolling(List<Widget> children) => ListView(padding: const EdgeInsets.fromLTRB(24, 24, 24, 16), children: children);
+  /// Прокручиваемая страница: нижний край плавно растворяется, а не обрезается резкой линией.
+  Widget _scrolling(List<Widget> children, {double top = 24}) => ShaderMask(
+        blendMode: BlendMode.dstIn,
+        shaderCallback: (r) {
+          final fade = (22 / r.height).clamp(0.0, 0.5).toDouble();
+          return LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: const [Colors.white, Colors.white, Colors.transparent],
+            stops: [0, 1 - fade, 1],
+          ).createShader(r);
+        },
+        child: ListView(padding: EdgeInsets.fromLTRB(24, top, 24, 28), children: children),
+      );
 
   Widget _title(BuildContext context, String title, String subtitle) => Column(children: [
         Text(title, textAlign: TextAlign.center, style: context.tt.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
@@ -245,20 +258,15 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     final store = StoreScope.of(context);
     final s = store.settings;
     final cs = context.cs;
-    return _scrolling([
+    return _scrolling(top: 12, [
       _title(context, 'Настройте под себя', 'Всё это можно изменить позже в профиле.'),
-      const SectionHeader('Оформление', top: 28),
+      const SectionHeader('Оформление', top: 18),
       const ThemeSelector(),
-      const SizedBox(height: 12),
-      const ThemeColorField(),
-      const SectionHeader('Быстрый пропуск'),
-      Text(
-        'Столько часов отмечается, когда вы нажимаете значок пропуска у пары.',
-        style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-      ),
       const SizedBox(height: 10),
+      const ThemeColorField(),
+      const SectionHeader('Быстрый пропуск', top: 18),
       const HoursSelector(),
-      const SectionHeader('Поведение'),
+      const SectionHeader('Поведение', top: 18),
       SegmentCard(
         index: 0,
         count: 2,

@@ -85,35 +85,43 @@ class FieldTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.cs;
     final has = valueLabel != null && valueLabel!.isNotEmpty;
+    final enabled = onTap != null;
     return Semantics(
       button: true,
+      enabled: enabled,
       label: '$label: ${has ? valueLabel : placeholder}',
       excludeSemantics: true,
       child: Material(
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(18),
+        color: cs.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(24),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: onTap == null
-              ? null
-              : () {
+          onTap: enabled
+              ? () {
                   Haptics.selection();
                   FocusManager.instance.primaryFocus?.unfocus();
                   onTap!();
-                },
+                }
+              : null,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 64),
+            constraints: const BoxConstraints(minHeight: 72),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+              padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
               child: Row(children: [
                 SizedBox(
-                  width: 32,
-                  child: Center(child: leading ?? Icon(icon, color: has ? cs.primary : cs.onSurfaceVariant)),
+                  width: 46,
+                  height: 46,
+                  child: leading != null
+                      ? Center(child: leading)
+                      : DecoratedBox(
+                          decoration: BoxDecoration(color: cs.secondaryContainer, borderRadius: BorderRadius.circular(16)),
+                          child: Icon(icon, size: 24, color: cs.onSecondaryContainer),
+                        ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                    Text(label, style: context.tt.labelMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                    Text(label, style: context.tt.labelLarge?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
                     Text(
                       has ? valueLabel! : placeholder,
@@ -126,8 +134,14 @@ class FieldTile extends StatelessWidget {
                     ),
                   ]),
                 ),
-                trailing ?? Icon(Icons.unfold_more_rounded, size: 26, color: cs.onSurfaceVariant),
-                const SizedBox(width: 4),
+                const SizedBox(width: 8),
+                trailing ??
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(color: cs.surfaceContainerHighest, shape: BoxShape.circle),
+                      child: Icon(Icons.keyboard_arrow_up_rounded, size: 24, color: cs.onSurfaceVariant),
+                    ),
               ]),
             ),
           ),
