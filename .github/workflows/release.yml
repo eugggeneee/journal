@@ -97,6 +97,9 @@ jobs:
       - run: flutter pub get
       - run: dart run flutter_launcher_icons
 
+      - name: Значки под каждую тему (смена значка)
+        run: python3 scripts/setup_icons_android.py
+
       - name: Сборка APK
         run: |
           flutter build apk --release \
@@ -170,6 +173,9 @@ jobs:
       - run: xcodebuild -version
       - run: flutter pub get
       - run: dart run flutter_launcher_icons
+
+      - name: Значки под каждую тему (смена значка)
+        run: python3 scripts/setup_icons_ios.py
 
       - name: Сборка (без подписи)
         run: |

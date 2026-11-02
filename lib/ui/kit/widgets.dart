@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/dates.dart';
 import 'ctx.dart';
 
 /// Запас снизу под плавающую кнопку, чтобы она не закрывала последние элементы списка.
@@ -178,7 +179,7 @@ class EmptyState extends StatelessWidget {
       );
 }
 
-/// Скруглённый значок с цифрой/текстом (номер пары, оценка).
+/// Скруглённый значок с цифрой/текстом (номер пары, оценка). Цвет меняется плавно.
 class NumberBadge extends StatelessWidget {
   const NumberBadge(this.text, {super.key, required this.tone, this.size = 48, this.round = true});
   final String text;
@@ -187,7 +188,9 @@ class NumberBadge extends StatelessWidget {
   final bool round;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => AnimatedContainer(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
         width: size,
         height: size,
         alignment: Alignment.center,
@@ -195,11 +198,47 @@ class NumberBadge extends StatelessWidget {
           color: tone.bg,
           borderRadius: BorderRadius.circular(round ? size / 2 : size * 0.34),
         ),
-        child: Text(
-          text,
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
           style: TextStyle(fontSize: size * 0.4, fontWeight: FontWeight.w800, color: tone.fg, height: 1),
+          child: Text(text),
         ),
       );
+}
+
+/// Маленькая плашка Material с числом часов пропуска. Садится на угол значка пары
+/// и не меняет размеры карточки: красная — без уважительной причины, синяя — по уважительной.
+class AbsenceBadge extends StatelessWidget {
+  const AbsenceBadge({super.key, required this.hours, required this.excused, required this.ringColor});
+  final int hours;
+  final bool excused;
+
+  /// Цвет карточки под плашкой — по нему рисуется тонкий «вырез» вокруг плашки.
+  final Color ringColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = absenceAccent(context, excused: excused);
+    return Semantics(
+      label: 'Пропуск: ${hoursText(hours)}${excused ? ', по уважительной причине' : ''}',
+      excludeSemantics: true,
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: accent,
+          borderRadius: BorderRadius.circular(11),
+          border: Border.all(color: ringColor, width: 2),
+        ),
+        child: Text(
+          '$hours',
+          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: onColorFor(accent), height: 1),
+        ),
+      ),
+    );
+  }
 }
 
 /// Пилюля с короткой подписью.
@@ -310,9 +349,18 @@ class SegmentCard extends StatelessWidget {
         child: body,
       );
     }
-    return Padding(
+    // Когда рядом появляется или исчезает карточка, скругления и зазоры меняются плавно.
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
       padding: EdgeInsets.only(bottom: index == count - 1 ? 0 : 2),
-      child: ClipRRect(borderRadius: r, child: body),
+      child: TweenAnimationBuilder<BorderRadius?>(
+        tween: BorderRadiusTween(end: r),
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+        builder: (context, radius, child) => ClipRRect(borderRadius: radius ?? r, child: child),
+        child: body,
+      ),
     );
   }
 }

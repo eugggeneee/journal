@@ -6,6 +6,7 @@ import '../group_picker.dart';
 import '../kit/ctx.dart';
 import '../kit/selectors.dart';
 import '../kit/widgets.dart';
+import '../profile/theme_widgets.dart';
 import '../scope.dart';
 
 /// Приветствие при первом запуске: знакомство → возможности → группа → стартовые настройки.
@@ -208,6 +209,12 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       _title(context, 'Настройте под себя', 'Всё это можно изменить позже в профиле.'),
       const SectionHeader('Оформление', top: 28),
       const ThemeSelector(),
+      const SizedBox(height: 12),
+      const SegmentCard(
+        index: 0,
+        count: 1,
+        child: Padding(padding: EdgeInsets.fromLTRB(12, 16, 12, 12), child: ThemeColorGrid()),
+      ),
       const SectionHeader('Быстрый пропуск'),
       Text(
         'Столько часов отмечается, когда вы нажимаете значок пропуска у пары.',

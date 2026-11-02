@@ -130,7 +130,7 @@ class _GradeFormState extends State<_GradeForm> {
             const SizedBox(height: 2),
             Text(
               details,
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: context.tt.bodyMedium?.copyWith(color: tone.fg.withValues(alpha: 0.85)),
             ),

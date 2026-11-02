@@ -8,6 +8,7 @@ import '../../logic/stats.dart';
 import '../kit/ctx.dart';
 import '../kit/feedback.dart';
 import '../kit/pickers.dart';
+import '../kit/reveal.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
 import 'absence_sheet.dart';
@@ -21,12 +22,16 @@ class AbsencesPage extends StatefulWidget {
 class _AbsencesPageState extends State<AbsencesPage> {
   int _mode = 0;
   int _filter = 0; // 0 все, 1 без уважительной, 2 по уважительной
+  final FreshTracker _fresh = FreshTracker();
+  final FreshTracker _freshSubjects = FreshTracker();
 
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
     final empty = store.absences.isEmpty;
     final stats = AbsenceStats.of(store.absences);
+    _fresh.sync(store.absences.map((a) => a.id));
+    _freshSubjects.sync(stats.bySubjectHours.keys);
 
     return LargePage(
       title: 'Пропуски',
@@ -104,13 +109,18 @@ class _AbsencesPageState extends State<AbsencesPage> {
           child: Padding(padding: EdgeInsets.all(32), child: Center(child: Text('Нет пропусков с таким фильтром'))),
         ),
       for (final e in byDay.entries)
-        Inset(children: [
+        Inset(key: ValueKey('day-${e.key}'), children: [
           SectionHeader(
             longDate(e.value.first.date),
             trailing: hoursText(e.value.fold<int>(0, (s, a) => s + a.hours)),
             top: 12,
           ),
-          for (var i = 0; i < e.value.length; i++) _AbsenceTile(absence: e.value[i], store: store, index: i, count: e.value.length),
+          for (var i = 0; i < e.value.length; i++)
+            Reveal(
+              key: ValueKey('ab-${e.value[i].id}'),
+              animate: _fresh.isFresh(e.value[i].id),
+              child: _AbsenceTile(absence: e.value[i], store: store, index: i, count: e.value.length),
+            ),
         ]),
     ];
   }
@@ -122,7 +132,10 @@ class _AbsencesPageState extends State<AbsencesPage> {
       Inset(top: 8, children: [
         SectionHeader('Часы по предметам', trailing: subjectsText(entries.length)),
         for (var i = 0; i < entries.length; i++)
-          SegmentCard(
+          Reveal(
+            key: ValueKey('subj-${entries[i].key}'),
+            animate: _freshSubjects.isFresh(entries[i].key),
+            child: SegmentCard(
             index: i,
             count: entries.length,
             child: Padding(
@@ -141,9 +154,10 @@ class _AbsencesPageState extends State<AbsencesPage> {
                   Text(hoursText(entries[i].value), style: context.tt.labelLarge?.copyWith(color: context.cs.onSurfaceVariant)),
                 ]),
                 const SizedBox(height: 12),
-                Bar(value: entries[i].value / maxV, color: absenceAccent(context, excused: false)),
+                _AnimatedBar(value: entries[i].value / maxV, color: absenceAccent(context, excused: false)),
               ]),
             ),
+          ),
           ),
       ]),
     ];
@@ -167,32 +181,23 @@ class AbsencesHero extends StatelessWidget {
         : '≈ ${pairsValue.toStringAsFixed(1).replaceAll('.', ',')} пары';
     final unexColor = absenceAccent(context, excused: false);
     final exColor = absenceAccent(context, excused: true);
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
       padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
       decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(32)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Всего пропущено', style: context.tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w600)),
         const SizedBox(height: 2),
         Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-          Text('${stats.totalHours}', style: context.tt.displayMedium?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1.05)),
+          AnimatedNumber(value: stats.totalHours.toDouble(), format: (v) => '${v.round()}', style: context.tt.displayMedium?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1.05)),
           const SizedBox(width: 8),
           Text(plural(stats.totalHours, 'час', 'часа', 'часов'), style: context.tt.titleMedium?.copyWith(color: fg)),
           const Spacer(),
           Text(pairs, style: context.tt.titleSmall?.copyWith(color: fg)),
         ]),
         const SizedBox(height: 18),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: SizedBox(
-            height: 12,
-            child: Row(children: [
-              if (unex > 0) Expanded(flex: unex, child: ColoredBox(color: unexColor)),
-              if (unex > 0 && ex > 0) const SizedBox(width: 3),
-              if (ex > 0) Expanded(flex: ex, child: ColoredBox(color: exColor)),
-              if (unex == 0 && ex == 0) Expanded(child: ColoredBox(color: fg.withValues(alpha: 0.2))),
-            ]),
-          ),
-        ),
+        _SplitBar(unexcused: unex, excused: ex, unexColor: unexColor, exColor: exColor, gapColor: tone.bg, emptyColor: fg.withValues(alpha: 0.2)),
         const SizedBox(height: 14),
         Row(children: [
           Expanded(child: _Legend(color: unexColor, label: 'Без уважительной', hours: unex, fg: fg)),
@@ -202,6 +207,76 @@ class AbsencesHero extends StatelessWidget {
       ]),
     );
   }
+}
+
+/// Двухцветная шкала «без уважительной / по уважительной»: границы плавно сдвигаются при изменении данных.
+class _SplitBar extends StatelessWidget {
+  const _SplitBar({
+    required this.unexcused,
+    required this.excused,
+    required this.unexColor,
+    required this.exColor,
+    required this.gapColor,
+    required this.emptyColor,
+  });
+  final int unexcused;
+  final int excused;
+  final Color unexColor;
+  final Color exColor;
+  final Color gapColor;
+  final Color emptyColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = unexcused + excused;
+    final share = total == 0 ? 0.0 : unexcused / total;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        height: 12,
+        child: LayoutBuilder(builder: (context, box) {
+          return TweenAnimationBuilder<double>(
+            tween: Tween<double>(end: share),
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOutCubic,
+            builder: (context, v, _) {
+              final inner = v > 0.001 && v < 0.999;
+              return Stack(children: [
+                Positioned.fill(child: ColoredBox(color: total == 0 ? emptyColor : exColor)),
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: box.maxWidth * v,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: unexColor,
+                      border: Border(right: BorderSide(color: gapColor, width: inner ? 3 : 0)),
+                    ),
+                  ),
+                ),
+              ]);
+            },
+          );
+        }),
+      ),
+    );
+  }
+}
+
+/// Полоса прогресса, которая плавно подрастает или сокращается.
+class _AnimatedBar extends StatelessWidget {
+  const _AnimatedBar({required this.value, required this.color});
+  final double value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+        tween: Tween<double>(end: value.clamp(0.0, 1.0).toDouble()),
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutCubic,
+        builder: (context, v, _) => Bar(value: v, color: color),
+      );
 }
 
 class _Legend extends StatelessWidget {

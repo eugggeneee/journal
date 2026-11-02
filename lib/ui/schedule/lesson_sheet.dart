@@ -8,6 +8,7 @@ import '../grades/grade_sheet.dart';
 import '../kit/ctx.dart';
 import '../kit/feedback.dart';
 import '../kit/pickers.dart';
+import '../kit/reveal.dart';
 import '../kit/sheet.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
@@ -119,13 +120,21 @@ class _LessonSheetState extends State<_LessonSheet> {
       ),
       children: [
         ...info,
-        if (multi && absence == null) ...[
-          const FieldLabel('Какой предмет?', top: 12),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            for (final s in slot.subjects)
-              ChoiceTag(label: store.subjectName(s), selected: s == subject, onTap: () => setState(() => subject = s)),
-          ]),
-        ],
+        Smooth(
+          child: (multi && absence == null)
+              ? Column(
+                  key: const ValueKey('subject-pick'),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const FieldLabel('Какой предмет?', top: 12),
+                    Wrap(spacing: 8, runSpacing: 8, children: [
+                      for (final s in slot.subjects)
+                        ChoiceTag(label: store.subjectName(s), selected: s == subject, onTap: () => setState(() => subject = s)),
+                    ]),
+                  ],
+                )
+              : const SizedBox.shrink(key: ValueKey('subject-none')),
+        ),
         FieldLabel(absence == null ? 'Отметить пропуск' : 'Пропуск', top: 16, trailing: absence == null ? null : hoursText(absence.hours)),
         SizedBox(
           width: double.infinity,
@@ -149,27 +158,31 @@ class _LessonSheetState extends State<_LessonSheet> {
             child: ExcuseTile(excused: true, selected: absence != null && absence.excused, onTap: () => mark(excused: true)),
           ),
         ]),
-        if (absence != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Row(children: [
-              TextButton.icon(
-                style: TextButton.styleFrom(foregroundColor: cs.error),
-                icon: const Icon(Icons.event_available_rounded),
-                label: const Text('Снять пропуск'),
-                onPressed: remove,
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: () {
-                  final host = Navigator.of(context).context;
-                  Navigator.of(context).pop();
-                  showAbsenceForm(host, edit: absence);
-                },
-                child: const Text('Подробнее'),
-              ),
-            ]),
-          ),
+        Smooth(
+          child: absence != null
+              ? Padding(
+                  key: const ValueKey('absence-actions'),
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(children: [
+                    TextButton.icon(
+                      style: TextButton.styleFrom(foregroundColor: cs.error),
+                      icon: const Icon(Icons.event_available_rounded),
+                      label: const Text('Снять пропуск'),
+                      onPressed: remove,
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        final host = Navigator.of(context).context;
+                        Navigator.of(context).pop();
+                        showAbsenceForm(host, edit: absence);
+                      },
+                      child: const Text('Подробнее'),
+                    ),
+                  ]),
+                )
+              : const SizedBox.shrink(key: ValueKey('absence-none')),
+        ),
         const SizedBox(height: 4),
       ],
     );

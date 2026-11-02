@@ -2,18 +2,27 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
 import '../kit/ctx.dart';
+import '../kit/reveal.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
 import 'grade_sheet.dart';
 import 'grades_page.dart';
 
 /// Оценки по одному предмету: средний балл, динамика и список.
-class SubjectPage extends StatelessWidget {
+class SubjectPage extends StatefulWidget {
   const SubjectPage({super.key, required this.subject});
   final String subject;
 
   @override
+  State<SubjectPage> createState() => _SubjectPageState();
+}
+
+class _SubjectPageState extends State<SubjectPage> {
+  final FreshTracker _fresh = FreshTracker();
+
+  @override
   Widget build(BuildContext context) {
+    final subject = widget.subject;
     final store = StoreScope.of(context);
     final cs = context.cs;
     final grades = store.gradesOf(subject)
@@ -21,6 +30,7 @@ class SubjectPage extends StatelessWidget {
         final c = b.date.compareTo(a.date);
         return c != 0 ? c : b.id.compareTo(a.id);
       });
+    _fresh.sync(grades.map((g) => g.id));
     final avg = grades.isEmpty ? null : grades.fold<int>(0, (a, g) => a + g.value) / grades.length;
     final tone = gradeTone(context, avg ?? 0);
     final chrono = grades.reversed.toList();
@@ -60,12 +70,14 @@ class SubjectPage extends StatelessWidget {
               )
             else
               Inset(children: [
-                Container(
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeOutCubic,
                   padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
                   decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(32)),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      Text(fmtAvg(avg!), style: context.tt.displayMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800, height: 1)),
+                      AnimatedNumber(value: avg!, format: fmtAvg, style: context.tt.displayMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800, height: 1)),
                       const SizedBox(width: 12),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
@@ -86,7 +98,11 @@ class SubjectPage extends StatelessWidget {
                 ),
                 const SectionHeader('Все оценки'),
                 for (var i = 0; i < grades.length; i++)
-                  GradeTile(grade: grades[i], store: store, index: i, count: grades.length, showSubject: false),
+                  Reveal(
+                    key: ValueKey('gr-${grades[i].id}'),
+                    animate: _fresh.isFresh(grades[i].id),
+                    child: GradeTile(grade: grades[i], store: store, index: i, count: grades.length, showSubject: false),
+                  ),
               ]),
             const SliverToBoxAdapter(child: SizedBox(height: kFabClearance)),
           ],

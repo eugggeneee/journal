@@ -212,6 +212,14 @@ class AppStore extends ChangeNotifier {
     _changed();
   }
 
+  /// Цветовая тема: 'auto' (по системе) или id из палитры приложения.
+  void setThemeColor(String id) {
+    final v = id.trim();
+    if (v.isEmpty || v == settings.themeColor) return;
+    settings.themeColor = v;
+    _changed();
+  }
+
   void setAbsenceHours(int v) {
     final h = v == 1 ? 1 : 2;
     if (h == settings.absenceHours) return;

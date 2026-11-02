@@ -7,6 +7,7 @@ import '../../data/store.dart';
 import '../kit/ctx.dart';
 import '../kit/feedback.dart';
 import '../kit/pickers.dart';
+import '../kit/reveal.dart';
 import '../kit/sheet.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
@@ -191,17 +192,25 @@ class _QuickAbsenceState extends State<_QuickAbsence> {
           ),
         ],
         if (!_locked && sched != null) ..._scope(context, store, sched),
-        if (manual) ...[
-          const SizedBox(height: 16),
-          SubjectPicker(selected: manualSubject, onSelect: (s) => setState(() => manualSubject = s)),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
-            child: Text(
-              'На эту дату расписания нет — укажите предмет.',
-              style: context.tt.bodySmall?.copyWith(color: context.cs.onSurfaceVariant),
-            ),
-          ),
-        ],
+        Smooth(
+          child: manual
+              ? Column(
+                  key: const ValueKey('manual'),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 16),
+                    SubjectPicker(selected: manualSubject, onSelect: (s) => setState(() => manualSubject = s)),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+                      child: Text(
+                        'На эту дату расписания нет — укажите предмет.',
+                        style: context.tt.bodySmall?.copyWith(color: context.cs.onSurfaceVariant),
+                      ),
+                    ),
+                  ],
+                )
+              : const SizedBox.shrink(key: ValueKey('manual-none')),
+        ),
         if (single != null && single.subjects.length > 1) ...[
           const FieldLabel('Какой предмет?', top: 8),
           Wrap(spacing: 8, runSpacing: 8, children: [
@@ -229,20 +238,24 @@ class _QuickAbsenceState extends State<_QuickAbsence> {
             },
           ),
         ),
-        if (already > 0)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),
-            child: Row(children: [
-              Icon(Icons.info_outline_rounded, size: 18, color: context.cs.onSurfaceVariant),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  already == 1 ? 'Одна из пар уже отмечена — отметка заменится.' : 'Часть пар уже отмечена — их отметки заменятся.',
-                  style: context.tt.bodySmall?.copyWith(color: context.cs.onSurfaceVariant),
-                ),
-              ),
-            ]),
-          ),
+        Smooth(
+          child: already > 0
+              ? Padding(
+                  key: ValueKey('already-$already'),
+                  padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),
+                  child: Row(children: [
+                    Icon(Icons.info_outline_rounded, size: 18, color: context.cs.onSurfaceVariant),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        already == 1 ? 'Одна из пар уже отмечена — отметка заменится.' : 'Часть пар уже отмечена — их отметки заменятся.',
+                        style: context.tt.bodySmall?.copyWith(color: context.cs.onSurfaceVariant),
+                      ),
+                    ),
+                  ]),
+                )
+              : const SizedBox.shrink(key: ValueKey('already-none')),
+        ),
         if (!widget.wholeDay)
           Align(
             alignment: Alignment.centerLeft,
@@ -304,11 +317,15 @@ class _QuickAbsenceState extends State<_QuickAbsence> {
             }),
           ),
       ]),
-      if (!whole && names.isNotEmpty)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),
-          child: Text(names, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-        ),
+      Smooth(
+        child: (!whole && names.isNotEmpty)
+            ? Padding(
+                key: const ValueKey('names'),
+                padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),
+                child: Text(names, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+              )
+            : const SizedBox.shrink(key: ValueKey('names-none')),
+      ),
     ];
   }
 }

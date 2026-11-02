@@ -10,6 +10,9 @@ import '../kit/selectors.dart';
 import '../kit/sheet.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
+import '../theme.dart';
+import 'theme_page.dart';
+import 'theme_widgets.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -64,12 +67,18 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  void _openTheme() {
+    Haptics.selection();
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ThemePage()));
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
     final store = StoreScope.of(context);
     final s = store.settings;
     final cached = store.schedulesFor(s.group).length;
+    const modeNames = ['как в системе', 'светлая', 'тёмная'];
 
     return LargePage(
       title: 'Профиль',
@@ -78,14 +87,14 @@ class _ProfilePageState extends State<ProfilePage> {
         Inset(children: [
           Material(
             color: cs.primaryContainer,
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(28),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
               onTap: () => openGroupPicker(context),
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(children: [
-                  CookieIcon(icon: Icons.school_rounded, size: 68, bg: cs.primary, fg: cs.onPrimary),
+                  CookieIcon(icon: Icons.school_rounded, size: 64, bg: cs.primary, fg: cs.onPrimary),
                   const SizedBox(width: 18),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -99,76 +108,92 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ),
+          const SectionHeader('Внешний вид'),
+          ValueListenableBuilder<bool>(
+            valueListenable: AppTheme.dynamicAvailable,
+            builder: (context, hasDynamic, _) => SegmentCard(
+              index: 0,
+              count: 1,
+              child: SettingsTile(
+                icon: Icons.palette_rounded,
+                title: 'Тема и значок',
+                subtitle: '${AppTheme.nameOf(s.themeColor, hasDynamic: hasDynamic)} · ${modeNames[s.themeMode]}',
+                trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                  SchemeDot(scheme: Theme.of(context).colorScheme, size: 26),
+                  const SizedBox(width: 4),
+                  Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+                ]),
+                onTap: _openTheme,
+              ),
+            ),
+          ),
           const SectionHeader('Расписание'),
           SegmentCard(
             index: 0,
             count: 1,
-            onTap: _refreshing ? null : _refresh,
-            child: _RowTile(
+            child: SettingsTile(
               icon: Icons.refresh_rounded,
               title: _refreshing ? 'Обновляю…' : 'Обновить расписание',
               subtitle: 'Сохранено: ${daysText(cached)} на устройстве',
               trailing: _refreshing ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 3)) : null,
+              onTap: _refreshing ? null : _refresh,
             ),
-          ),
-          const SectionHeader('Оформление'),
-          const SegmentCard(
-            index: 0,
-            count: 1,
-            child: Padding(padding: EdgeInsets.fromLTRB(16, 16, 16, 16), child: ThemeSelector()),
           ),
           const SectionHeader('Быстрый пропуск'),
           SegmentCard(
             index: 0,
             count: 1,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(
-                  'Столько часов отмечается, когда вы нажимаете значок пропуска у пары.',
-                  style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-                ),
-                const SizedBox(height: 12),
-                const HoursSelector(),
-              ]),
-            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              const SettingsTile(
+                icon: Icons.timer_outlined,
+                title: 'Часов по умолчанию',
+                subtitle: 'Столько отмечается, когда вы нажимаете значок пропуска у пары',
+              ),
+              const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 16), child: HoursSelector()),
+            ]),
           ),
           const SectionHeader('Поведение'),
           SegmentCard(
             index: 0,
             count: 2,
-            child: SwitchListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              secondary: Icon(Icons.vibration_rounded, color: cs.primary),
-              title: const Text('Виброотклик'),
-              value: s.haptics,
-              onChanged: store.setHaptics,
+            child: SettingsTile(
+              icon: Icons.vibration_rounded,
+              title: 'Виброотклик',
+              trailing: SettingsSwitch(value: s.haptics, onChanged: store.setHaptics),
+              onTap: () => store.setHaptics(!s.haptics),
             ),
           ),
           SegmentCard(
             index: 1,
             count: 2,
-            child: SwitchListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              secondary: Icon(Icons.sync_rounded, color: cs.primary),
-              title: const Text('Автообновление'),
-              subtitle: const Text('Подгружать расписание при запуске'),
-              value: s.autoRefresh,
-              onChanged: store.setAutoRefresh,
+            child: SettingsTile(
+              icon: Icons.sync_rounded,
+              title: 'Автообновление',
+              subtitle: 'Подгружать расписание при запуске',
+              trailing: SettingsSwitch(value: s.autoRefresh, onChanged: store.setAutoRefresh),
+              onTap: () => store.setAutoRefresh(!s.autoRefresh),
             ),
           ),
           const SectionHeader('Данные'),
           SegmentCard(
             index: 0,
             count: 2,
-            onTap: _export,
-            child: const _RowTile(icon: Icons.content_copy_rounded, title: 'Сохранить копию', subtitle: 'Оценки и пропуски — в буфер обмена'),
+            child: SettingsTile(
+              icon: Icons.content_copy_rounded,
+              title: 'Сохранить копию',
+              subtitle: 'Оценки и пропуски — в буфер обмена',
+              onTap: _export,
+            ),
           ),
           SegmentCard(
             index: 1,
             count: 2,
-            onTap: _import,
-            child: const _RowTile(icon: Icons.restore_rounded, title: 'Восстановить из копии', subtitle: 'Вставить данные из буфера обмена'),
+            child: SettingsTile(
+              icon: Icons.restore_rounded,
+              title: 'Восстановить из копии',
+              subtitle: 'Вставить данные из буфера обмена',
+              onTap: _import,
+            ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 16, 12, 0),
@@ -183,35 +208,47 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
-class _RowTile extends StatelessWidget {
-  const _RowTile({required this.icon, required this.title, this.subtitle, this.trailing});
+/// Строка настроек в стиле Material: значок слева, заголовок, пояснение и действие справа.
+class SettingsTile extends StatelessWidget {
+  const SettingsTile({super.key, required this.icon, required this.title, this.subtitle, this.trailing, this.onTap});
   final IconData icon;
   final String title;
   final String? subtitle;
   final Widget? trailing;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      child: Row(children: [
-        Container(
-          width: 44,
-          height: 44,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(color: cs.secondaryContainer, borderRadius: BorderRadius.circular(14)),
-          child: Icon(icon, color: cs.onSecondaryContainer),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-            if (subtitle != null) Text(subtitle!, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-          ]),
-        ),
-        ?trailing,
-      ]),
+    return ListTile(
+      onTap: onTap,
+      // у карточек-сегментов скругление задаёт сама карточка
+      shape: const RoundedRectangleBorder(),
+      minVerticalPadding: 14,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+      leading: Icon(icon, color: cs.primary),
+      title: Text(title, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+      subtitle: subtitle == null ? null : Text(subtitle!, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+      trailing: trailing,
     );
   }
+}
+
+/// Переключатель Material 3 с галочкой на включённом положении.
+class SettingsSwitch extends StatelessWidget {
+  const SettingsSwitch({super.key, required this.value, required this.onChanged});
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Switch(
+        value: value,
+        onChanged: (v) {
+          Haptics.selection();
+          onChanged(v);
+        },
+        thumbIcon: WidgetStateProperty.resolveWith<Icon?>(
+          (states) => states.contains(WidgetState.selected) ? const Icon(Icons.check_rounded) : null,
+        ),
+      );
 }

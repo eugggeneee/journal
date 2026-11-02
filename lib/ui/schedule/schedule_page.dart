@@ -8,6 +8,7 @@ import '../../logic/schedule_service.dart';
 import '../absences/absence_actions.dart';
 import '../group_picker.dart';
 import '../kit/ctx.dart';
+import '../kit/reveal.dart';
 import '../kit/sheet.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
@@ -265,7 +266,9 @@ class _DayChip extends StatelessWidget {
                   style: context.tt.titleLarge?.copyWith(color: fg, fontWeight: (selected || isToday) ? FontWeight.w800 : FontWeight.w500),
                 ),
                 const SizedBox(height: 6),
-                Container(
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOutCubic,
                   width: 6,
                   height: 6,
                   decoration: BoxDecoration(
@@ -347,16 +350,55 @@ class _DayViewState extends State<DayView> {
             child: Row(children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(pairsText(s.slots.length), style: context.tt.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    Flexible(
+                      child: Text(
+                        pairsText(s.slots.length),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    // Плашка с часами появляется рядом с заголовком и не меняет высоту шапки.
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 280),
+                      curve: Curves.easeOutCubic,
+                      alignment: Alignment.centerLeft,
+                      child: PopIn(
+                        token: hours,
+                        child: hours > 0
+                            ? Padding(
+                                padding: const EdgeInsets.only(left: 10),
+                                child: Pill(
+                                  hoursText(hours),
+                                  tone: absenceTone(context, excused: false),
+                                  icon: Icons.event_busy_rounded,
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+                  ]),
                   Text(
-                    hours > 0 ? '$sub · пропущено ${hoursText(hours)}' : sub,
+                    sub,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                   ),
                 ]),
               ),
+              // Ширина кнопки не зависит от подписи — «Весь день» и «Снять день» не сдвигают шапку.
               FilledButton.tonalIcon(
-                style: FilledButton.styleFrom(minimumSize: const Size(0, 44), padding: const EdgeInsets.symmetric(horizontal: 16)),
-                icon: Icon(allMarked ? Icons.event_available_rounded : Icons.event_busy_rounded, size: 20),
+                style: FilledButton.styleFrom(minimumSize: const Size(152, 44), padding: const EdgeInsets.symmetric(horizontal: 16)),
+                icon: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
+                  child: Icon(
+                    allMarked ? Icons.event_available_rounded : Icons.event_busy_rounded,
+                    key: ValueKey(allMarked),
+                    size: 20,
+                  ),
+                ),
                 label: Text(allMarked ? 'Снять день' : 'Весь день'),
                 onPressed: () => toggleWholeDay(context, store, widget.date, s.slots),
               ),
@@ -419,6 +461,7 @@ class LessonCard extends StatelessWidget {
     final lines = [
       for (final e in slot.entries) [roomText(e.room), e.teacher].where((x) => x.isNotEmpty).join(' · '),
     ].where((x) => x.isNotEmpty).toList();
+    final cardColor = absence == null ? cs.surfaceContainerLow : Color.alphaBlend(tone.bg.withValues(alpha: 0.55), cs.surfaceContainerLow);
 
     return SegmentCard(
       index: index,
@@ -429,7 +472,22 @@ class LessonCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
         child: Row(children: [
-          NumberBadge('${slot.number}', tone: tone, size: 46, round: false),
+          // Пропуск — маленькая плашка с цифрой на углу номера пары: размер карточки не меняется.
+          SizedBox(
+            width: 46,
+            height: 46,
+            child: Stack(clipBehavior: Clip.none, children: [
+              NumberBadge('${slot.number}', tone: tone, size: 46, round: false),
+              Positioned(
+                top: -7,
+                right: -7,
+                child: PopIn(
+                  token: absence == null ? null : '${absence.hours}-${absence.excused}',
+                  child: absence == null ? null : AbsenceBadge(hours: absence.hours, excused: absence.excused, ringColor: cardColor),
+                ),
+              ),
+            ]),
+          ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -439,20 +497,18 @@ class LessonCard extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 2),
                   child: Text(l, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
                 ),
-              if (absence != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Pill(
-                    '${hoursText(absence.hours)}${absence.excused ? ' · уважительная' : ''}',
-                    tone: tone,
-                    icon: Icons.event_busy_rounded,
-                  ),
-                ),
             ]),
           ),
           IconButton(
             tooltip: absence == null ? 'Отметить пропуск' : 'Снять пропуск',
-            icon: Icon(absence == null ? Icons.event_busy_outlined : Icons.event_available_rounded),
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
+              child: Icon(
+                absence == null ? Icons.event_busy_outlined : Icons.event_available_rounded,
+                key: ValueKey(absence != null),
+              ),
+            ),
             color: absence == null ? cs.onSurfaceVariant : tone.fg,
             onPressed: () => toggleLessonAbsence(context, store, date, slot),
           ),

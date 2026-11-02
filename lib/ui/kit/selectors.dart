@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/haptics.dart';
 import '../scope.dart';
 
-/// Выбор оформления: как в системе / светлая / тёмная.
+/// Режим оформления: как в системе / светлая / тёмная (цвета выбираются отдельно).
 class ThemeSelector extends StatelessWidget {
   const ThemeSelector({super.key});
 
@@ -15,9 +15,9 @@ class ThemeSelector extends StatelessWidget {
       child: SegmentedButton<int>(
         showSelectedIcon: false,
         segments: const [
-          ButtonSegment(value: 0, label: Text('Системная')),
-          ButtonSegment(value: 1, label: Text('Светлая')),
-          ButtonSegment(value: 2, label: Text('Тёмная')),
+          ButtonSegment(value: 0, icon: Icon(Icons.brightness_auto_rounded), label: Text('Авто')),
+          ButtonSegment(value: 1, icon: Icon(Icons.light_mode_rounded), label: Text('Светлая')),
+          ButtonSegment(value: 2, icon: Icon(Icons.dark_mode_rounded), label: Text('Тёмная')),
         ],
         selected: {store.settings.themeMode},
         onSelectionChanged: (s) {

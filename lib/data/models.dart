@@ -217,6 +217,7 @@ class Settings {
     List<String>? extraSubjects,
     this.onboarded = false,
     this.themeMode = 0,
+    this.themeColor = 'auto',
     this.absenceHours = 2,
     this.haptics = true,
     this.autoRefresh = true,
@@ -227,6 +228,7 @@ class Settings {
 
   bool onboarded; // приветственные экраны уже пройдены
   int themeMode; // 0 — как в системе, 1 — светлая, 2 — тёмная
+  String themeColor; // цветовая тема: 'auto' — подстраивается под систему (Material You), либо id из палитры
   int absenceHours; // сколько часов отмечать при быстром нажатии: 1 или 2
   bool haptics; // тактильная отдача
   bool autoRefresh; // подгружать расписание при запуске и возвращении в приложение
@@ -236,6 +238,7 @@ class Settings {
         'extra': extraSubjects,
         'onb': onboarded,
         'theme': themeMode,
+        'tc': themeColor,
         'ah': absenceHours,
         'hap': haptics,
         'auto': autoRefresh,
@@ -246,6 +249,7 @@ class Settings {
       final j = Map<String, dynamic>.from(raw as Map);
       final group = _str(j['group']).trim();
       final theme = _int(j['theme'], 0);
+      final color = _str(j['tc']).trim();
       final hours = _int(j['ah'], 2);
       return Settings(
         group: group,
@@ -253,6 +257,7 @@ class Settings {
         // копии и данные из прошлых версий: если группа уже выбрана — приветствие не показываем
         onboarded: j['onb'] is bool ? j['onb'] as bool : group.isNotEmpty,
         themeMode: theme >= 0 && theme <= 2 ? theme : 0,
+        themeColor: color.isEmpty ? 'auto' : color,
         absenceHours: hours == 1 ? 1 : 2,
         haptics: j['hap'] is bool ? j['hap'] as bool : true,
         autoRefresh: j['auto'] is bool ? j['auto'] as bool : true,

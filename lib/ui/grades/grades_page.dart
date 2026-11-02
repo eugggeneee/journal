@@ -8,6 +8,7 @@ import '../../logic/stats.dart';
 import '../kit/ctx.dart';
 import '../kit/feedback.dart';
 import '../kit/pickers.dart';
+import '../kit/reveal.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
 import 'grade_sheet.dart';
@@ -22,12 +23,16 @@ class GradesPage extends StatefulWidget {
 class _GradesPageState extends State<GradesPage> {
   int _mode = 0;
   String? _filter; // предмет в журнале
+  final FreshTracker _freshGrades = FreshTracker();
+  final FreshTracker _freshSubjects = FreshTracker();
 
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
     final stats = GradeStats.of(store.grades);
     final empty = store.grades.isEmpty;
+    _freshGrades.sync(store.grades.map((g) => g.id));
+    _freshSubjects.sync(stats.subjects.map((s) => s.subject));
 
     return LargePage(
       title: 'Оценки',
@@ -78,7 +83,12 @@ class _GradesPageState extends State<GradesPage> {
     return [
       Inset(top: 8, children: [
         SectionHeader('Предметы', trailing: subjectsText(list.length)),
-        for (var i = 0; i < list.length; i++) _SubjectCard(stat: list[i], index: i, count: list.length, store: store),
+        for (var i = 0; i < list.length; i++)
+          Reveal(
+            key: ValueKey('sub-${list[i].subject}'),
+            animate: _freshSubjects.isFresh(list[i].subject),
+            child: _SubjectCard(stat: list[i], index: i, count: list.length, store: store),
+          ),
       ]),
     ];
   }
@@ -113,9 +123,14 @@ class _GradesPageState extends State<GradesPage> {
         ),
       ),
       for (final e in byMonth.entries)
-        Inset(children: [
+        Inset(key: ValueKey('month-${e.key}'), children: [
           SectionHeader(e.key, trailing: gradesText(e.value.length), top: 12),
-          for (var i = 0; i < e.value.length; i++) GradeTile(grade: e.value[i], store: store, index: i, count: e.value.length),
+          for (var i = 0; i < e.value.length; i++)
+            Reveal(
+              key: ValueKey('gr-${e.value[i].id}'),
+              animate: _freshGrades.isFresh(e.value[i].id),
+              child: GradeTile(grade: e.value[i], store: store, index: i, count: e.value.length),
+            ),
         ]),
     ];
   }
@@ -131,7 +146,9 @@ class GradesHero extends StatelessWidget {
     final avg = stats.average ?? 0;
     final tone = gradeTone(context, avg);
     final maxC = stats.distribution.reduce((a, b) => a > b ? a : b);
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
       padding: const EdgeInsets.fromLTRB(24, 22, 24, 18),
       decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(32)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -140,8 +157,9 @@ class GradesHero extends StatelessWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Средний балл', style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w600)),
               const SizedBox(height: 2),
-              Text(
-                fmtAvg(avg),
+              AnimatedNumber(
+                value: avg,
+                format: fmtAvg,
                 style: context.tt.displayMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800, height: 1.05),
               ),
             ]),

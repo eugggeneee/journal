@@ -37,12 +37,13 @@ class JournalApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        final light = lightDynamic?.harmonized() ?? AppTheme.fallback(Brightness.light);
-        final dark = darkDynamic?.harmonized() ?? AppTheme.fallback(Brightness.dark);
+        // Цвета обоев (Android 12+): их можно выбрать в настройках темы, а по умолчанию они и используются.
+        AppTheme.setDynamic(lightDynamic?.harmonized(), darkDynamic?.harmonized());
         return ListenableBuilder(
           listenable: store,
           builder: (context, _) {
             Haptics.enabled = store.settings.haptics;
+            final color = store.settings.themeColor;
             return MaterialApp(
               title: 'Journal',
               debugShowCheckedModeBanner: false,
@@ -50,8 +51,11 @@ class JournalApp extends StatelessWidget {
               supportedLocales: const [Locale('ru'), Locale('en')],
               localizationsDelegates: GlobalMaterialLocalizations.delegates,
               themeMode: _modes[store.settings.themeMode],
-              theme: AppTheme.build(light),
-              darkTheme: AppTheme.build(dark),
+              theme: AppTheme.themeFor(color, Brightness.light),
+              darkTheme: AppTheme.themeFor(color, Brightness.dark),
+              // Смена темы — плавное перетекание всех цветов, а не мгновенная перекраска.
+              themeAnimationDuration: AppTheme.switchDuration,
+              themeAnimationCurve: AppTheme.switchCurve,
               builder: _scope,
               home: _home(),
             );
