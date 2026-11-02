@@ -9,6 +9,7 @@ import '../kit/ctx.dart';
 import '../kit/feedback.dart';
 import '../kit/pickers.dart';
 import '../kit/reveal.dart';
+import '../kit/select_sheet.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
 import 'absence_sheet.dart';
@@ -89,18 +90,27 @@ class _AbsencesPageState extends State<AbsencesPage> {
     }
     return [
       SliverToBoxAdapter(
-        child: SizedBox(
-          height: 56,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            children: [
-              ChoiceTag(label: 'Все', selected: _filter == 0, onTap: () => setState(() => _filter = 0)),
-              const SizedBox(width: 8),
-              ChoiceTag(label: 'Без уважительной', selected: _filter == 1, onTap: () => setState(() => _filter = 1)),
-              const SizedBox(width: 8),
-              ChoiceTag(label: 'По уважительной', selected: _filter == 2, onTap: () => setState(() => _filter = 2)),
-            ],
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: FilterButton(
+              icon: Icons.filter_list_rounded,
+              label: const ['Все пропуски', 'Без уважительной', 'По уважительной'][_filter],
+              active: _filter != 0,
+              onClear: () => setState(() => _filter = 0),
+              onTap: () => showSelectSheet<int>(
+                context,
+                title: 'Показать пропуски',
+                value: _filter,
+                options: const [
+                  MenuOption(0, 'Все пропуски', icon: Icons.apps_rounded),
+                  MenuOption(1, 'Без уважительной', icon: Icons.event_busy_rounded),
+                  MenuOption(2, 'По уважительной', icon: Icons.verified_rounded),
+                ],
+                onSelected: (v) => setState(() => _filter = v),
+              ),
+            ),
           ),
         ),
       ),

@@ -9,6 +9,7 @@ import '../kit/ctx.dart';
 import '../kit/feedback.dart';
 import '../kit/pickers.dart';
 import '../kit/reveal.dart';
+import '../kit/select_sheet.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
 import 'grade_sheet.dart';
@@ -107,18 +108,27 @@ class _GradesPageState extends State<GradesPage> {
     }
     return [
       SliverToBoxAdapter(
-        child: SizedBox(
-          height: 56,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            children: [
-              ChoiceTag(label: 'Все', selected: filter == null, onTap: () => setState(() => _filter = null)),
-              for (final s in subjects) ...[
-                const SizedBox(width: 8),
-                ChoiceTag(label: store.subjectName(s), selected: filter == s, onTap: () => setState(() => _filter = s)),
-              ],
-            ],
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: FilterButton(
+              icon: Icons.filter_list_rounded,
+              label: filter == null ? 'Все предметы' : store.subjectName(filter),
+              active: filter != null,
+              onClear: () => setState(() => _filter = null),
+              onTap: () => showSelectSheet<String>(
+                context,
+                title: 'Предмет',
+                subtitle: 'Показать оценки только по одному предмету',
+                value: filter ?? '',
+                options: [
+                  const MenuOption('', 'Все предметы', icon: Icons.apps_rounded),
+                  for (final s in subjects) MenuOption(s, store.subjectName(s), icon: Icons.menu_book_outlined),
+                ],
+                onSelected: (v) => setState(() => _filter = v.isEmpty ? null : v),
+              ),
+            ),
           ),
         ),
       ),

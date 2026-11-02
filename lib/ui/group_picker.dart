@@ -2,54 +2,50 @@ import 'package:material_ui/material_ui.dart';
 
 import '../core/haptics.dart';
 import 'kit/ctx.dart';
-import 'kit/pickers.dart';
-import 'kit/widgets.dart';
+import 'kit/sheet.dart';
 import 'scope.dart';
 
-/// Открывает выбор группы отдельной страницей (из профиля и меню расписания).
+/// Открывает нижнюю шторку выбора группы (из профиля и меню расписания).
 Future<void> openGroupPicker(BuildContext context) {
   final store = StoreScope.of(context);
   final repo = StoreScope.repoOf(context);
-  return Navigator.of(context).push<void>(MaterialPageRoute<void>(
-    builder: (ctx) => GroupPickerScreen(
-      onSelected: (g) {
-        store.setGroup(g);
-        repo.prefetch(respectSetting: false);
-        Navigator.of(ctx).pop();
-      },
-    ),
-  ));
+  return showGroupSheet(
+    context,
+    selected: store.settings.group,
+    onSelected: (g) {
+      store.setGroup(g);
+      repo.prefetch(respectSetting: false);
+    },
+  );
 }
 
-class GroupPickerScreen extends StatelessWidget {
-  const GroupPickerScreen({super.key, required this.onSelected});
-  final ValueChanged<String> onSelected;
+/// Шторка выбора группы: поиск, сетка групп с сайта колледжа и ввод номера вручную.
+/// На планшете и ПК показывается диалогом по центру.
+Future<void> showGroupSheet(
+  BuildContext context, {
+  required String selected,
+  required ValueChanged<String> onSelected,
+}) =>
+    showAdaptiveSheet<void>(
+      context,
+      (ctx) => GroupSheet(
+        selected: selected,
+        onSelected: (g) {
+          Navigator.of(ctx).pop();
+          onSelected(g);
+        },
+      ),
+    );
 
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Выбор группы')),
-        body: ContentFrame(
-          maxWidth: 640,
-          child: GroupPickerBody(
-            selected: StoreScope.of(context).settings.group,
-            onSelected: onSelected,
-            padding: EdgeInsets.fromLTRB(20, 8, 20, MediaQuery.paddingOf(context).bottom + 32),
-          ),
-        ),
-      );
-}
-
-/// Поиск + список групп с сайта колледжа. Общий для приветствия и отдельной страницы.
-class GroupPickerBody extends StatefulWidget {
-  const GroupPickerBody({super.key, required this.onSelected, this.selected = '', this.padding = const EdgeInsets.all(16)});
+class GroupSheet extends StatefulWidget {
+  const GroupSheet({super.key, required this.onSelected, this.selected = ''});
   final ValueChanged<String> onSelected;
   final String selected;
-  final EdgeInsets padding;
   @override
-  State<GroupPickerBody> createState() => _GroupPickerBodyState();
+  State<GroupSheet> createState() => _GroupSheetState();
 }
 
-class _GroupPickerBodyState extends State<GroupPickerBody> {
+class _GroupSheetState extends State<GroupSheet> {
   final TextEditingController _q = TextEditingController();
   List<String> _groups = const [];
   bool _loading = true;
@@ -89,11 +85,51 @@ class _GroupPickerBodyState extends State<GroupPickerBody> {
     final filtered = _groups.where((g) => g.contains(query)).toList();
     final manualOk = RegExp(r'^\d{3,5}$').hasMatch(query) && !_groups.contains(query);
 
-    return ListView(
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: widget.padding,
-      children: [
-        TextField(
+    Widget body;
+    if (_loading) {
+      body = const Padding(padding: EdgeInsets.symmetric(vertical: 56), child: Center(child: CircularProgressIndicator()));
+    } else if (_offline) {
+      body = _Notice(
+        icon: Icons.wifi_off_rounded,
+        text: 'Нет подключения. Подключитесь к интернету, чтобы увидеть список групп, или введите номер вручную.',
+        onRetry: _load,
+      );
+    } else if (_groups.isEmpty) {
+      body = _Notice(
+        icon: Icons.error_outline_rounded,
+        text: 'Список групп сейчас недоступен — расписание на сайте не опубликовано. Введите номер вручную.',
+        onRetry: _load,
+      );
+    } else if (filtered.isEmpty) {
+      body = Padding(
+        padding: const EdgeInsets.symmetric(vertical: 28),
+        child: Center(
+          child: Text(
+            manualOk ? 'Такой группы нет в списке — можно ввести номер вручную' : 'Такой группы нет в списке',
+            textAlign: TextAlign.center,
+            style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+          ),
+        ),
+      );
+    } else {
+      body = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 4, 8, 10),
+          child: Text(
+            query.isEmpty ? 'Группы на сайте · ${_groups.length}' : 'Найдено: ${filtered.length}',
+            style: context.tt.labelLarge?.copyWith(color: cs.primary, fontWeight: FontWeight.w700),
+          ),
+        ),
+        _GroupGrid(groups: filtered, selected: widget.selected, onTap: widget.onSelected),
+      ]);
+    }
+
+    return SheetHeight(
+      child: SheetScaffold(
+        title: 'Выбор группы',
+        subtitle: widget.selected.isEmpty ? 'Выберите из списка или введите номер' : 'Сейчас: ${widget.selected}',
+        fill: true,
+        pinned: TextField(
           controller: _q,
           keyboardType: TextInputType.number,
           onChanged: (_) => setState(() {}),
@@ -109,51 +145,86 @@ class _GroupPickerBodyState extends State<GroupPickerBody> {
                   ),
           ),
         ),
-        const SizedBox(height: 16),
-        if (_loading)
-          const Padding(padding: EdgeInsets.symmetric(vertical: 56), child: Center(child: CircularProgressIndicator()))
-        else ...[
-          if (_offline)
-            _Notice(
-              icon: Icons.wifi_off_rounded,
-              text: 'Нет подключения. Подключитесь к интернету, чтобы увидеть список групп, или введите номер вручную.',
-              onRetry: _load,
-            )
-          else if (_groups.isEmpty)
-            _Notice(
-              icon: Icons.error_outline_rounded,
-              text: 'Список групп сейчас недоступен — расписание на сайте не опубликовано. Введите номер вручную.',
-              onRetry: _load,
-            )
-          else ...[
-            const SectionHeader('Группы на сайте', top: 8),
-            if (filtered.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text('Такой группы нет в списке', style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+        footer: manualOk
+            ? FilledButton(
+                onPressed: () {
+                  Haptics.selection();
+                  widget.onSelected(query);
+                },
+                child: Text('Использовать группу $query'),
               )
-            else
-              Wrap(spacing: 8, runSpacing: 8, children: [
-                for (final g in filtered)
-                  ChoiceTag(
-                    label: g,
-                    selected: g == widget.selected,
-                    onTap: () => widget.onSelected(g),
-                  ),
-              ]),
-          ],
-          if (manualOk) ...[
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: () {
-                Haptics.selection();
-                widget.onSelected(query);
-              },
-              child: Text('Использовать группу $query'),
+            : null,
+        children: [body],
+      ),
+    );
+  }
+}
+
+/// Сетка групп: плитки одинакового размера, число столбцов подстраивается под ширину — ничего не обрезается.
+class _GroupGrid extends StatelessWidget {
+  const _GroupGrid({required this.groups, required this.selected, required this.onTap});
+  final List<String> groups;
+  final String selected;
+  final ValueChanged<String> onTap;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, c) {
+        const gap = 10.0;
+        final cols = ((c.maxWidth + gap) / (92 + gap)).floor().clamp(3, 6);
+        final w = (c.maxWidth - gap * (cols - 1)) / cols;
+        return Wrap(spacing: gap, runSpacing: gap, children: [
+          for (final g in groups)
+            SizedBox(
+              width: w,
+              child: _GroupTile(label: g, selected: g == selected, onTap: () => onTap(g)),
             ),
-          ],
-        ],
-      ],
+        ]);
+      });
+}
+
+class _GroupTile extends StatelessWidget {
+  const _GroupTile({required this.label, required this.selected, required this.onTap});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: 'Группа $label',
+      excludeSemantics: true,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        height: 52,
+        decoration: BoxDecoration(
+          color: selected ? cs.primary : cs.surfaceContainerHighest.withValues(alpha: 0.7),
+          borderRadius: BorderRadius.circular(selected ? 26 : 16),
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+            onTap: () {
+              Haptics.selection();
+              onTap();
+            },
+            child: Center(
+              child: Text(
+                label,
+                maxLines: 1,
+                style: context.tt.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: selected ? cs.onPrimary : cs.onSurface,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

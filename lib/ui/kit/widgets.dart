@@ -208,7 +208,7 @@ class NumberBadge extends StatelessWidget {
 }
 
 /// Маленькая плашка Material с числом часов пропуска. Садится на угол значка пары
-/// и не меняет размеры карточки: красная — без уважительной причины, синяя — по уважительной.
+/// и не меняет размеры карточки: красная — без уважительной причины, зелёная — по уважительной.
 class AbsenceBadge extends StatelessWidget {
   const AbsenceBadge({super.key, required this.hours, required this.excused, required this.ringColor});
   final int hours;

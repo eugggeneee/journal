@@ -25,7 +25,7 @@ const List<double> _scaleGrade = [1, 3, 4.5, 6, 7.5, 9, 10];
 const List<double> _scaleHue = [4, 14, 30, 44, 76, 128, 152];
 
 const double _hueRed = 4;
-const double _hueBlue = 212;
+const double _hueGreen = 142;
 
 double _gradeHue(num v) {
   final x = v.toDouble().clamp(1.0, 10.0).toDouble();
@@ -54,10 +54,10 @@ Tone gradeTone(BuildContext context, num v) => _pastel(context, _gradeHue(v));
 /// Насыщенный цвет оценки (для столбиков, графиков и выбранной кнопки).
 Color gradeAccent(BuildContext context, num v) => _accent(context, _gradeHue(v));
 
-/// Тоны для пропусков: без уважительной причины (красный) / по уважительной (синий).
-Tone absenceTone(BuildContext context, {required bool excused}) => _pastel(context, excused ? _hueBlue : _hueRed);
+/// Тоны для пропусков: без уважительной причины (красный) / по уважительной (мягкий зелёный).
+Tone absenceTone(BuildContext context, {required bool excused}) => _pastel(context, excused ? _hueGreen : _hueRed);
 
-Color absenceAccent(BuildContext context, {required bool excused}) => _accent(context, excused ? _hueBlue : _hueRed);
+Color absenceAccent(BuildContext context, {required bool excused}) => _accent(context, excused ? _hueGreen : _hueRed);
 
 /// Нейтральный тон (пока ничего не выбрано).
 Tone neutralTone(BuildContext context) => Tone(context.cs.surfaceContainerHighest, context.cs.onSurfaceVariant);

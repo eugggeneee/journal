@@ -9,6 +9,7 @@ import '../kit/ctx.dart';
 import '../kit/feedback.dart';
 import '../kit/pickers.dart';
 import '../kit/reveal.dart';
+import '../kit/select_sheet.dart';
 import '../kit/sheet.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
@@ -127,10 +128,11 @@ class _LessonSheetState extends State<_LessonSheet> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const FieldLabel('Какой предмет?', top: 12),
-                    Wrap(spacing: 8, runSpacing: 8, children: [
-                      for (final s in slot.subjects)
-                        ChoiceTag(label: store.subjectName(s), selected: s == subject, onTap: () => setState(() => subject = s)),
-                    ]),
+                    ChoiceList<String>(
+                      options: [for (final s in slot.subjects) MenuOption(s, store.subjectName(s))],
+                      value: subject,
+                      onChanged: (s) => setState(() => subject = s),
+                    ),
                   ],
                 )
               : const SizedBox.shrink(key: ValueKey('subject-none')),

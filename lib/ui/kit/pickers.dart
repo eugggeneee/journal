@@ -4,6 +4,7 @@ import '../../core/dates.dart';
 import '../../core/haptics.dart';
 import '../scope.dart';
 import 'ctx.dart';
+import 'select_sheet.dart';
 import 'sheet.dart';
 
 /// Чип выбора (ChoiceChip Material 3) с вибрацией.
@@ -55,27 +56,10 @@ class DayChips extends StatelessWidget {
   }
 }
 
-// ───────────────────────── выпадающее меню ─────────────────────────
+// ───────────────────────── поле выбора (нижняя шторка) ─────────────────────────
 
-/// Пункт выпадающего меню. [section] — подпись группы (появляется, когда меняется от пункта к пункту).
-class MenuOption<T> {
-  const MenuOption(this.value, this.label, {this.icon, this.section});
-  final T value;
-  final String label;
-  final IconData? icon;
-  final String? section;
-}
-
-/// Действие в конце меню (например, «Новый предмет…»).
-class MenuAction {
-  const MenuAction({required this.icon, required this.label, required this.onTap});
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-}
-
-/// Поле-выпадайка Material 3: нажали — внизу появилось меню со всеми вариантами,
-/// ничего не нужно листать по шторке.
+/// Поле выбора Material 3: нажали — снизу открылась шторка со всеми вариантами
+/// (при длинном списке — с поиском). Ничего не обрезается и не нужно листать по горизонтали.
 class SelectField<T> extends StatelessWidget {
   const SelectField({
     super.key,
@@ -86,6 +70,7 @@ class SelectField<T> extends StatelessWidget {
     this.value,
     this.valueLabel,
     this.placeholder = 'Выберите',
+    this.sheetTitle,
     this.actions = const [],
   });
   final String label;
@@ -93,6 +78,7 @@ class SelectField<T> extends StatelessWidget {
   final T? value;
   final String? valueLabel;
   final String placeholder;
+  final String? sheetTitle;
   final List<MenuOption<T>> options;
   final List<MenuAction> actions;
   final ValueChanged<T> onSelected;
@@ -100,137 +86,120 @@ class SelectField<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
-    return LayoutBuilder(builder: (context, c) {
-      final w = c.maxWidth.isFinite ? c.maxWidth : 320.0;
-      final maxH = (MediaQuery.sizeOf(context).height * 0.5).clamp(240.0, 440.0).toDouble();
-      final itemStyle = ButtonStyle(
-        minimumSize: WidgetStatePropertyAll(Size(w - 16, 48)),
-        padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 12)),
-        shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-      );
-
-      final children = <Widget>[];
-      String? lastSection;
-      for (final o in options) {
-        if (o.section != null && o.section != lastSection) {
-          children.add(Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-            child: Text(o.section!, style: context.tt.labelMedium?.copyWith(color: cs.primary, fontWeight: FontWeight.w700)),
-          ));
-        }
-        lastSection = o.section;
-        final selected = value != null && o.value == value;
-        children.add(MenuItemButton(
-          style: itemStyle.copyWith(
-            backgroundColor: WidgetStatePropertyAll(selected ? cs.secondaryContainer : Colors.transparent),
-          ),
-          leadingIcon: o.icon == null ? null : Icon(o.icon, size: 20, color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant),
-          trailingIcon: selected ? Icon(Icons.check_rounded, size: 20, color: cs.onSecondaryContainer) : null,
-          onPressed: () {
+    final has = valueLabel != null && valueLabel!.isNotEmpty;
+    return Semantics(
+      button: true,
+      label: '$label: ${has ? valueLabel : placeholder}',
+      excludeSemantics: true,
+      child: Material(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(18),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
             Haptics.selection();
-            onSelected(o.value);
+            FocusManager.instance.primaryFocus?.unfocus();
+            showSelectSheet<T>(
+              context,
+              title: sheetTitle ?? label,
+              options: options,
+              value: value,
+              actions: actions,
+              onSelected: onSelected,
+            );
           },
-          child: Text(
-            o.label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: context.tt.bodyLarge?.copyWith(
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              color: selected ? cs.onSecondaryContainer : cs.onSurface,
-            ),
-          ),
-        ));
-      }
-      if (actions.isNotEmpty) {
-        if (options.isNotEmpty) {
-          children.add(Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Divider(color: cs.outlineVariant),
-          ));
-        }
-        for (final a in actions) {
-          children.add(MenuItemButton(
-            style: itemStyle,
-            leadingIcon: Icon(a.icon, size: 20, color: cs.primary),
-            onPressed: () {
-              Haptics.selection();
-              a.onTap();
-            },
-            child: Text(a.label, style: context.tt.bodyLarge?.copyWith(fontWeight: FontWeight.w700, color: cs.primary)),
-          ));
-        }
-      }
-
-      return MenuAnchor(
-        alignmentOffset: const Offset(0, 6),
-        style: MenuStyle(
-          backgroundColor: WidgetStatePropertyAll(cs.surfaceContainerHigh),
-          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
-          elevation: const WidgetStatePropertyAll(4),
-          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(22))),
-          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 8, horizontal: 8)),
-          minimumSize: WidgetStatePropertyAll(Size(w, 0)),
-          maximumSize: WidgetStatePropertyAll(Size(w, maxH)),
-        ),
-        menuChildren: children,
-        builder: (context, controller, _) {
-          final open = controller.isOpen;
-          final has = valueLabel != null && valueLabel!.isNotEmpty;
-          return Material(
-            color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-              side: BorderSide(color: open ? cs.primary : Colors.transparent, width: 2),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: () {
-                Haptics.selection();
-                if (open) {
-                  controller.close();
-                } else {
-                  controller.open();
-                }
-              },
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 64),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
-                  child: Row(children: [
-                    Icon(icon, color: has ? cs.primary : cs.onSurfaceVariant),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                        Text(label, style: context.tt.labelMedium?.copyWith(color: open ? cs.primary : cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 2),
-                        Text(
-                          has ? valueLabel! : placeholder,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.tt.titleMedium?.copyWith(
-                            fontWeight: has ? FontWeight.w700 : FontWeight.w500,
-                            color: has ? cs.onSurface : cs.onSurfaceVariant,
-                          ),
-                        ),
-                      ]),
-                    ),
-                    AnimatedRotation(
-                      turns: open ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(Icons.arrow_drop_down_rounded, size: 32, color: cs.onSurfaceVariant),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 64),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+              child: Row(children: [
+                Icon(icon, color: has ? cs.primary : cs.onSurfaceVariant),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                    Text(label, style: context.tt.labelMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 2),
+                    Text(
+                      has ? valueLabel! : placeholder,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.tt.titleMedium?.copyWith(
+                        fontWeight: has ? FontWeight.w700 : FontWeight.w500,
+                        color: has ? cs.onSurface : cs.onSurfaceVariant,
+                      ),
                     ),
                   ]),
                 ),
-              ),
+                Icon(Icons.unfold_more_rounded, size: 26, color: cs.onSurfaceVariant),
+                const SizedBox(width: 4),
+              ]),
             ),
-          );
-        },
-      );
-    });
+          ),
+        ),
+      ),
+    );
   }
 }
 
-/// Выбор предмета: выпадающее меню — сначала предметы из расписания дня, затем все остальные.
+/// Кнопка-фильтр над списком: показывает текущий выбор, по нажатию открывает шторку.
+/// Когда фильтр включён, подсвечивается и получает крестик сброса.
+class FilterButton extends StatelessWidget {
+  const FilterButton({super.key, required this.icon, required this.label, required this.onTap, this.active = false, this.onClear});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool active;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+    final fg = active ? cs.onSecondaryContainer : cs.onSurfaceVariant;
+    final clearable = active && onClear != null;
+    return Material(
+      color: active ? cs.secondaryContainer : Colors.transparent,
+      shape: StadiumBorder(side: BorderSide(color: active ? Colors.transparent : cs.outlineVariant)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          Haptics.selection();
+          onTap();
+        },
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 40),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(12, 0, clearable ? 4 : 8, 0),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, size: 18, color: fg),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.tt.labelLarge?.copyWith(color: active ? cs.onSecondaryContainer : cs.onSurface, fontWeight: FontWeight.w600),
+                ),
+              ),
+              if (clearable)
+                InkResponse(
+                  radius: 18,
+                  onTap: () {
+                    Haptics.selection();
+                    onClear!();
+                  },
+                  child: Padding(padding: const EdgeInsets.all(8), child: Icon(Icons.close_rounded, size: 18, color: fg)),
+                )
+              else
+                Icon(Icons.arrow_drop_down_rounded, size: 24, color: fg),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Выбор предмета: нижняя шторка — сначала предметы из расписания дня, затем все остальные.
 class SubjectPicker extends StatelessWidget {
   const SubjectPicker({
     super.key,
@@ -263,6 +232,7 @@ class SubjectPicker extends StatelessWidget {
       value: selected.isEmpty ? null : selected,
       valueLabel: selected.isEmpty ? null : store.subjectName(selected),
       placeholder: 'Выберите предмет',
+      sheetTitle: 'Выбор предмета',
       options: [
         for (final s in first) MenuOption(s, store.subjectName(s), icon: Icons.event_note_rounded, section: 'По расписанию'),
         for (final s in rest)
@@ -285,7 +255,7 @@ class SubjectPicker extends StatelessWidget {
   }
 }
 
-/// Выбор типа работы выпадающим меню.
+/// Выбор типа работы нижней шторкой.
 class KindPicker extends StatelessWidget {
   const KindPicker({super.key, required this.kind, required this.kinds, required this.onChanged});
   final String kind;
@@ -298,6 +268,7 @@ class KindPicker extends StatelessWidget {
     if (kind.isNotEmpty && !list.contains(kind)) list.insert(0, kind);
     return SelectField<String>(
       label: 'Тип работы',
+      sheetTitle: 'Тип работы',
       icon: Icons.assignment_rounded,
       value: kind.isEmpty ? '' : kind,
       valueLabel: kind,

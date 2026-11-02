@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
@@ -40,6 +42,8 @@ class SheetScaffold extends StatelessWidget {
     this.trailing,
     this.leading,
     this.footer,
+    this.pinned,
+    this.fill = false,
   });
   final String title;
   final String? subtitle;
@@ -47,6 +51,12 @@ class SheetScaffold extends StatelessWidget {
   final Widget? leading;
   final List<Widget> children;
   final Widget? footer;
+
+  /// Закреплённый блок под заголовком (например, строка поиска) — не прокручивается вместе с содержимым.
+  final Widget? pinned;
+
+  /// Занять всю доступную высоту (список меняется при поиске, а шторка не должна «прыгать»).
+  final bool fill;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +67,7 @@ class SheetScaffold extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: bottom),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
         children: [
           Padding(
             padding: EdgeInsets.fromLTRB(24, wide ? 20 : 0, 12, 8),
@@ -81,7 +91,9 @@ class SheetScaffold extends StatelessWidget {
               ],
             ),
           ),
+          if (pinned != null) Padding(padding: const EdgeInsets.fromLTRB(24, 4, 24, 4), child: pinned),
           Flexible(
+            fit: fill ? FlexFit.tight : FlexFit.loose,
             child: SingleChildScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
@@ -98,6 +110,22 @@ class SheetScaffold extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Задаёт шторке со списком и поиском постоянную высоту: список меняется при вводе,
+/// а сама шторка не должна «прыгать». Учитывает клавиатуру.
+class SheetHeight extends StatelessWidget {
+  const SheetHeight({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final wide = size.width >= _wideBreakpoint;
+    final keyboard = wide ? 0.0 : MediaQuery.viewInsetsOf(context).bottom;
+    final base = (size.height * 0.74).clamp(380.0, 680.0).toDouble();
+    return SizedBox(height: math.min(base + keyboard, size.height - 80), child: child);
   }
 }
 

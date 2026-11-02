@@ -8,6 +8,7 @@ import '../kit/ctx.dart';
 import '../kit/feedback.dart';
 import '../kit/pickers.dart';
 import '../kit/reveal.dart';
+import '../kit/select_sheet.dart';
 import '../kit/sheet.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
@@ -213,14 +214,11 @@ class _QuickAbsenceState extends State<_QuickAbsence> {
         ),
         if (single != null && single.subjects.length > 1) ...[
           const FieldLabel('Какой предмет?', top: 8),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            for (final s in single.subjects)
-              ChoiceTag(
-                label: store.subjectName(s),
-                selected: (subjectPick ?? single.subject) == s,
-                onTap: () => setState(() => subjectPick = s),
-              ),
-          ]),
+          ChoiceList<String>(
+            options: [for (final s in single.subjects) MenuOption(s, store.subjectName(s))],
+            value: subjectPick ?? single.subject,
+            onChanged: (s) => setState(() => subjectPick = s),
+          ),
         ],
         FieldLabel('Сколько часов', trailing: (slots != null && slots.length > 1) ? 'всего ${hoursText(totalHours)}' : null, top: _locked && !(single != null && single.subjects.length > 1) ? 8 : 20),
         SizedBox(

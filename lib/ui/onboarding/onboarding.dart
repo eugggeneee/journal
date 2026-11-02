@@ -184,22 +184,62 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     ]);
   }
 
-  Widget _group(BuildContext context, AppStore store) => Column(children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-          child: _title(context, 'Ваша группа', 'Выберите группу из списка на сайте колледжа или введите её номер.'),
-        ),
-        Expanded(
-          child: GroupPickerBody(
-            selected: store.settings.group,
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-            onSelected: (g) {
-              Haptics.selection();
-              store.setGroup(g);
-            },
+  Widget _group(BuildContext context, AppStore store) {
+    final cs = context.cs;
+    final has = store.hasGroup;
+    final group = store.settings.group;
+    return _scrolling([
+      _title(context, 'Ваша группа', 'Выберите группу из списка на сайте колледжа или введите её номер.'),
+      const SizedBox(height: 32),
+      Material(
+        color: has ? cs.primaryContainer : cs.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(28),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            Haptics.selection();
+            showGroupSheet(
+              context,
+              selected: group,
+              onSelected: (g) {
+                Haptics.selection();
+                store.setGroup(g);
+              },
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(children: [
+              CookieIcon(
+                icon: Icons.groups_rounded,
+                size: 64,
+                bg: has ? cs.primary : cs.secondaryContainer,
+                fg: has ? cs.onPrimary : cs.onSecondaryContainer,
+              ),
+              const SizedBox(width: 18),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(
+                    has ? 'Группа $group' : 'Выбрать группу',
+                    style: context.tt.headlineSmall?.copyWith(
+                      color: has ? cs.onPrimaryContainer : cs.onSurface,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    has ? 'Нажмите, чтобы сменить' : 'Нажмите, чтобы открыть список',
+                    style: context.tt.bodyMedium?.copyWith(color: has ? cs.onPrimaryContainer.withValues(alpha: 0.85) : cs.onSurfaceVariant),
+                  ),
+                ]),
+              ),
+              Icon(Icons.expand_less_rounded, color: has ? cs.onPrimaryContainer : cs.onSurfaceVariant),
+            ]),
           ),
         ),
-      ]);
+      ),
+    ]);
+  }
 
   Widget _settings(BuildContext context) {
     final store = StoreScope.of(context);
