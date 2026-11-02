@@ -58,30 +58,28 @@ class DayChips extends StatelessWidget {
 
 // ───────────────────────── поле выбора (нижняя шторка) ─────────────────────────
 
-/// Поле выбора Material 3: нажали — снизу открылась шторка со всеми вариантами
-/// (при длинном списке — с поиском). Ничего не обрезается и не нужно листать по горизонтали.
-class SelectField<T> extends StatelessWidget {
-  const SelectField({
+/// Строка-поле Material 3: значок слева, подпись, текущее значение и «стрелки» справа.
+/// Нажатие открывает шторку или экран выбора — сама строка ничего не знает о выборе.
+class FieldTile extends StatelessWidget {
+  const FieldTile({
     super.key,
     required this.label,
-    required this.icon,
-    required this.options,
-    required this.onSelected,
-    this.value,
+    required this.onTap,
+    this.icon,
+    this.leading,
     this.valueLabel,
     this.placeholder = 'Выберите',
-    this.sheetTitle,
-    this.actions = const [],
+    this.trailing,
   });
   final String label;
-  final IconData icon;
-  final T? value;
+  final VoidCallback? onTap;
+  final IconData? icon;
+
+  /// Свой виджет вместо значка (например, образец цвета темы).
+  final Widget? leading;
   final String? valueLabel;
   final String placeholder;
-  final String? sheetTitle;
-  final List<MenuOption<T>> options;
-  final List<MenuAction> actions;
-  final ValueChanged<T> onSelected;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -96,24 +94,22 @@ class SelectField<T> extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () {
-            Haptics.selection();
-            FocusManager.instance.primaryFocus?.unfocus();
-            showSelectSheet<T>(
-              context,
-              title: sheetTitle ?? label,
-              options: options,
-              value: value,
-              actions: actions,
-              onSelected: onSelected,
-            );
-          },
+          onTap: onTap == null
+              ? null
+              : () {
+                  Haptics.selection();
+                  FocusManager.instance.primaryFocus?.unfocus();
+                  onTap!();
+                },
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 64),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
               child: Row(children: [
-                Icon(icon, color: has ? cs.primary : cs.onSurfaceVariant),
+                SizedBox(
+                  width: 32,
+                  child: Center(child: leading ?? Icon(icon, color: has ? cs.primary : cs.onSurfaceVariant)),
+                ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
@@ -130,7 +126,7 @@ class SelectField<T> extends StatelessWidget {
                     ),
                   ]),
                 ),
-                Icon(Icons.unfold_more_rounded, size: 26, color: cs.onSurfaceVariant),
+                trailing ?? Icon(Icons.unfold_more_rounded, size: 26, color: cs.onSurfaceVariant),
                 const SizedBox(width: 4),
               ]),
             ),
@@ -139,6 +135,51 @@ class SelectField<T> extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Поле выбора Material 3: нажали — снизу открылась шторка со всеми вариантами
+/// (при длинном списке — с поиском). Ничего не обрезается и не нужно листать по горизонтали.
+class SelectField<T> extends StatelessWidget {
+  const SelectField({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.options,
+    required this.onSelected,
+    this.value,
+    this.valueLabel,
+    this.placeholder = 'Выберите',
+    this.sheetTitle,
+    this.sheetSubtitle,
+    this.actions = const [],
+  });
+  final String label;
+  final IconData icon;
+  final T? value;
+  final String? valueLabel;
+  final String placeholder;
+  final String? sheetTitle;
+  final String? sheetSubtitle;
+  final List<MenuOption<T>> options;
+  final List<MenuAction> actions;
+  final ValueChanged<T> onSelected;
+
+  @override
+  Widget build(BuildContext context) => FieldTile(
+        label: label,
+        icon: icon,
+        valueLabel: valueLabel,
+        placeholder: placeholder,
+        onTap: () => showSelectSheet<T>(
+          context,
+          title: sheetTitle ?? label,
+          subtitle: sheetSubtitle,
+          options: options,
+          value: value,
+          actions: actions,
+          onSelected: onSelected,
+        ),
+      );
 }
 
 /// Кнопка-фильтр над списком: показывает текущий выбор, по нажатию открывает шторку.

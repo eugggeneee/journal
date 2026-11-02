@@ -140,18 +140,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           const SectionHeader('Быстрый пропуск'),
-          SegmentCard(
-            index: 0,
-            count: 1,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              const SettingsTile(
-                icon: Icons.timer_outlined,
-                title: 'Часов по умолчанию',
-                subtitle: 'Столько отмечается, когда вы нажимаете значок пропуска у пары',
-              ),
-              const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 16), child: HoursSelector()),
-            ]),
-          ),
+          const HoursSelector(),
           const SectionHeader('Поведение'),
           SegmentCard(
             index: 0,

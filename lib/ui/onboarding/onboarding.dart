@@ -250,11 +250,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       const SectionHeader('Оформление', top: 28),
       const ThemeSelector(),
       const SizedBox(height: 12),
-      const SegmentCard(
-        index: 0,
-        count: 1,
-        child: Padding(padding: EdgeInsets.fromLTRB(12, 16, 12, 12), child: ThemeColorGrid()),
-      ),
+      const ThemeColorField(),
       const SectionHeader('Быстрый пропуск'),
       Text(
         'Столько часов отмечается, когда вы нажимаете значок пропуска у пары.',

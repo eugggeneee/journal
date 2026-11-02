@@ -12,6 +12,7 @@ import '../kit/reveal.dart';
 import '../kit/select_sheet.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
+import 'absence_limit.dart';
 import 'absence_sheet.dart';
 
 class AbsencesPage extends StatefulWidget {
@@ -55,6 +56,7 @@ class _AbsencesPageState extends State<AbsencesPage> {
             ]
           : [
               Inset(children: [
+                AbsenceLimitBanner(unexcusedHours: stats.unexcusedHours),
                 AbsencesHero(stats: stats),
                 const SizedBox(height: 16),
                 SizedBox(

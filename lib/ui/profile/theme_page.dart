@@ -26,11 +26,7 @@ class ThemePage extends StatelessWidget {
               const SectionHeader('Режим'),
               const ThemeSelector(),
               const SectionHeader('Цвет'),
-              const SegmentCard(
-                index: 0,
-                count: 1,
-                child: Padding(padding: EdgeInsets.fromLTRB(12, 16, 12, 12), child: ThemeColorGrid()),
-              ),
+              const ThemeColorField(),
               ValueListenableBuilder<bool>(
                 valueListenable: AppTheme.dynamicAvailable,
                 builder: (context, hasDynamic, _) => Padding(
@@ -43,6 +39,7 @@ class ThemePage extends StatelessWidget {
                   ),
                 ),
               ),
+              const SectionHeader('Значок приложения'),
               const AppIconSection(),
             ]),
             const SliverToBoxAdapter(child: SizedBox(height: 40)),

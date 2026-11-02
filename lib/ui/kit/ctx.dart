@@ -26,6 +26,7 @@ const List<double> _scaleHue = [4, 14, 30, 44, 76, 128, 152];
 
 const double _hueRed = 4;
 const double _hueGreen = 142;
+const double _hueAmber = 36;
 
 double _gradeHue(num v) {
   final x = v.toDouble().clamp(1.0, 10.0).toDouble();
@@ -58,6 +59,11 @@ Color gradeAccent(BuildContext context, num v) => _accent(context, _gradeHue(v))
 Tone absenceTone(BuildContext context, {required bool excused}) => _pastel(context, excused ? _hueGreen : _hueRed);
 
 Color absenceAccent(BuildContext context, {required bool excused}) => _accent(context, excused ? _hueGreen : _hueRed);
+
+/// Предупреждающий тон (янтарный): «лимит близко».
+Tone warnTone(BuildContext context) => _pastel(context, _hueAmber);
+
+Color warnAccent(BuildContext context) => _accent(context, _hueAmber);
 
 /// Нейтральный тон (пока ничего не выбрано).
 Tone neutralTone(BuildContext context) => Tone(context.cs.surfaceContainerHighest, context.cs.onSurfaceVariant);

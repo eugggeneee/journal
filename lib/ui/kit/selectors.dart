@@ -2,6 +2,8 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/haptics.dart';
 import '../scope.dart';
+import 'pickers.dart';
+import 'select_sheet.dart';
 
 /// Режим оформления: как в системе / светлая / тёмная (цвета выбираются отдельно).
 class ThemeSelector extends StatelessWidget {
@@ -36,20 +38,19 @@ class HoursSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
-    return SizedBox(
-      width: double.infinity,
-      child: SegmentedButton<int>(
-        showSelectedIcon: false,
-        segments: const [
-          ButtonSegment(value: 2, label: Text('2 часа (пара)')),
-          ButtonSegment(value: 1, label: Text('1 час')),
-        ],
-        selected: {store.settings.absenceHours},
-        onSelectionChanged: (s) {
-          Haptics.selection();
-          store.setAbsenceHours(s.first);
-        },
-      ),
+    final h = store.settings.absenceHours == 1 ? 1 : 2;
+    return SelectField<int>(
+      label: 'Часов по умолчанию',
+      icon: Icons.timer_outlined,
+      value: h,
+      valueLabel: h == 1 ? '1 час' : '2 часа (пара)',
+      sheetTitle: 'Быстрый пропуск',
+      sheetSubtitle: 'Столько часов отмечается по значку пропуска у пары',
+      options: const [
+        MenuOption(2, '2 часа (пара)', icon: Icons.looks_two_rounded),
+        MenuOption(1, '1 час', icon: Icons.looks_one_rounded),
+      ],
+      onSelected: store.setAbsenceHours,
     );
   }
 }

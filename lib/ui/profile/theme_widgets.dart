@@ -6,7 +6,8 @@ import '../../core/app_icons.dart';
 import '../../core/haptics.dart';
 import '../kit/ctx.dart';
 import '../kit/feedback.dart';
-import '../kit/reveal.dart';
+import '../kit/pickers.dart';
+import '../kit/sheet.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
 import '../theme.dart';
@@ -199,6 +200,39 @@ class ThemeColorGrid extends StatelessWidget {
   }
 }
 
+/// Строка «Цвет темы»: образец текущей схемы и название. По нажатию открывается шторка с цветами.
+class ThemeColorField extends StatelessWidget {
+  const ThemeColorField({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = StoreScope.of(context);
+    return ValueListenableBuilder<bool>(
+      valueListenable: AppTheme.dynamicAvailable,
+      builder: (context, hasDynamic, _) => FieldTile(
+        label: 'Цвет темы',
+        leading: SchemeDot(scheme: Theme.of(context).colorScheme, size: 28),
+        valueLabel: AppTheme.nameOf(store.settings.themeColor, hasDynamic: hasDynamic),
+        onTap: () => showThemeColorSheet(context),
+      ),
+    );
+  }
+}
+
+/// Шторка выбора цвета: тема применяется сразу, шторка остаётся открытой, чтобы видеть результат.
+Future<void> showThemeColorSheet(BuildContext context) => showAdaptiveSheet<void>(
+      context,
+      (ctx) => SheetScaffold(
+        title: 'Цвет темы',
+        subtitle: 'Применяется сразу ко всему приложению',
+        footer: SizedBox(
+          width: double.infinity,
+          child: FilledButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Готово')),
+        ),
+        children: const [Padding(padding: EdgeInsets.only(top: 4), child: ThemeColorGrid())],
+      ),
+    );
+
 /// Живой макет приложения: рисуется цветами текущей темы, поэтому на глазах перекрашивается при выборе.
 class ThemePreview extends StatelessWidget {
   const ThemePreview({super.key});
@@ -289,7 +323,7 @@ class ThemePreview extends StatelessWidget {
   }
 }
 
-/// Выбор значка приложения: у каждой темы свой значок.
+/// Выбор значка приложения: у каждой темы свой значок. Строка открывает шторку со значками.
 class AppIconSection extends StatefulWidget {
   const AppIconSection({super.key});
   @override
@@ -297,9 +331,9 @@ class AppIconSection extends StatefulWidget {
 }
 
 class _AppIconSectionState extends State<AppIconSection> {
-  String? _current;
+  final ValueNotifier<String?> _current = ValueNotifier<String?>(null);
+  final ValueNotifier<bool> _busy = ValueNotifier<bool>(false);
   bool _loaded = false;
-  bool _busy = false;
 
   @override
   void initState() {
@@ -307,92 +341,127 @@ class _AppIconSectionState extends State<AppIconSection> {
     _load();
   }
 
+  @override
+  void dispose() {
+    _current.dispose();
+    _busy.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     final v = await AppIcons.current();
     if (!mounted) return;
-    setState(() {
-      _current = v;
-      _loaded = true;
-    });
+    _current.value = v;
+    setState(() => _loaded = true);
   }
 
   Future<void> _pick(String id) async {
-    if (_busy || id == _current) return;
+    if (_busy.value || id == _current.value) return;
     final messenger = ScaffoldMessenger.of(context);
-    final prev = _current;
-    setState(() {
-      _current = id;
-      _busy = true;
-    });
+    final android = Theme.of(context).platform == TargetPlatform.android;
+    final prev = _current.value;
+    _current.value = id;
+    _busy.value = true;
     final ok = await AppIcons.set(id);
     if (!mounted) return;
-    setState(() {
-      _busy = false;
-      if (!ok) _current = prev;
-    });
+    _busy.value = false;
+    if (!ok) _current.value = prev;
     if (!ok) {
       showNote(messenger, 'Не удалось сменить значок');
-    } else if (Theme.of(context).platform == TargetPlatform.android) {
+    } else if (android) {
       showNote(messenger, 'Значок обновится через пару секунд');
     }
+  }
+
+  void _open() {
+    showAdaptiveSheet<void>(
+      context,
+      (ctx) => _AppIconSheet(current: _current, busy: _busy, onPick: _pick),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     if (!AppIcons.platformOk) return const SizedBox.shrink();
-    final cs = context.cs;
+    return ValueListenableBuilder<String?>(
+      valueListenable: _current,
+      builder: (context, current, _) {
+        final known = current != null && AppPalette.has(current);
+        final String value;
+        if (!_loaded) {
+          value = '';
+        } else if (current == null) {
+          value = 'Недоступно в этой сборке';
+        } else {
+          value = known ? AppPalette.byId(current).name : 'Стандартный';
+        }
+        return FieldTile(
+          label: 'Значок приложения',
+          valueLabel: value,
+          placeholder: 'Загрузка…',
+          leading: known
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset('assets/icons/preview/$current.png', width: 28, height: 28, fit: BoxFit.cover),
+                )
+              : Icon(Icons.apps_rounded, color: context.cs.onSurfaceVariant),
+          onTap: _loaded && current != null ? _open : null,
+        );
+      },
+    );
+  }
+}
+
+class _AppIconSheet extends StatelessWidget {
+  const _AppIconSheet({required this.current, required this.busy, required this.onPick});
+  final ValueNotifier<String?> current;
+  final ValueNotifier<bool> busy;
+  final Future<void> Function(String id) onPick;
+
+  @override
+  Widget build(BuildContext context) {
     final store = StoreScope.of(context);
     final themeId = AppPalette.has(store.settings.themeColor) ? store.settings.themeColor : AppPalette.standardId;
-
-    Widget body;
-    if (!_loaded) {
-      body = const SizedBox(key: ValueKey('icons-loading'), height: 8);
-    } else if (_current == null) {
-      body = Padding(
-        key: const ValueKey('icons-off'),
-        padding: const EdgeInsets.all(20),
-        child: Text(
-          'Смена значка недоступна в этой сборке приложения.',
-          style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-        ),
-      );
-    } else {
-      body = Padding(
-        key: const ValueKey('icons-grid'),
-        padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          _ChoiceGrid(
-            round: false,
-            items: [
-              for (final c in AppPalette.choices)
-                _ChoiceItem(
-                  label: c.name,
-                  selected: _current == c.id,
-                  onTap: () => _pick(c.id),
-                  visual: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.asset('assets/icons/preview/${c.id}.png', fit: BoxFit.cover, filterQuality: FilterQuality.medium),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: FilledButton.tonalIcon(
-              style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-              icon: const Icon(Icons.auto_fix_high_rounded, size: 20),
-              label: const Text('Подобрать под тему'),
-              onPressed: _busy ? null : () => _pick(themeId),
+    return ValueListenableBuilder<String?>(
+      valueListenable: current,
+      builder: (context, cur, _) => ValueListenableBuilder<bool>(
+        valueListenable: busy,
+        builder: (context, isBusy, _) => SheetScaffold(
+          title: 'Значок приложения',
+          subtitle: 'У каждой темы свой значок',
+          footer: Row(children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.auto_fix_high_rounded, size: 20),
+                label: const Text('Под тему'),
+                onPressed: isBusy ? null : () => onPick(themeId),
+              ),
             ),
-          ),
-        ]),
-      );
-    }
-
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      const SectionHeader('Значок приложения'),
-      SegmentCard(index: 0, count: 1, child: Smooth(child: body)),
-    ]);
+            const SizedBox(width: 12),
+            Expanded(child: FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Готово'))),
+          ]),
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: _ChoiceGrid(
+                round: false,
+                items: [
+                  for (final c in AppPalette.choices)
+                    _ChoiceItem(
+                      label: c.name,
+                      selected: cur == c.id,
+                      onTap: () => onPick(c.id),
+                      visual: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.asset('assets/icons/preview/${c.id}.png', fit: BoxFit.cover, filterQuality: FilterQuality.medium),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
