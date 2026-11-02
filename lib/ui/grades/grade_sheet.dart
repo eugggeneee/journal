@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/dates.dart';
 import '../../core/haptics.dart';
 import '../../data/models.dart';
+import '../../data/store.dart';
 import '../kit/ctx.dart';
 import '../kit/feedback.dart';
 import '../kit/pickers.dart';
@@ -83,6 +84,62 @@ class _GradeFormState extends State<_GradeForm> {
     showUndo(messenger, 'Оценка удалена', () => store.saveGrade(g));
   }
 
+  /// Превью: большая оценка, предмет и дата — меняют цвет вместе с выбранной оценкой.
+  Widget _preview(BuildContext context, AppStore store) {
+    final cs = context.cs;
+    final v = value;
+    final tone = v == null ? neutralTone(context) : gradeTone(context, v);
+    final accent = v == null ? cs.surfaceContainerLow : gradeAccent(context, v);
+    final onAccent = v == null ? cs.onSurfaceVariant : onColorFor(accent);
+    final details = [dayCaption(date), if (kind.isNotEmpty) kind].join(' · ');
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(28)),
+      child: Row(children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          width: 72,
+          height: 72,
+          alignment: Alignment.center,
+          decoration: ShapeDecoration(
+            color: accent,
+            shape: const StarBorder(points: 10, innerRadiusRatio: 0.86, pointRounding: 0.55, valleyRounding: 0.4),
+          ),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
+            child: Text(
+              v == null ? '–' : '$v',
+              key: ValueKey(v),
+              style: TextStyle(fontSize: v == 10 ? 26 : 30, fontWeight: FontWeight.w800, color: onAccent, height: 1),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Text(
+              subject.isEmpty ? 'Предмет не выбран' : store.subjectName(subject),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              details,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: context.tt.bodyMedium?.copyWith(color: tone.fg.withValues(alpha: 0.85)),
+            ),
+          ]),
+        ),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
@@ -91,7 +148,7 @@ class _GradeFormState extends State<_GradeForm> {
     final editing = widget.edit != null;
 
     return SheetScaffold(
-      title: editing ? 'Оценка' : 'Новая оценка',
+      title: editing ? 'Изменить оценку' : 'Новая оценка',
       subtitle: _added > 0 ? 'Добавлено подряд: $_added' : null,
       trailing: editing
           ? IconButton(
@@ -101,51 +158,60 @@ class _GradeFormState extends State<_GradeForm> {
             )
           : null,
       footer: Column(mainAxisSize: MainAxisSize.min, children: [
-        if (!_canSave)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Text(
-              subject.isEmpty ? 'Выберите предмет и оценку' : 'Выберите оценку',
-              style: context.tt.bodySmall?.copyWith(color: context.cs.onSurfaceVariant),
-            ),
-          ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          child: _canSave
+              ? const SizedBox(width: double.infinity)
+              : Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(
+                    subject.isEmpty && value == null ? 'Выберите оценку и предмет' : (subject.isEmpty ? 'Выберите предмет' : 'Выберите оценку'),
+                    style: context.tt.bodySmall?.copyWith(color: context.cs.onSurfaceVariant),
+                  ),
+                ),
+        ),
         Row(children: [
           if (!editing) ...[
             Expanded(
-              child: OutlinedButton(
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.library_add_rounded, size: 20),
                 onPressed: _canSave ? () => _commit(another: true) : null,
-                child: const Text('Ещё одну'),
+                label: const Text('Ещё одну'),
               ),
             ),
             const SizedBox(width: 12),
           ],
           Expanded(
             flex: editing ? 1 : 2,
-            child: FilledButton(
+            child: FilledButton.icon(
+              icon: const Icon(Icons.check_rounded, size: 22),
               onPressed: _canSave ? () => _commit(another: false) : null,
-              child: Text(editing ? 'Готово' : 'Сохранить'),
+              label: Text(editing ? 'Готово' : 'Сохранить'),
             ),
           ),
         ]),
       ]),
       children: [
-        const FieldLabel('Оценка', top: 8),
+        _preview(context, store),
+        const FieldLabel('Оценка', top: 20),
         GradePad(value: value, onChanged: (v) => setState(() => value = v)),
-        const FieldLabel('Предмет'),
+        const SizedBox(height: 20),
         SubjectPicker(selected: subject, suggested: suggested, onSelect: (s) => setState(() => subject = s)),
+        const SizedBox(height: 12),
+        KindPicker(kind: kind, kinds: _kinds, onChanged: (k) => setState(() => kind = k)),
         FieldLabel('Дата', trailing: dayCaption(date)),
         DayChips(date: date, onChanged: (d) => setState(() => date = d)),
-        const FieldLabel('Тип работы'),
-        Wrap(spacing: 8, runSpacing: 8, children: [
-          for (final k in _kinds) ChoiceTag(label: k, selected: kind == k, onTap: () => setState(() => kind = kind == k ? '' : k)),
-        ]),
-        const FieldLabel('Заметка'),
+        const SizedBox(height: 20),
         TextField(
           controller: note,
           minLines: 1,
           maxLines: 3,
           textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(hintText: 'Необязательно — например, «ответ у доски»'),
+          decoration: const InputDecoration(
+            labelText: 'Заметка',
+            hintText: 'Необязательно — например, «ответ у доски»',
+            prefixIcon: Icon(Icons.notes_rounded),
+          ),
         ),
       ],
     );

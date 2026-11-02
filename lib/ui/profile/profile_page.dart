@@ -73,6 +73,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return LargePage(
       title: 'Профиль',
+      subtitle: 'Группа ${s.group} · МГТЭК',
       slivers: [
         Inset(children: [
           Material(

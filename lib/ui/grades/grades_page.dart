@@ -31,6 +31,7 @@ class _GradesPageState extends State<GradesPage> {
 
     return LargePage(
       title: 'Оценки',
+      subtitle: store.grades.isEmpty ? 'Успеваемость' : '${gradesText(stats.count)} · ${subjectsText(stats.subjects.length)}',
       slivers: empty
           ? [
               SliverFillRemaining(

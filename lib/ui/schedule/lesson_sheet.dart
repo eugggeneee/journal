@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/dates.dart';
 import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../absences/absence_sheet.dart';
@@ -8,9 +9,10 @@ import '../kit/ctx.dart';
 import '../kit/feedback.dart';
 import '../kit/pickers.dart';
 import '../kit/sheet.dart';
+import '../kit/widgets.dart';
 import '../scope.dart';
 
-/// Действия с парой: пропуск (1/2 часа, уважительный), снять пропуск, добавить оценку.
+/// Действия с парой: пропуск (причина и часы), снять пропуск, добавить оценку.
 Future<void> showLessonSheet(BuildContext context, DateTime date, LessonSlot slot) =>
     showAdaptiveSheet<void>(context, (_) => _LessonSheet(date: date, slot: slot));
 
@@ -24,6 +26,7 @@ class _LessonSheet extends StatefulWidget {
 
 class _LessonSheetState extends State<_LessonSheet> {
   late String subject = widget.slot.subject;
+  int? _hours;
 
   @override
   Widget build(BuildContext context) {
@@ -32,11 +35,11 @@ class _LessonSheetState extends State<_LessonSheet> {
     final date = widget.date;
     final cs = context.cs;
     final absence = store.absenceFor(date, slot.number);
-    final defHours = store.settings.absenceHours;
+    final hours = absence?.hours ?? _hours ?? store.settings.absenceHours;
     final multi = slot.subjects.length > 1;
     final current = absence?.subject ?? subject;
 
-    void mark(int hours) {
+    void mark({required bool excused}) {
       Haptics.medium();
       store.saveAbsence(Absence(
         id: absence?.id ?? newId(),
@@ -44,9 +47,18 @@ class _LessonSheetState extends State<_LessonSheet> {
         lesson: slot.number,
         subject: current,
         hours: hours,
-        excused: absence?.excused ?? false,
+        excused: excused,
         note: absence?.note ?? '',
       ));
+    }
+
+    void setHours(int h) {
+      Haptics.selection();
+      if (absence == null) {
+        setState(() => _hours = h);
+      } else {
+        store.saveAbsence(absence.copyWith(hours: h));
+      }
     }
 
     void remove() {
@@ -62,26 +74,37 @@ class _LessonSheetState extends State<_LessonSheet> {
       for (final e in slot.entries)
         if (e.room.isNotEmpty || e.teacher.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.only(bottom: 8),
             child: Row(children: [
-              Icon(Icons.meeting_room_rounded, size: 18, color: cs.onSurfaceVariant),
-              const SizedBox(width: 8),
+              Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: cs.secondaryContainer, borderRadius: BorderRadius.circular(12)),
+                child: Icon(Icons.meeting_room_rounded, size: 20, color: cs.onSecondaryContainer),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   [
                     if (e.room.isNotEmpty) (RegExp(r'\d').hasMatch(e.room) ? 'ауд. ${e.room}' : e.room),
                     if (e.teacher.isNotEmpty) e.teacher,
                   ].join(' · '),
-                  style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                  style: context.tt.bodyLarge?.copyWith(color: cs.onSurface),
                 ),
               ),
             ]),
           ),
     ];
 
+    final tone = absence == null
+        ? Tone(cs.primaryContainer, cs.onPrimaryContainer)
+        : absenceTone(context, excused: absence.excused);
+
     return SheetScaffold(
       title: slot.subjects.map(store.subjectName).join(' / '),
       subtitle: '${slot.number} пара · ${dayCaption(date)}',
+      leading: NumberBadge('${slot.number}', tone: tone, size: 52, round: false),
       footer: SizedBox(
         width: double.infinity,
         child: FilledButton.tonalIcon(
@@ -103,65 +126,50 @@ class _LessonSheetState extends State<_LessonSheet> {
               ChoiceTag(label: store.subjectName(s), selected: s == subject, onTap: () => setState(() => subject = s)),
           ]),
         ],
-        const FieldLabel('Пропуск', top: 16),
-        if (absence == null)
-          Row(children: [
-            Expanded(
-              child: FilledButton.icon(
-                icon: const Icon(Icons.event_busy_rounded),
-                label: Text(defHours == 2 ? 'Пара · 2 ч' : '1 час'),
-                onPressed: () => mark(defHours),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => mark(defHours == 2 ? 1 : 2),
-                child: Text(defHours == 2 ? 'Только 1 час' : 'Вся пара · 2 ч'),
-              ),
-            ),
-          ])
-        else ...[
-          SizedBox(
-            width: double.infinity,
-            child: SegmentedButton<int>(
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: 1, label: Text('1 час')),
-                ButtonSegment(value: 2, label: Text('2 часа')),
-              ],
-              selected: {absence.hours},
-              onSelectionChanged: (s) => mark(s.first),
-            ),
+        FieldLabel(absence == null ? 'Отметить пропуск' : 'Пропуск', top: 16, trailing: absence == null ? null : hoursText(absence.hours)),
+        SizedBox(
+          width: double.infinity,
+          child: SegmentedButton<int>(
+            showSelectedIcon: false,
+            segments: const [
+              ButtonSegment(value: 1, label: Text('1 час')),
+              ButtonSegment(value: 2, label: Text('2 часа (пара)')),
+            ],
+            selected: {hours},
+            onSelectionChanged: (s) => setHours(s.first),
           ),
-          const SizedBox(height: 8),
-          SwitchListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-            title: const Text('По уважительной причине'),
-            value: absence.excused,
-            onChanged: (v) {
-              Haptics.selection();
-              store.saveAbsence(absence.copyWith(excused: v));
-            },
+        ),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(
+            child: ExcuseTile(excused: false, selected: absence != null && !absence.excused, onTap: () => mark(excused: false)),
           ),
-          Row(children: [
-            TextButton.icon(
-              style: TextButton.styleFrom(foregroundColor: cs.error),
-              icon: const Icon(Icons.event_available_rounded),
-              label: const Text('Снять пропуск'),
-              onPressed: remove,
-            ),
-            const Spacer(),
-            TextButton(
-              onPressed: () {
-                final host = Navigator.of(context).context;
-                Navigator.of(context).pop();
-                showAbsenceSheet(host, edit: absence);
-              },
-              child: const Text('Подробнее'),
-            ),
-          ]),
-        ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: ExcuseTile(excused: true, selected: absence != null && absence.excused, onTap: () => mark(excused: true)),
+          ),
+        ]),
+        if (absence != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(children: [
+              TextButton.icon(
+                style: TextButton.styleFrom(foregroundColor: cs.error),
+                icon: const Icon(Icons.event_available_rounded),
+                label: const Text('Снять пропуск'),
+                onPressed: remove,
+              ),
+              const Spacer(),
+              TextButton(
+                onPressed: () {
+                  final host = Navigator.of(context).context;
+                  Navigator.of(context).pop();
+                  showAbsenceForm(host, edit: absence);
+                },
+                child: const Text('Подробнее'),
+              ),
+            ]),
+          ),
         const SizedBox(height: 4),
       ],
     );

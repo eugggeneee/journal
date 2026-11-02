@@ -21,15 +21,14 @@ class _AddMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.cs;
     return SheetScaffold(
       title: 'Добавить',
       subtitle: dayCaption(date),
       children: [
         _BigTile(
           icon: Icons.star_rounded,
-          bg: cs.tertiaryContainer,
-          fg: cs.onTertiaryContainer,
+          bg: gradeTone(context, 9).bg,
+          fg: gradeTone(context, 9).fg,
           title: 'Оценка',
           text: 'Записать оценку по предмету',
           onTap: () => _open(context, (h) => showGradeSheet(h, date: date)),
@@ -37,10 +36,10 @@ class _AddMenu extends StatelessWidget {
         const SizedBox(height: 10),
         _BigTile(
           icon: Icons.event_busy_rounded,
-          bg: cs.errorContainer,
-          fg: cs.onErrorContainer,
+          bg: absenceTone(context, excused: false).bg,
+          fg: absenceTone(context, excused: false).fg,
           title: 'Пропуск',
-          text: 'Отметить одну или несколько пар',
+          text: 'Выбрать причину и отметить пары',
           onTap: () => _open(context, (h) => showAbsenceSheet(h, date: date)),
         ),
         const SizedBox(height: 8),

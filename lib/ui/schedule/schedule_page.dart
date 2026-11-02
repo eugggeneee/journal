@@ -126,18 +126,11 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     final isToday = sameDay(_selected, today());
 
     final header = AppBar(
-      toolbarHeight: 76,
+      toolbarHeight: kHeaderHeight,
       titleSpacing: 20,
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(relativeDay(_selected), style: context.tt.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
-          Text(
-            '${fullDate(_selected)}${_selected.weekday == DateTime.sunday ? '' : ' · ${weekdayName(_selected)}'}',
-            style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-          ),
-        ],
+      title: PageTitle(
+        relativeDay(_selected),
+        subtitle: '${fullDate(_selected)}${_selected.weekday == DateTime.sunday ? '' : ' · ${weekdayName(_selected)}'}',
       ),
       actions: [
         AnimatedSwitcher(

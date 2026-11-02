@@ -30,6 +30,7 @@ class _AbsencesPageState extends State<AbsencesPage> {
 
     return LargePage(
       title: 'Пропуски',
+      subtitle: empty ? 'Посещаемость' : '${hoursText(stats.totalHours)} пропущено',
       slivers: empty
           ? [
               SliverFillRemaining(
@@ -37,7 +38,7 @@ class _AbsencesPageState extends State<AbsencesPage> {
                 child: EmptyState(
                   icon: Icons.event_available_rounded,
                   title: 'Пропусков нет',
-                  message: 'Отмечайте пропуски прямо в расписании: нажмите на значок у пары или удерживайте карточку.',
+                  message: 'Отмечайте пропуски прямо в расписании: нажмите на значок у пары — сразу выберете причину.',
                   action: FilledButton.icon(
                     icon: const Icon(Icons.add_rounded),
                     label: const Text('Добавить пропуск'),
@@ -140,7 +141,7 @@ class _AbsencesPageState extends State<AbsencesPage> {
                   Text(hoursText(entries[i].value), style: context.tt.labelLarge?.copyWith(color: context.cs.onSurfaceVariant)),
                 ]),
                 const SizedBox(height: 12),
-                Bar(value: entries[i].value / maxV, color: context.cs.error),
+                Bar(value: entries[i].value / maxV, color: absenceAccent(context, excused: false)),
               ]),
             ),
           ),
@@ -149,21 +150,26 @@ class _AbsencesPageState extends State<AbsencesPage> {
   }
 }
 
-/// Итоговая карточка пропусков: всего часов и доля уважительных.
+/// Итоговая карточка пропусков: всего часов и доля уважительных. Цвета — из палитры Material Design.
 class AbsencesHero extends StatelessWidget {
   const AbsencesHero({super.key, required this.stats});
   final AbsenceStats stats;
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.cs;
-    final pairs = (stats.totalHours / 2).toStringAsFixed(stats.totalHours.isEven ? 0 : 1).replaceAll('.', ',');
-    final fg = cs.onErrorContainer;
+    final tone = absenceTone(context, excused: false);
+    final fg = tone.fg;
     final unex = stats.unexcusedHours;
     final ex = stats.excusedHours;
+    final pairsValue = stats.totalHours / 2;
+    final pairs = stats.totalHours.isEven
+        ? '≈ ${pairsText(pairsValue.round())}'
+        : '≈ ${pairsValue.toStringAsFixed(1).replaceAll('.', ',')} пары';
+    final unexColor = absenceAccent(context, excused: false);
+    final exColor = absenceAccent(context, excused: true);
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
-      decoration: BoxDecoration(color: cs.errorContainer, borderRadius: BorderRadius.circular(32)),
+      decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(32)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Всего пропущено', style: context.tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w600)),
         const SizedBox(height: 2),
@@ -172,7 +178,7 @@ class AbsencesHero extends StatelessWidget {
           const SizedBox(width: 8),
           Text(plural(stats.totalHours, 'час', 'часа', 'часов'), style: context.tt.titleMedium?.copyWith(color: fg)),
           const Spacer(),
-          Text('≈ $pairs пар', style: context.tt.titleSmall?.copyWith(color: fg)),
+          Text(pairs, style: context.tt.titleSmall?.copyWith(color: fg)),
         ]),
         const SizedBox(height: 18),
         ClipRRect(
@@ -180,18 +186,18 @@ class AbsencesHero extends StatelessWidget {
           child: SizedBox(
             height: 12,
             child: Row(children: [
-              if (unex > 0) Expanded(flex: unex, child: ColoredBox(color: cs.error)),
+              if (unex > 0) Expanded(flex: unex, child: ColoredBox(color: unexColor)),
               if (unex > 0 && ex > 0) const SizedBox(width: 3),
-              if (ex > 0) Expanded(flex: ex, child: ColoredBox(color: cs.tertiary)),
-              if (unex == 0 && ex == 0) Expanded(child: ColoredBox(color: cs.onErrorContainer.withValues(alpha: 0.2))),
+              if (ex > 0) Expanded(flex: ex, child: ColoredBox(color: exColor)),
+              if (unex == 0 && ex == 0) Expanded(child: ColoredBox(color: fg.withValues(alpha: 0.2))),
             ]),
           ),
         ),
         const SizedBox(height: 14),
         Row(children: [
-          Expanded(child: _Legend(color: cs.error, label: 'Без уважительной', hours: unex, fg: fg)),
+          Expanded(child: _Legend(color: unexColor, label: 'Без уважительной', hours: unex, fg: fg)),
           const SizedBox(width: 12),
-          Expanded(child: _Legend(color: cs.tertiary, label: 'По уважительной', hours: ex, fg: fg)),
+          Expanded(child: _Legend(color: exColor, label: 'По уважительной', hours: ex, fg: fg)),
         ]),
       ]),
     );

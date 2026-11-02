@@ -38,11 +38,13 @@ class SheetScaffold extends StatelessWidget {
     required this.children,
     this.subtitle,
     this.trailing,
+    this.leading,
     this.footer,
   });
   final String title;
   final String? subtitle;
   final Widget? trailing;
+  final Widget? leading;
   final List<Widget> children;
   final Widget? footer;
 
@@ -58,18 +60,19 @@ class SheetScaffold extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(24, wide ? 20 : 0, 12, 4),
+            padding: EdgeInsets.fromLTRB(24, wide ? 20 : 0, 12, 8),
             child: Row(
               children: [
+                if (leading != null) ...[leading!, const SizedBox(width: 14)],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: context.tt.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                      Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
                       if (subtitle != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 2),
-                          child: Text(subtitle!, style: context.tt.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant)),
+                          child: Text(subtitle!, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant)),
                         ),
                     ],
                   ),

@@ -5,45 +5,34 @@ import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../kit/feedback.dart';
+import 'absence_sheet.dart';
 
-/// Быстрый переключатель пропуска пары: отметить (по умолчанию 1 или 2 часа) или снять.
+/// Значок пропуска у пары: если пропуска нет — сразу выезжает маленькая шторка с выбором
+/// «без уважительной / по уважительной»; если есть — отметка снимается (с кнопкой «Отменить»).
 void toggleLessonAbsence(BuildContext context, AppStore store, DateTime date, LessonSlot slot) {
-  final m = ScaffoldMessenger.of(context);
-  final before = store.snapshotDay(date);
   final existing = store.absenceFor(date, slot.number);
-  if (existing != null) {
-    store.deleteAbsence(existing.id);
-    Haptics.light();
-    showUndo(m, '${slot.number} пара — пропуск снят', () => store.restoreDay(date, before));
+  if (existing == null) {
+    showLessonAbsence(context, date, slot);
     return;
   }
-  final hours = store.settings.absenceHours;
-  store.saveAbsence(Absence(id: newId(), date: date, lesson: slot.number, subject: slot.subject, hours: hours));
-  Haptics.medium();
-  showUndo(m, '${slot.number} пара — пропуск ${hoursText(hours)}', () => store.restoreDay(date, before));
+  final m = ScaffoldMessenger.of(context);
+  final before = store.snapshotDay(date);
+  store.deleteAbsence(existing.id);
+  Haptics.light();
+  showUndo(m, '${slot.number} пара — пропуск снят', () => store.restoreDay(date, before));
 }
 
-/// Отмечает все пары дня; если всё уже отмечено — снимает отметки.
+/// «Весь день»: если не всё отмечено — шторка с выбором причины; если всё — отметки снимаются.
 void toggleWholeDay(BuildContext context, AppStore store, DateTime date, List<LessonSlot> slots) {
   if (slots.isEmpty) return;
-  final m = ScaffoldMessenger.of(context);
-  final before = store.snapshotDay(date);
-  final lessons = {for (final s in slots) s.number};
   final allMarked = slots.every((s) => store.absenceFor(date, s.number) != null);
-  if (allMarked) {
-    store.clearAbsencesOn(date, lessons: lessons);
-    Haptics.light();
-    showUndo(m, 'Отметки дня сняты', () => store.restoreDay(date, before));
+  if (!allMarked) {
+    showWholeDayAbsence(context, date, slots);
     return;
   }
-  final hours = store.settings.absenceHours;
-  final fresh = <Absence>[
-    for (final s in slots)
-      if (store.absenceFor(date, s.number) == null)
-        Absence(id: newId(), date: date, lesson: s.number, subject: s.subject, hours: hours),
-  ];
-  store.saveAbsences(fresh);
-  Haptics.medium();
-  final total = slots.fold<int>(0, (sum, s) => sum + (store.absenceFor(date, s.number)?.hours ?? 0));
-  showUndo(m, 'Пропущен весь день: ${pairsText(slots.length)} · ${hoursText(total)}', () => store.restoreDay(date, before));
+  final m = ScaffoldMessenger.of(context);
+  final before = store.snapshotDay(date);
+  store.clearAbsencesOn(date, lessons: {for (final s in slots) s.number});
+  Haptics.light();
+  showUndo(m, 'Отметки дня сняты', () => store.restoreDay(date, before));
 }

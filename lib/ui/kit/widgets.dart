@@ -22,26 +22,70 @@ class ContentFrame extends StatelessWidget {
       );
 }
 
-/// Страница с большим сворачивающимся заголовком Material 3.
+/// Высота шапки страницы: у всех вкладок заголовок стоит на одном и том же месте — вверху.
+const double kHeaderHeight = 76;
+
+/// Заголовок страницы: крупное название и маленькая подпись под ним.
+class PageTitle extends StatelessWidget {
+  const PageTitle(this.title, {super.key, this.subtitle});
+  final String title;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: context.tt.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          if (subtitle != null)
+            Text(
+              subtitle!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.tt.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant),
+            ),
+        ],
+      );
+}
+
+/// Страница с закреплённой шапкой: название всегда в самом верху, при прокрутке шапка остаётся на месте.
 class LargePage extends StatelessWidget {
   const LargePage({
     super.key,
     required this.title,
     required this.slivers,
+    this.subtitle,
     this.actions = const [],
     this.onRefresh,
   });
   final String title;
+  final String? subtitle;
   final List<Widget> slivers;
   final List<Widget> actions;
   final Future<void> Function()? onRefresh;
 
   @override
   Widget build(BuildContext context) {
+    final cs = context.cs;
     final view = CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
-        SliverAppBar.large(title: Text(title), actions: actions),
+        SliverAppBar(
+          pinned: true,
+          toolbarHeight: kHeaderHeight,
+          titleSpacing: 20,
+          scrolledUnderElevation: 0,
+          backgroundColor: WidgetStateColor.resolveWith(
+            (states) => states.contains(WidgetState.scrolledUnder) ? cs.surfaceContainer : cs.surface,
+          ),
+          title: PageTitle(title, subtitle: subtitle),
+          actions: actions,
+        ),
         ...slivers,
         const SliverToBoxAdapter(child: SizedBox(height: kFabClearance)),
       ],
