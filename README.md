@@ -4,11 +4,9 @@
 
 <br><br>
 
-<a href="../../releases/latest"><img src="assets/branding/btn-android.png" width="215" alt="Скачать для Android"></a>
+<a href="https://github.com/eugggeneee/journal/releases/latest"><img src="assets/branding/btn-android.png" width="215" alt="Скачать для Android"></a>
 &nbsp;
-<a href="../../releases/latest"><img src="assets/branding/btn-iphone.png" width="215" alt="Скачать для iPhone"></a>
-&nbsp;
-<a href="https://eugggeneee.github.io/journal/"><img src="assets/branding/btn-site.png" width="215" alt="Открыть сайт"></a>
+<a href="https://github.com/eugggeneee/journal/releases/latest"><img src="assets/branding/btn-iphone.png" width="215" alt="Скачать для iPhone"></a>
 
 <br><br>
 
@@ -88,7 +86,7 @@
 
 ## 📲 Установка
 
-Все готовые версии — на странице [**Releases**](../../releases/latest).
+Все готовые версии — на странице [**Releases**](https://github.com/eugggeneee/journal/releases/latest).
 
 <table>
 <tr>
