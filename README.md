@@ -1,24 +1,48 @@
 <div align="center">
 
-<img src="assets/icon/icon.png" width="132" alt="Journal">
+<img src="assets/branding/hero.png" alt="Journal — МГТЭК · Дневник: расписание, оценки и пропуски в одном месте" width="100%">
 
-# Journal
+<br><br>
 
-**МГТЭК · Дневник**
-
-Приложение для Android и iOS: расписание, оценки и пропуски в одном месте.
-
-<br>
-
-[![Скачать для Android](https://img.shields.io/badge/Android-скачать-3DDC84?style=for-the-badge&logo=android&logoColor=white)](../../releases/latest)
+[![Android](https://img.shields.io/badge/Android-скачать-3DDC84?style=for-the-badge&logo=android&logoColor=white)](../../releases/latest)
 &nbsp;
-[![Скачать для iPhone](https://img.shields.io/badge/iPhone-скачать-171E32?style=for-the-badge&logo=apple&logoColor=white)](../../releases/latest)
+[![iPhone](https://img.shields.io/badge/iPhone-скачать-171E32?style=for-the-badge&logo=apple&logoColor=white)](../../releases/latest)
+&nbsp;
+[![Сайт](https://img.shields.io/badge/Сайт-открыть-373F7A?style=for-the-badge&logo=googlechrome&logoColor=white)](https://eugggeneee.github.io/journal/)
+
+<sub>
+<a href="#что-умеет">Возможности</a> &nbsp;·&nbsp;
+<a href="#установка">Установка</a> &nbsp;·&nbsp;
+<a href="#конфиденциальность">Конфиденциальность</a> &nbsp;·&nbsp;
+<a href="RELEASING.md">Сборка</a>
+</sub>
 
 <br>
 
 ![Некоммерческий](https://img.shields.io/badge/проект-некоммерческий-26334F?style=flat-square)
+![Без рекламы](https://img.shields.io/badge/реклама-нет-303F5D?style=flat-square)
+![Офлайн](https://img.shields.io/badge/офлайн-да-26334F?style=flat-square)
 ![Лицензия MIT](https://img.shields.io/badge/лицензия-MIT-303F5D?style=flat-square)
 
+</div>
+
+<br>
+
+<div align="center">
+<table>
+<tr>
+<td><img src="docs/assets/phone-5-sm.webp" width="190" alt="Расписание"></td>
+<td><img src="docs/assets/phone-7-sm.webp" width="190" alt="Оценки"></td>
+<td><img src="docs/assets/phone-6-sm.webp" width="190" alt="Пропуски"></td>
+<td><img src="docs/assets/phone-2-sm.webp" width="190" alt="Возможности"></td>
+</tr>
+<tr align="center">
+<td><sub><b>Расписание</b></sub></td>
+<td><sub><b>Оценки</b></sub></td>
+<td><sub><b>Пропуски</b></sub></td>
+<td><sub><b>Всё под рукой</b></sub></td>
+</tr>
+</table>
 </div>
 
 <br>

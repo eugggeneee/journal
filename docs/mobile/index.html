@@ -1,780 +1,345 @@
 <!doctype html>
-<html lang="ru" data-theme="dark">
+<html lang="ru" data-theme="system">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Journal — дневник для студентов МГТЭК: расписание, оценки, пропуски</title>
-<meta name="description" content="Journal — бесплатное приложение для студентов МГТЭК: расписание группы на любую дату, оценки со средним баллом и учёт пропусков с лимитом. Работает без интернета. Без аккаунтов и рекламы. Android и iPhone.">
-<meta name="theme-color" content="#121218">
-<meta name="color-scheme" content="dark light">
-<link rel="canonical" href="https://eugggeneee.github.io/journal/">
-<link rel="icon" href="../assets/favicon-32.png" sizes="32x32" type="image/png">
-<link rel="icon" href="../assets/favicon.png" sizes="64x64" type="image/png">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Journal — дневник для студентов МГТЭК</title>
+<meta name="description" content="Journal — расписание, оценки и пропуски в одном приложении. Работает без интернета, без аккаунтов и рекламы.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#14151f">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fbfaff">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
 <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
-<link rel="manifest" href="../site.webmanifest">
+<link rel="canonical" href="https://eugggeneee.github.io/journal/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Journal">
 <meta property="og:locale" content="ru_RU">
 <meta property="og:url" content="https://eugggeneee.github.io/journal/">
 <meta property="og:title" content="Journal — МГТЭК · Дневник">
-<meta property="og:description" content="Расписание, оценки и пропуски — в одном месте. Бесплатно, без аккаунтов и рекламы.">
-<meta property="og:image" content="https://eugggeneee.github.io/journal/assets/og.png?v=2">
+<meta property="og:description" content="Расписание, оценки и пропуски — всё в одном месте. Без аккаунтов и рекламы, данные только на вашем устройстве.">
+<meta property="og:image" content="https://eugggeneee.github.io/journal/assets/og.png?v=5">
+<meta property="og:image:secure_url" content="https://eugggeneee.github.io/journal/assets/og.png?v=5">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Journal — приложение для студентов МГТЭК: расписание, оценки и пропуски">
+<meta property="og:image:alt" content="Journal — расписание, оценки и пропуски в одном приложении">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Journal — МГТЭК · Дневник">
-<meta name="twitter:description" content="Расписание, оценки и пропуски — в одном месте.">
-<meta name="twitter:image" content="https://eugggeneee.github.io/journal/assets/og.png?v=2">
-<meta name="twitter:image:alt" content="Journal — приложение для студентов МГТЭК">
-<script>(function(){try{var m=localStorage.getItem('journal-theme');var d=m==='dark'||(m!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=d?'dark':'light'}catch(e){}})()</script>
+<meta name="twitter:description" content="Расписание, оценки и пропуски — всё в одном месте. Без аккаунтов и рекламы, данные только на вашем устройстве.">
+<meta name="twitter:image" content="https://eugggeneee.github.io/journal/assets/og.png?v=5">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#121218;--surface:#1c1b22;--surface-2:#25242d;--surface-3:#2f2e38;--outline:#3b3a45;
-  --text:#e6e1e9;--muted:#b9b5c2;--primary:#b8c0ff;--on-primary:#1f2a5e;--tonal:#373f7a;--on-tonal:#dfe0ff;
-  --t2:#5b3a52;--on-t2:#ffd8ec;--t3:#4f2f33;--on-t3:#ffdad6;
-  --g-bg:#233a1d;--g-solid:#bcec92;--g-on:#17330b;--g-soft:#9fd77a;
-  --r-bg:#4a201c;--r-solid:#ee6b60;--r-soft:#eca39e;--r-on:#3a0906;--r-card:#f1a9a2;--ok:#8ddb8a;
-  --display:'Unbounded','Onest',system-ui,sans-serif;--body:'Onest',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-  --sab:env(safe-area-inset-bottom,0px);--sat:env(safe-area-inset-top,0px);
-  color-scheme:dark;
-}
-html[data-theme="light"]{
-  --bg:#fbf8ff;--surface:#f2eff8;--surface-2:#e9e5f1;--surface-3:#dfdae9;--outline:#c9c4d3;
-  --text:#1b1b21;--muted:#4c4a56;--primary:#4a55a2;--on-primary:#fff;--tonal:#dfe0ff;--on-tonal:#1f2a5e;
-  --t2:#ffd8ec;--on-t2:#46203a;--t3:#ffdad6;--on-t3:#4a1511;
-  --g-bg:#dcf2c6;--r-bg:#ffdad6;color-scheme:light;
-}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{scroll-behavior:smooth;scroll-padding-top:76px;-webkit-text-size-adjust:100%}
-body{background:var(--bg);color:var(--text);font:400 16px/1.55 var(--body);overflow-x:hidden;-webkit-font-smoothing:antialiased;padding-bottom:calc(96px + var(--sab))}
-html,main{overflow-x:clip}
-img{display:block;max-width:100%;height:auto}
-a{color:inherit;text-decoration:none}
-button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;touch-action:manipulation}
-:focus-visible{outline:3px solid var(--primary);outline-offset:2px;border-radius:12px}
-.i{width:1.5em;height:1.5em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
-h1,h2,h3,h4{font-family:var(--display);font-weight:600;letter-spacing:-.02em;line-height:1.12}
-.pad{padding:0 16px}
-.cookie{clip-path:url(#c9)}.cookie12{clip-path:url(#c12)}.cookie7{clip-path:url(#c7)}.cookie6{clip-path:url(#c6)}.cookie16{clip-path:url(#c16)}.cookie5{clip-path:url(#c5)}.cookie8{clip-path:url(#c8)}
-@keyframes spin{to{rotate:360deg}}@keyframes spinr{to{rotate:-360deg}}
-.js .rv{translate:0 28px;transition:translate .7s cubic-bezier(.2,.9,.2,1)}
-.js .rv.in{translate:0 0}
-
-/* верхняя панель */
-.appbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:12px;height:calc(64px + var(--sat));padding:var(--sat) 8px 0 16px;background:var(--bg);transition:background .25s}
-.appbar.scrolled{background:var(--surface-2)}
-.appbar .brand{display:flex;align-items:center;gap:12px;font:600 20px var(--display);margin-right:auto}
-.appbar .brand img{width:38px;height:38px;border-radius:12px}
-.ibtn{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;color:var(--text);transition:background .2s}
-.ibtn:active{background:var(--surface-3)}
-
-/* кнопки */
-.stores{display:grid;gap:10px}
-.store{display:flex;align-items:center;gap:16px;padding:0 24px 0 20px;height:68px;border-radius:26px;transition:border-radius .3s cubic-bezier(.3,1.4,.5,1),scale .15s}
-.store:active{scale:.97;border-radius:34px}
-.store .i{width:32px;height:32px}
-.store small{display:block;font-size:13px;font-weight:500;line-height:1.1}
-.store strong{display:block;font:600 21px/1.15 var(--display)}
-.store.and{background:var(--primary);color:var(--on-primary)}
-.store.ios{background:var(--tonal);color:var(--on-tonal)}
-html[data-plat="ios"] .stores .ios{order:-1;background:var(--primary);color:var(--on-primary)}
-html[data-plat="ios"] .stores .and{background:var(--tonal);color:var(--on-tonal)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 24px;border-radius:999px;background:var(--primary);color:var(--on-primary);font-weight:600;font-size:16px;transition:scale .15s,border-radius .25s}
-.btn:active{scale:.97;border-radius:18px}
-.btn.tonal{background:var(--tonal);color:var(--on-tonal)}
-.btn.sm{min-height:48px;padding:0 20px;font-size:15px}
-.btn.wide{width:100%}
-
-/* hero */
-.hero{padding:20px 16px 12px}
-.pill{display:inline-flex;align-items:center;gap:10px;padding:6px 16px 6px 6px;border-radius:999px;background:var(--surface-2);font-size:13px;font-weight:600;color:var(--muted)}
-.pill b{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--tonal);color:var(--on-tonal)}
-.pill .i{width:17px;height:17px}
-.hero h1{font-size:clamp(30px,8.8vw,42px);margin:18px 0 14px}
-.hero h1 em{font-style:normal;color:var(--primary)}
-.hero .lead{color:var(--muted);font-size:16.5px;margin-bottom:22px}
-.ver{margin-top:14px;font-size:14px;color:var(--muted);text-align:center}.ver b{color:var(--text)}
-.facts{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
-.facts span{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;color:var(--muted);padding:8px 14px;border-radius:14px;background:var(--surface-2)}
-.facts .i{width:17px;height:17px;color:var(--primary)}
-.stage{position:relative;height:min(112vw,470px);margin-top:26px;--w:min(50vw,230px);overflow:hidden;border-radius:36px;background:var(--surface)}
-.s-big{position:absolute;left:50%;top:44%;width:112%;aspect-ratio:1;translate:-50% -50%;background:var(--tonal);animation:spin 90s linear infinite}
-.s-b2{position:absolute;right:-26px;top:-26px;width:120px;aspect-ratio:1;background:var(--primary);animation:spinr 40s linear infinite}
-.ph{position:absolute;left:50%;top:9%;animation:rise 1s cubic-bezier(.2,.9,.2,1) both}
-.ph img{width:100%}
-.ph.main{width:var(--w);margin-left:calc(var(--w)*-.5);z-index:3;animation-delay:.2s}
-.ph.left{width:calc(var(--w)*.8);margin-left:calc(var(--w)*-1.05);top:17%;z-index:2;rotate:-8deg}
-.ph.right{width:calc(var(--w)*.8);margin-left:calc(var(--w)*.25);top:17%;z-index:2;rotate:8deg}
-@keyframes rise{from{translate:0 80px}to{translate:0 0}}
-
-/* цифры */
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:22px 16px 6px}
-.stat{border-radius:28px;padding:20px 18px 16px;display:flex;flex-direction:column;justify-content:flex-end;min-height:130px;position:relative;overflow:hidden}
-.stat b{font:600 clamp(26px,8vw,34px)/1 var(--display);letter-spacing:-.03em;position:relative}
-.stat span{font-size:13.5px;font-weight:500;margin-top:6px;position:relative;line-height:1.3}
-.stat .sh{position:absolute;right:-22px;top:-22px;width:80px;aspect-ratio:1;animation:spin 60s linear infinite}
-.stat:nth-child(1){background:var(--tonal);color:var(--on-tonal)}.stat:nth-child(1) .sh{background:var(--primary)}
-.stat:nth-child(2){background:var(--t2);color:var(--on-t2)}.stat:nth-child(2) .sh{background:var(--on-t2)}
-.stat:nth-child(3){background:var(--g-bg)}.stat:nth-child(3) .sh{background:var(--g-solid)}
-.stat:nth-child(4){background:var(--t3);color:var(--on-t3)}.stat:nth-child(4) .sh{background:var(--r-solid)}
-
-/* секции */
-.sec{padding:44px 0 8px}
-.sec>h2,.head h2{font-size:clamp(26px,7.4vw,34px);margin-bottom:10px}
-.head{padding:0 16px;margin-bottom:22px}
-.head .lead{color:var(--muted);font-size:16px}
-.worlds{display:grid;gap:14px;padding:30px 12px 0}
-.world{border-radius:40px;padding:28px 16px 0;position:relative;overflow:hidden}
-.world .copy{padding:0 6px}
-.tag{display:inline-flex;align-items:center;gap:8px;padding:8px 16px 8px 10px;border-radius:999px;font-weight:700;font-size:14px;margin-bottom:16px}
-.tag .i{width:19px;height:19px}
-.world h2{font-size:clamp(26px,7.4vw,32px);margin-bottom:12px}
-.world .t{font-size:16px;margin-bottom:18px}
-.checks{list-style:none;display:grid;gap:10px;margin-bottom:22px}
-.checks li{display:flex;gap:12px;align-items:flex-start;font-size:15px;line-height:1.45}
-.checks li i{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;margin-top:0}
-.checks li i .i{width:14px;height:14px;stroke-width:3}
-.shot{position:relative;display:grid;place-items:end center;height:min(104vw,430px);overflow:hidden;margin-top:22px}
-.shot .bl{position:absolute;bottom:-30%;left:50%;width:115%;aspect-ratio:1;translate:-50% 0;animation:spin 100s linear infinite}
-.shot .bl.b2{width:110px;bottom:auto;top:6%;left:auto;right:2%;translate:0;animation:spinr 45s linear infinite}
-.shot img{position:relative;width:min(62vw,270px);margin-bottom:-22%}
-.w-sched{background:var(--tonal);color:var(--on-tonal)}.w-sched .tag{background:var(--primary);color:var(--on-primary)}.w-sched .checks li i{background:var(--primary);color:var(--on-primary)}
-.w-sched .shot .bl{background:var(--primary)}.w-sched .shot .bl.b2{background:var(--t2)}
-.w-grades{background:var(--g-bg)}.w-grades .tag{background:var(--g-solid);color:var(--g-on)}.w-grades .t{color:var(--muted)}.w-grades .checks li i{background:var(--g-solid);color:var(--g-on)}
-.w-grades .shot .bl{background:var(--g-solid)}.w-grades .shot .bl.b2{background:var(--tonal)}
-.w-abs{background:var(--r-bg)}.w-abs .tag{background:var(--r-solid);color:var(--r-on)}.w-abs .t{color:var(--muted)}.w-abs .checks li i{background:var(--r-solid);color:var(--r-on)}
-.w-abs .shot .bl{background:var(--r-soft)}.w-abs .shot .bl.b2{background:var(--t2)}
-
-
-/* виджеты внутри миров */
-.wg{background:var(--surface);color:var(--text);border-radius:36px;padding:24px;margin-bottom:0}
-.week{display:flex;gap:8px;margin-bottom:16px}
-.week button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:11px 0 12px;border-radius:999px;background:var(--surface-2);font-size:13px;font-weight:500;color:var(--muted);transition:background .2s,color .2s,border-radius .3s}
-.week button b{font:600 19px/1 var(--display);color:var(--text)}
-.week button:hover{background:var(--surface-3)}
-.week button[aria-pressed="true"]{background:var(--primary);color:var(--on-primary)}
-.week button[aria-pressed="true"] b{color:var(--on-primary)}
-.wlabel{font-size:14px;font-weight:600;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.wlabel .i{width:18px;height:18px}
-#wlist{list-style:none;display:grid;gap:10px;min-height:178px;align-content:start}
-.lz{display:flex;align-items:center;gap:16px;padding:12px 18px 12px 12px;border-radius:24px}
-.lz .no{width:44px;height:44px;border-radius:15px;display:grid;place-items:center;font:600 18px var(--display);flex:none}
-.lz .tx b{display:block;font-size:17px;line-height:1.25}.lz .tx small{font-size:14px;color:inherit}
-.lz-a{background:var(--tonal);color:var(--on-tonal)}.lz-a .no{background:var(--primary);color:var(--on-primary)}
-.lz-b{background:var(--t2);color:var(--on-t2)}.lz-b .no{background:var(--on-t2);color:var(--t2)}
-.lz-c{background:var(--t3);color:var(--on-t3)}.lz-c .no{background:var(--r-solid);color:var(--r-on)}
-.lz-empty{display:grid;justify-items:center;gap:6px;padding:26px;background:var(--surface-2);border-radius:24px;text-align:center}
-.lz-empty .sun{width:64px;height:64px;display:grid;place-items:center;background:var(--tonal);color:var(--on-tonal);clip-path:url(#c9)}
-.lz-empty b{font:600 20px var(--display)}.lz-empty small{color:var(--muted);font-size:15px}
-
-.gcard{background:var(--g-solid);color:var(--g-on);border-radius:32px;padding:24px 24px 18px}
-.gtop{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
-.gtop small{display:block;font-size:14px;font-weight:600;margin-bottom:4px}
-.gtop b{font:600 clamp(54px,5vw,76px)/1 var(--display);letter-spacing:-.03em;display:block;min-width:4.2ch}
-.gtop span{font-size:15px;font-weight:600;padding-bottom:10px}
-.hist{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;margin-top:16px}
-.hcol{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0 4px;border-radius:16px;color:var(--g-on);transition:background .2s}
-.hcol:hover{background:var(--g-soft)}
-.hcol .bar{display:flex;align-items:flex-end;width:100%;height:112px;padding:0 4px}
-.hcol .bar i{display:block;width:100%;border-radius:10px 10px 6px 6px;height:6%;transition:height .45s cubic-bezier(.3,1.3,.5,1);min-height:6px;background:#aaa}
-.hcol:not(.has) .bar i{background:var(--g-soft)!important}
-.hcol b{font:600 15px var(--display)}
-.gacts{display:flex;gap:10px;margin-top:16px;align-items:center;flex-wrap:wrap}
-.gacts .hint{font-size:14px;font-weight:600;flex:1 0 100%;color:var(--g-on)}
-.chipb{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 18px;border-radius:999px;background:var(--g-on);color:var(--g-solid);font-weight:600;font-size:15px;transition:border-radius .25s}
-.chipb:hover:not(:disabled){border-radius:14px}
-.chipb:disabled{background:var(--g-soft);color:var(--g-on)}
-.chipb .i{width:18px;height:18px}
-.chipb.line{background:var(--g-solid);box-shadow:inset 0 0 0 2px var(--g-on);color:var(--g-on)}
-
-.awrap{display:grid;gap:12px}
-.asum{background:var(--r-card);color:var(--r-on);border-radius:30px;padding:20px 22px}
-.asum .row1{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
-.asum small{display:block;font-size:14px;font-weight:600}
-.asum .big{font:600 clamp(44px,4.4vw,60px)/1 var(--display);letter-spacing:-.03em}
-.asum .big em{font:600 17px var(--body);font-style:normal;margin-left:8px}
-.asum .pr{font-size:15px;font-weight:600;padding-bottom:6px}
-.sbar{display:flex;gap:4px;height:12px;border-radius:99px;overflow:hidden;margin:14px 0 10px}
-.sbar i{display:block;height:100%;min-width:6px;transition:flex .4s}
-.sbar i.no{background:var(--r-solid)}.sbar i.yes{background:var(--ok)}.sbar i.none{background:var(--r-soft);flex:1}
-.leg{display:flex;gap:22px;font-size:14px;font-weight:600}
-.leg span{display:flex;gap:8px;align-items:center}.leg span::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--r-solid)}.leg span.y::before{background:#37a14a}
-.limit{display:flex;gap:16px;align-items:center;background:var(--tonal);color:var(--on-tonal);border-radius:30px;padding:16px 20px}
-.limit[hidden]{display:none}
-.limit.over{background:var(--r-solid);color:var(--r-on)}
-.limit b{display:block;font:600 17px var(--display);margin-bottom:2px}
-.limit p{font-size:14px;line-height:1.4;font-weight:500}
-.ring{position:relative;width:74px;height:74px;flex:none}
-.ring svg{width:100%;height:100%;rotate:-90deg}
-.ring circle{fill:none;stroke-width:8}
-.ring .tr{stroke:var(--surface-3)}.limit.over .ring .tr{stroke:var(--r-soft)}
-.ring .ar{stroke:var(--primary);stroke-linecap:round;transition:stroke-dashoffset .5s cubic-bezier(.3,1.2,.5,1)}.limit.over .ring .ar{stroke:var(--r-on)}
-.ring span{position:absolute;inset:0;display:grid;place-items:center;font:600 13px/1.1 var(--display);text-align:center}
-.limit.over .ring span{font-size:34px}
-#absList{list-style:none;display:grid;gap:8px;min-height:60px}
-.aw{position:relative;border-radius:24px;overflow:hidden;touch-action:pan-y;user-select:none;-webkit-user-select:none}
-.aw-bg{position:absolute;inset:0;display:flex;align-items:center;gap:10px;padding:0 24px;font-weight:700;font-size:15px}
-.aw-bg.l{background:#37a14a;color:#fff;justify-content:flex-start}
-.aw-bg.r{background:var(--r-solid);color:var(--r-on);justify-content:flex-end}
-.aw-bg{visibility:hidden}.aw.sr .aw-bg.l{visibility:visible}.aw.sl .aw-bg.r{visibility:visible}
-.arow{position:relative;display:flex;align-items:center;gap:14px;padding:11px 12px 11px 11px;background:var(--surface-2);border-radius:24px;cursor:grab;transition:transform .3s cubic-bezier(.2,.9,.2,1)}
-.arow:active{cursor:grabbing}
-.arow .hrs{width:44px;height:44px;border-radius:15px;display:grid;place-items:center;font:600 18px var(--display);flex:none}
-.arow.no .hrs{background:var(--r-soft);color:var(--r-on)}
-.arow.ex .hrs{background:#a8e2a3;color:#103a12}
-.arow .tx{flex:1;min-width:0}.arow .tx b{display:block;font-size:16px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.arow .tx small{font-size:13px;color:var(--muted)}
-.acts{display:flex;gap:2px}
-.ab{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--muted);transition:background .2s,color .2s}
-.ab:hover{background:var(--surface-3);color:var(--text)}.ab .i{width:20px;height:20px}
-#absEmpty{padding:18px;text-align:center;color:var(--muted);font-size:15px}
-.aacts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:4px}
-.aacts .hint{font-size:14px;color:var(--muted);margin-right:auto}
-
-/* ---------- ещё (bento) ---------- */
-.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
-.card{border-radius:44px;padding:32px;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:12px}
-.card .ico{width:56px;height:56px;border-radius:20px;display:grid;place-items:center;margin-bottom:6px}
-.card h3{font-size:23px;line-height:1.15}
-.card p{font-size:16px;line-height:1.5}
-.c-undo{grid-column:span 3;background:var(--tonal);color:var(--on-tonal)}.c-undo .ico{background:var(--primary);color:var(--on-primary)}
-.c-group{grid-column:span 3;background:var(--t2);color:var(--on-t2)}.c-group .ico{background:var(--on-t2);color:var(--t2)}
-.c-back{grid-column:span 2;background:var(--g-bg)}.c-back .ico{background:var(--g-solid);color:var(--g-on)}
-.c-wide{grid-column:span 2;background:var(--t3);color:var(--on-t3)}.c-wide .ico{background:var(--r-solid);color:var(--r-on)}
-.c-off{grid-column:span 2;background:var(--surface-2)}.c-off .ico{background:var(--tonal);color:var(--on-tonal)}
-.card .demo{margin-top:auto;padding-top:10px}
-.mrow{display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:22px;background:var(--surface);color:var(--text);transition:translate .35s cubic-bezier(.3,1.2,.5,1),scale .3s,height .3s,margin .3s,padding .3s;transform-origin:center}
-.mrow .sc{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font:600 17px var(--display);background:hsl(100 68% 64%);color:#173a08;flex:none}
-.mrow b{font-size:16px;display:block;line-height:1.2}.mrow small{font-size:13px;color:var(--muted)}
-.mrow.gone{translate:-110% 0;scale:.9}
-.undoStage{overflow:hidden;border-radius:22px}
-.mgroup{display:flex;align-items:center;gap:12px;background:var(--surface);color:var(--text);padding:12px 16px;border-radius:999px;font-size:16px}
-.mgroup .i{color:var(--primary)}.mgroup b{margin-left:auto;font:600 15px var(--display);background:var(--tonal);color:var(--on-tonal);padding:7px 14px;border-radius:99px}
-.gridchips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.gridchips span{padding:8px 14px;border-radius:14px;background:var(--on-t2);color:var(--t2);font:600 14px var(--display)}
-.sw{display:flex;align-items:center;gap:12px;font-weight:600}
-.tg{position:relative;width:60px;height:34px;border-radius:99px;background:var(--surface-3);border:2px solid var(--outline);transition:background .25s,border-color .25s}
-.tg::after{content:"";position:absolute;left:5px;top:50%;translate:0 -50%;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:left .25s cubic-bezier(.3,1.4,.5,1),width .25s,height .25s,background .25s}
-.tg[aria-checked="true"]{background:var(--primary);border-color:var(--primary)}
-.tg[aria-checked="true"]::after{left:29px;width:24px;height:24px;background:var(--on-primary)}
-.seg{display:flex;padding:5px;border-radius:999px;background:var(--surface);gap:4px;width:max-content;max-width:100%}
-.seg button{height:42px;padding:0 20px;border-radius:999px;font-weight:600;font-size:15px;color:var(--muted);transition:background .2s,color .2s}
-.seg button[aria-pressed="true"]{background:var(--primary);color:var(--on-primary)}
-.seg button:hover:not([aria-pressed="true"]){background:var(--surface-3)}
-
-.tswatch{position:relative;aspect-ratio:1;border-radius:26%;overflow:hidden;transition:border-radius .3s cubic-bezier(.3,1.4,.5,1),scale .2s;outline-offset:4px}
-.tswatch img{width:100%;height:100%;object-fit:cover}
-.tswatch:hover{scale:1.06;border-radius:50%}
-.tswatch[aria-pressed="true"]{border-radius:50%;outline:4px solid var(--primary);scale:1.06}
-.tfoot{display:flex;align-items:center;gap:16px;margin-top:28px;flex-wrap:wrap}
-.tname{font:600 20px var(--display)}.tname small{display:block;font:500 14px var(--body);color:var(--muted);margin-bottom:2px}
-.tprev{position:relative;display:grid;place-items:center;min-height:520px}
-.tprev .bg1{position:absolute;width:480px;max-width:100%;aspect-ratio:1;background:var(--tonal);animation:spin 70s linear infinite}
-.mini{position:relative;width:300px;background:var(--bg);border:3px solid var(--outline);border-radius:44px;padding:22px 18px 16px;display:grid;gap:12px;z-index:2}
-.mini .mt{display:flex;align-items:center;gap:12px}
-.mini .mt img{width:56px;height:56px;border-radius:18px;transition:scale .3s}
-.mini .mt b{font:600 22px var(--display);display:block;line-height:1.1}.mini .mt small{font-size:13px;color:var(--muted)}
-.mini .mc{background:var(--tonal);color:var(--on-tonal);border-radius:26px;padding:16px 18px}
-.mini .mc b{font:600 30px var(--display);display:block;line-height:1.1}.mini .mc small{font-size:13px;font-weight:600}
-.mini .mb{background:var(--t2);color:var(--on-t2);border-radius:22px;padding:14px 18px;font-weight:600;font-size:15px}
-.mini .mb2{background:var(--t3);color:var(--on-t3);border-radius:22px;padding:14px 18px;font-weight:600;font-size:15px}
-.mini .mf{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
-.mini .mf i{display:block;width:36px;height:36px;border-radius:50%;background:var(--surface-3)}
-.mini .mf span{background:var(--primary);color:var(--on-primary);font-weight:700;font-size:15px;padding:12px 20px;border-radius:18px}
-.mini .mnav{display:flex;justify-content:space-between;padding:6px 10px 0}
-.mini .mnav i{width:34px;height:8px;border-radius:9px;background:var(--surface-3)}.mini .mnav i:first-child{background:var(--primary);width:50px}
-
-
-
-/* адаптация виджетов под телефон */
-.wg{border-radius:28px;padding:14px;margin:0 -6px}
-.week{gap:4px}
-.week button{padding:10px 0;min-height:60px;font-size:12px}.week button b{font-size:16px}
-.lz .tx b{font-size:16px}
-.gcard{border-radius:28px;padding:18px 14px 14px;margin:0 -6px}
-.gtop b{font-size:clamp(46px,14vw,60px)}
-.hist{gap:2px}
-.hcol{min-height:48px}.hcol .bar{height:92px;padding:0 2px}
-.gacts .chipb{height:48px;padding:0 20px}
-.asum{border-radius:26px;padding:16px}
-.limit{border-radius:26px;padding:14px 16px;gap:14px}
-.ring{width:64px;height:64px}.ring span{font-size:11.5px}.limit.over .ring span{font-size:30px}
-.awrap{margin:0 -6px}
-.awrap>*,.world .copy,.world .wg{min-width:0}
-.leg{flex-wrap:wrap;gap:6px 14px}
-.asum .big{font-size:clamp(38px,11vw,48px)}
-.arow{padding:9px 6px 9px 9px;gap:11px}
-.arow .hrs{width:40px;height:40px;font-size:16px;border-radius:13px}
-.arow .tx b{font-size:15px}.arow .tx small{font-size:12px}
-.ab{width:44px;height:44px}
-.aacts .hint{flex:1 0 100%}
-.aacts .btn{flex:1}
-.seg button{min-height:48px}
-
-/* ещё */
-.cards{display:grid;gap:10px;padding:0 12px}
-.card{border-radius:32px;padding:22px 20px;display:flex;flex-direction:column;gap:10px}
-.card .ico{width:52px;height:52px;border-radius:18px;display:grid;place-items:center}
-.card h3{font-size:19px}.card p{font-size:15px;line-height:1.5}
-.c-undo{background:var(--tonal);color:var(--on-tonal)}.c-undo .ico{background:var(--primary);color:var(--on-primary)}
-.c-group{background:var(--t2);color:var(--on-t2)}.c-group .ico{background:var(--on-t2);color:var(--t2)}
-.c-back{background:var(--g-bg)}.c-back .ico{background:var(--g-solid);color:var(--g-on)}
-.c-wide{background:var(--t3);color:var(--on-t3)}.c-wide .ico{background:var(--r-solid);color:var(--r-on)}
-.c-off{background:var(--surface-2)}.c-off .ico{background:var(--tonal);color:var(--on-tonal)}
-.demo{padding-top:6px}
-.mrow{display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:22px;background:var(--surface);color:var(--text);transition:translate .35s cubic-bezier(.3,1.2,.5,1),scale .3s}
-.mrow .sc{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font:600 17px var(--display);background:hsl(100 68% 64%);color:#173a08;flex:none}
-.mrow b{font-size:15px;display:block;line-height:1.2}.mrow small{font-size:12.5px;color:var(--muted)}
-.mrow.gone{translate:-110% 0;scale:.9}
-.undoStage{overflow:hidden;border-radius:22px}
-.mgroup{display:flex;align-items:center;gap:12px;background:var(--surface);color:var(--text);padding:12px 16px;border-radius:999px;font-size:15px}
-.mgroup .i{color:var(--primary)}.mgroup b{margin-left:auto;font:600 14px var(--display);background:var(--tonal);color:var(--on-tonal);padding:7px 14px;border-radius:99px}
-.gridchips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.gridchips span{padding:8px 13px;border-radius:14px;background:var(--on-t2);color:var(--t2);font:600 13px var(--display)}
-.sw{display:flex;align-items:center;gap:12px;font-weight:600}
-.tg{position:relative;width:64px;height:38px;border-radius:99px;background:var(--surface-3);border:2px solid var(--outline);transition:background .25s,border-color .25s}
-.tg::after{content:"";position:absolute;left:6px;top:50%;translate:0 -50%;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:left .25s cubic-bezier(.3,1.4,.5,1),width .25s,height .25s,background .25s}
-.tg[aria-checked="true"]{background:var(--primary);border-color:var(--primary)}
-.tg[aria-checked="true"]::after{left:31px;width:26px;height:26px;background:var(--on-primary)}
-
-/* темы */
-.tpanel{margin:0 12px;background:var(--surface);border-radius:40px;padding:26px 16px 22px;overflow:hidden}
-.tpanel h2{font-size:clamp(26px,7.4vw,32px);margin-bottom:10px;padding:0 6px}
-.tpanel .lead{color:var(--muted);font-size:15.5px;margin-bottom:18px;padding:0 6px}
-.modes{margin-bottom:16px}
-.modes .seg{width:100%;background:var(--surface-2)}.modes .seg button{flex:1;padding:0 6px}
-.tgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:2px}
-.tswatch{width:100%;min-height:48px}
-.tswatch{border-radius:26%}
-.tswatch[aria-pressed="true"]{outline-offset:2px}
-.tfoot{display:flex;align-items:center;gap:12px;margin-top:20px;flex-wrap:wrap;padding:0 6px}
-.tname{font:600 18px var(--display)}.tname small{display:block;font:500 13px var(--body);color:var(--muted)}
-.tfoot .btn{margin-left:auto}
-.tprev{display:grid;place-items:center;position:relative;margin-top:22px;min-height:330px}
-.tprev .bg1{position:absolute;width:310px;aspect-ratio:1;background:var(--tonal);animation:spin 70s linear infinite}
-.mini{width:min(270px,76vw);padding:18px 14px 14px;border-radius:38px}
-.mini .mt img{width:48px;height:48px;border-radius:15px}
-.mini .mt b{font-size:19px}
-.mini .mc b{font-size:26px}
-
-/* первый запуск — карусель */
-.carousel{position:relative}
-.ctrack{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 16px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
-.ctrack::-webkit-scrollbar{display:none}
-.ob{flex:0 0 min(78vw,310px);scroll-snap-align:center;border-radius:36px;padding:22px 18px 0;display:flex;flex-direction:column;gap:6px;overflow:hidden;background:var(--surface-2);height:480px}
-.ob:nth-child(2){background:var(--tonal);color:var(--on-tonal)}.ob:nth-child(3){background:var(--t2);color:var(--on-t2)}.ob:nth-child(4){background:var(--t3);color:var(--on-t3)}
-.ob .n{font:600 12px var(--display);letter-spacing:.05em}
-.ob h3{font-size:19px}.ob p{font-size:14px;line-height:1.4;min-height:3.6em}
-.ob img{width:76%;margin:12px auto -14%}
-.cdots{display:flex;justify-content:center;gap:4px;margin-top:10px}
-.cdot{width:48px;height:32px;display:grid;place-items:center}
-.cdot::after{content:"";width:8px;height:8px;border-radius:99px;background:var(--surface-3);transition:width .3s,background .3s}
-.cdot.on::after{width:26px;background:var(--primary)}
-
-/* приватность */
-.pbig{margin:0 12px 10px;background:var(--tonal);color:var(--on-tonal);border-radius:40px;padding:150px 22px 26px;position:relative;overflow:hidden}
-.pbig .lk{position:absolute;right:-30px;top:-40px;width:190px;aspect-ratio:1;background:var(--primary);animation:spin 80s linear infinite}
-.pbig .lkw{position:absolute;right:8px;top:6px;width:110px;height:110px;display:grid;place-items:center;color:var(--on-primary);z-index:2}
-.pbig .lkw .i{width:56px;height:56px;stroke-width:1.8}
-.pbig h2{font-size:clamp(24px,7vw,30px);margin-bottom:10px;position:relative}
-.pbig p{font-size:15.5px;position:relative}
-.plist{display:grid;gap:10px;padding:0 12px}
-.pi{display:flex;gap:16px;align-items:center;border-radius:30px;padding:18px}
-.pi .ico{width:52px;height:52px;border-radius:18px;display:grid;place-items:center;flex:none}
-.pi h3{font-size:17px;margin-bottom:2px}.pi p{font-size:14px;line-height:1.4}
-.pi:nth-child(1){background:var(--t2);color:var(--on-t2)}.pi:nth-child(1) .ico{background:var(--on-t2);color:var(--t2)}
-.pi:nth-child(2){background:var(--g-bg)}.pi:nth-child(2) .ico{background:var(--g-solid);color:var(--g-on)}
-.pi:nth-child(3){background:var(--surface-2)}.pi:nth-child(3) .ico{background:var(--tonal);color:var(--on-tonal)}
-
-/* установка */
-.tabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:999px;margin:0 16px 16px}
-.tabs button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border-radius:999px;font-weight:600;font-size:16px;color:var(--muted);transition:background .2s,color .2s}
-.tabs button .i{width:22px;height:22px}
-.tabs button[aria-selected="true"]{background:var(--primary);color:var(--on-primary)}
-.ipanel{display:grid;gap:10px;padding:0 12px}
-.ipanel[hidden]{display:none}
-.dlcard{background:var(--tonal);color:var(--on-tonal);border-radius:32px;padding:22px 20px;display:grid;gap:10px;position:relative;overflow:hidden}
-.dlcard h3{font-size:20px;position:relative}.dlcard p{font-size:14.5px;position:relative}
-.dlcard .sh{position:absolute;right:-40px;bottom:-50px;width:150px;aspect-ratio:1;background:var(--primary);animation:spin 70s linear infinite}
-.dlcard .btn{position:relative;margin-top:4px;width:100%}
-.steps{list-style:none;display:grid;gap:10px}
-.steps li{display:flex;gap:14px;align-items:flex-start;background:var(--surface-2);border-radius:28px;padding:18px 16px 18px 14px}
-.steps .sn{flex:none;width:44px;height:44px;display:grid;place-items:center;background:var(--primary);color:var(--on-primary);font:600 17px var(--display);clip-path:url(#c9)}
-.steps h4{font-size:16.5px;margin-bottom:5px;line-height:1.25}
-.steps p{font-size:14.5px;line-height:1.55;color:var(--muted)}
-.steps p b{color:var(--text);font-weight:600}
-.ihead{font:600 12px var(--display);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:12px 6px 0}
-.opts{display:grid;gap:10px}
-.opt{background:var(--surface-2);border-radius:28px;padding:20px 18px}
-.opt .lab{display:inline-block;font:600 11px var(--display);letter-spacing:.04em;padding:7px 12px;border-radius:99px;background:var(--tonal);color:var(--on-tonal);margin-bottom:12px}
-.opt h3{font-size:19px;margin-bottom:6px}.opt>p{font-size:14px;color:var(--muted);margin-bottom:14px}
-.opt ol{list-style:none;display:grid;gap:10px;counter-reset:o}
-.opt ol li{counter-increment:o;display:flex;gap:12px;font-size:14.5px;line-height:1.5}
-.opt ol li::before{content:counter(o);flex:none;width:26px;height:26px;border-radius:50%;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;font:700 13px var(--body)}
-.opt ol li a{color:var(--primary);font-weight:600;text-decoration:underline;text-underline-offset:3px}
-.note{border-radius:28px;padding:18px 20px;background:var(--t3);color:var(--on-t3)}
-.note h4{font-size:16px;margin-bottom:8px;display:flex;gap:10px;align-items:center}.note .i{width:21px;height:21px}
-.note p,.note li{font-size:14.5px;line-height:1.55}.note ul{padding-left:20px;display:grid;gap:6px}
-.note.ok{background:var(--g-bg);color:var(--text)}
-
-.faq{padding:44px 12px 0}
-.faq h2{font-size:clamp(26px,7.4vw,34px);margin:0 4px 16px}
-.qas{display:grid;gap:8px}
-.qa{background:var(--surface-2);border-radius:26px;overflow:hidden}
-.qa[open]{background:var(--surface-3)}
-.qa summary{list-style:none;cursor:pointer;padding:16px 18px;min-height:56px;font-weight:600;font-size:15.5px;display:flex;align-items:center;gap:12px;line-height:1.35}
-.qa summary::-webkit-details-marker{display:none}
-.qa summary::after{content:"";margin-left:auto;flex:none;width:10px;height:10px;border-right:3px solid var(--primary);border-bottom:3px solid var(--primary);rotate:45deg;translate:0 -3px;transition:rotate .25s,translate .25s}
-.qa[open] summary::after{rotate:225deg;translate:0 3px}
-.qa-a{padding:0 18px 18px;color:var(--muted);font-size:15px;line-height:1.6}
-.qa-a b{color:var(--text)}
-
-.rel{padding:44px 12px 0}
-.rel .head{padding:0 4px}
-.rel .head h2{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.rel .head .rbadge{font-size:13px}
-
-.dl{margin:44px 12px 0;border-radius:40px;background:var(--primary);color:var(--on-primary);padding:44px 20px 36px;text-align:center;position:relative;overflow:hidden}
-.dl .shp{position:absolute;aspect-ratio:1;animation:spin 70s linear infinite}
-.dl .d1{width:170px;left:-60px;top:-60px;background:var(--tonal)}.dl .d2{width:130px;right:-40px;bottom:-40px;background:var(--t2);animation-name:spinr}
-.dl .ic{width:96px;height:96px;border-radius:28px;margin:0 auto 20px;position:relative}
-.dl h2{font-size:clamp(28px,8vw,36px);position:relative;margin-bottom:10px}
-.dl p{font-size:16px;margin:0 auto 24px;position:relative}
-.dl .stores{position:relative}
-.dl .store.and{background:var(--on-primary);color:var(--primary)}.dl .store.ios{background:var(--tonal);color:var(--on-tonal)}
-html[data-plat="ios"] .dl .stores .ios{background:var(--on-primary);color:var(--primary)}
-html[data-plat="ios"] .dl .stores .and{background:var(--tonal);color:var(--on-tonal)}
-.dl .more{display:inline-flex;align-items:center;gap:10px;margin-top:18px;min-height:48px;font-weight:600;position:relative;text-decoration:underline;text-underline-offset:4px}
-
-footer{padding:34px 16px 0;display:grid;gap:14px}
-footer nav{display:flex;flex-wrap:wrap;gap:8px}
-footer nav a{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 18px;border-radius:99px;background:var(--surface-2);font-weight:500;font-size:14.5px}
-footer nav .i{width:19px;height:19px}
-.disc{padding:0 16px;margin-top:6px;color:var(--muted);font-size:12.5px;line-height:1.5}
-
-/* нижняя навигация (как в приложении) */
-.bnav{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;background:var(--surface-2);padding:10px 8px calc(10px + var(--sab));min-height:calc(80px + var(--sab))}
-.bnav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:60px;font-size:12px;font-weight:600;color:var(--muted)}
-.bnav a .pl{display:grid;place-items:center;width:64px;height:32px;border-radius:99px;transition:background .25s,width .25s}
-.bnav a .i{width:24px;height:24px}
-.bnav a.on{color:var(--text)}
-.bnav a.on .pl{background:var(--tonal);color:var(--on-tonal)}
-.bnav a:active .pl{background:var(--surface-3)}
-
-/* FAB */
-#fab{position:fixed;right:16px;bottom:calc(96px + var(--sab));z-index:55;display:flex;align-items:center;gap:12px;height:60px;padding:0 24px 0 20px;border-radius:20px;background:var(--primary);color:var(--on-primary);font-weight:700;font-size:16px;transition:translate .35s cubic-bezier(.3,1.2,.5,1),scale .15s}
-#fab:active{scale:.96}
-#fab.off{translate:0 160px;visibility:hidden;transition:translate .35s,visibility 0s .35s}
-#fab .i{width:24px;height:24px}
-
-#snack{visibility:hidden;position:fixed;left:12px;right:12px;bottom:calc(96px + var(--sab));translate:0 200px;z-index:80;display:flex;align-items:center;gap:12px;background:var(--text);color:var(--bg);padding:6px 6px 6px 18px;min-height:56px;border-radius:16px;font-weight:500;font-size:15px;transition:translate .35s cubic-bezier(.3,1.3,.5,1),visibility 0s .35s;pointer-events:none}
-#snack.on{visibility:visible;translate:0 0;pointer-events:auto;transition:translate .35s cubic-bezier(.3,1.3,.5,1),visibility 0s}
-#snack .sm{flex:1}
-#snack button{font-weight:700;color:var(--bg);background:var(--text);padding:0 16px;min-height:48px;border-radius:12px;font-size:15px;text-decoration:underline}
-#snack button[hidden]{display:none}
-@media (min-width:600px){body{max-width:560px;margin:0 auto}.bnav{max-width:560px;margin:0 auto}#snack{max-width:536px;left:50%;right:auto;width:calc(100% - 24px);translate:-50% 200px}#snack.on{translate:-50% 0}}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
-
-</style>
-<link rel="stylesheet" href="../assets/release.css">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wdth,wght@8..144,25..151,100..1000&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/shapes.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="mobile.css">
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><clipPath id="c9" clipPathUnits="objectBoundingBox"><path d="M1.0000 0.5000 L0.9989 0.5131 L0.9955 0.5260 L0.9901 0.5386 L0.9830 0.5508 L0.9744 0.5625 L0.9648 0.5736 L0.9546 0.5843 L0.9444 0.5945 L0.9345 0.6043 L0.9254 0.6140 L0.9174 0.6237 L0.9108 0.6335 L0.9057 0.6437 L0.9021 0.6543 L0.8999 0.6657 L0.8991 0.6777 L0.8994 0.6905 L0.9003 0.7040 L0.9016 0.7180 L0.9028 0.7326 L0.9035 0.7473 L0.9034 0.7619 L0.9020 0.7763 L0.8991 0.7900 L0.8946 0.8028 L0.8882 0.8144 L0.8801 0.8247 L0.8703 0.8334 L0.8590 0.8406 L0.8463 0.8463 L0.8327 0.8506 L0.8184 0.8537 L0.8038 0.8558 L0.7893 0.8572 L0.7750 0.8584 L0.7613 0.8597 L0.7484 0.8615 L0.7364 0.8640 L0.7253 0.8677 L0.7151 0.8726 L0.7057 0.8789 L0.6970 0.8867 L0.6888 0.8959 L0.6808 0.9062 L0.6729 0.9174 L0.6647 0.9291 L0.6562 0.9410 L0.6471 0.9526 L0.6373 0.9634 L0.6268 0.9731 L0.6155 0.9812 L0.6036 0.9874 L0.5911 0.9915 L0.5782 0.9934 L0.5649 0.9931 L0.5516 0.9906 L0.5383 0.9863 L0.5252 0.9803 L0.5124 0.9731 L0.5000 0.9651 L0.4880 0.9568 L0.4765 0.9487 L0.4653 0.9411 L0.4543 0.9345 L0.4435 0.9292 L0.4326 0.9254 L0.4216 0.9231 L0.4102 0.9225 L0.3984 0.9233 L0.3860 0.9254 L0.3731 0.9285 L0.3596 0.9321 L0.3457 0.9359 L0.3314 0.9393 L0.3169 0.9420 L0.3025 0.9436 L0.2883 0.9437 L0.2747 0.9421 L0.2619 0.9386 L0.2500 0.9330 L0.2393 0.9255 L0.2298 0.9161 L0.2215 0.9052 L0.2146 0.8929 L0.2087 0.8796 L0.2039 0.8657 L0.1997 0.8516 L0.1960 0.8376 L0.1924 0.8242 L0.1886 0.8114 L0.1842 0.7997 L0.1790 0.7890 L0.1728 0.7795 L0.1653 0.7710 L0.1566 0.7635 L0.1465 0.7568 L0.1354 0.7506 L0.1232 0.7447 L0.1104 0.7388 L0.0972 0.7326 L0.0841 0.7258 L0.0715 0.7183 L0.0597 0.7100 L0.0493 0.7007 L0.0405 0.6903 L0.0336 0.6790 L0.0288 0.6669 L0.0261 0.6540 L0.0255 0.6405 L0.0269 0.6268 L0.0300 0.6128 L0.0345 0.5989 L0.0400 0.5853 L0.0460 0.5719 L0.0521 0.5590 L0.0578 0.5465 L0.0628 0.5344 L0.0666 0.5227 L0.0690 0.5113 L0.0698 0.5000 L0.0690 0.4887 L0.0666 0.4773 L0.0628 0.4656 L0.0578 0.4535 L0.0521 0.4410 L0.0460 0.4281 L0.0400 0.4147 L0.0345 0.4011 L0.0300 0.3872 L0.0269 0.3732 L0.0255 0.3595 L0.0261 0.3460 L0.0288 0.3331 L0.0336 0.3210 L0.0405 0.3097 L0.0493 0.2993 L0.0597 0.2900 L0.0715 0.2817 L0.0841 0.2742 L0.0972 0.2674 L0.1104 0.2612 L0.1232 0.2553 L0.1354 0.2494 L0.1465 0.2432 L0.1566 0.2365 L0.1653 0.2290 L0.1728 0.2205 L0.1790 0.2110 L0.1842 0.2003 L0.1886 0.1886 L0.1924 0.1758 L0.1960 0.1624 L0.1997 0.1484 L0.2039 0.1343 L0.2087 0.1204 L0.2146 0.1071 L0.2215 0.0948 L0.2298 0.0839 L0.2393 0.0745 L0.2500 0.0670 L0.2619 0.0614 L0.2747 0.0579 L0.2883 0.0563 L0.3025 0.0564 L0.3169 0.0580 L0.3314 0.0607 L0.3457 0.0641 L0.3596 0.0679 L0.3731 0.0715 L0.3860 0.0746 L0.3984 0.0767 L0.4102 0.0775 L0.4216 0.0769 L0.4326 0.0746 L0.4435 0.0708 L0.4543 0.0655 L0.4653 0.0589 L0.4765 0.0513 L0.4880 0.0432 L0.5000 0.0349 L0.5124 0.0269 L0.5252 0.0197 L0.5383 0.0137 L0.5516 0.0094 L0.5649 0.0069 L0.5782 0.0066 L0.5911 0.0085 L0.6036 0.0126 L0.6155 0.0188 L0.6268 0.0269 L0.6373 0.0366 L0.6471 0.0474 L0.6562 0.0590 L0.6647 0.0709 L0.6729 0.0826 L0.6808 0.0938 L0.6888 0.1041 L0.6970 0.1133 L0.7057 0.1211 L0.7151 0.1274 L0.7253 0.1323 L0.7364 0.1360 L0.7484 0.1385 L0.7613 0.1403 L0.7750 0.1416 L0.7893 0.1428 L0.8038 0.1442 L0.8184 0.1463 L0.8327 0.1494 L0.8463 0.1537 L0.8590 0.1594 L0.8703 0.1666 L0.8801 0.1753 L0.8882 0.1856 L0.8946 0.1972 L0.8991 0.2100 L0.9020 0.2237 L0.9034 0.2381 L0.9035 0.2527 L0.9028 0.2674 L0.9016 0.2820 L0.9003 0.2960 L0.8994 0.3095 L0.8991 0.3223 L0.8999 0.3343 L0.9021 0.3457 L0.9057 0.3563 L0.9108 0.3665 L0.9174 0.3763 L0.9254 0.3860 L0.9345 0.3957 L0.9444 0.4055 L0.9546 0.4157 L0.9648 0.4264 L0.9744 0.4375 L0.9830 0.4492 L0.9901 0.4614 L0.9955 0.4740 L0.9989 0.4869Z"/></clipPath><clipPath id="c12" clipPathUnits="objectBoundingBox"><path d="M1.0000 0.5000 L0.9987 0.5131 L0.9948 0.5259 L0.9887 0.5385 L0.9809 0.5505 L0.9721 0.5622 L0.9631 0.5733 L0.9545 0.5842 L0.9469 0.5950 L0.9410 0.6059 L0.9370 0.6171 L0.9349 0.6288 L0.9346 0.6412 L0.9357 0.6543 L0.9377 0.6680 L0.9399 0.6822 L0.9417 0.6967 L0.9424 0.7110 L0.9415 0.7249 L0.9384 0.7380 L0.9330 0.7500 L0.9253 0.7606 L0.9155 0.7698 L0.9040 0.7776 L0.8912 0.7842 L0.8778 0.7899 L0.8644 0.7950 L0.8515 0.8002 L0.8396 0.8057 L0.8290 0.8122 L0.8199 0.8199 L0.8122 0.8290 L0.8057 0.8396 L0.8002 0.8515 L0.7950 0.8644 L0.7899 0.8778 L0.7842 0.8912 L0.7776 0.9040 L0.7698 0.9155 L0.7606 0.9253 L0.7500 0.9330 L0.7380 0.9384 L0.7249 0.9415 L0.7110 0.9424 L0.6967 0.9417 L0.6822 0.9399 L0.6680 0.9377 L0.6543 0.9357 L0.6412 0.9346 L0.6288 0.9349 L0.6171 0.9370 L0.6059 0.9410 L0.5950 0.9469 L0.5842 0.9545 L0.5733 0.9631 L0.5622 0.9721 L0.5505 0.9809 L0.5385 0.9887 L0.5259 0.9948 L0.5131 0.9987 L0.5000 1.0000 L0.4869 0.9987 L0.4741 0.9948 L0.4615 0.9887 L0.4495 0.9809 L0.4378 0.9721 L0.4267 0.9631 L0.4158 0.9545 L0.4050 0.9469 L0.3941 0.9410 L0.3829 0.9370 L0.3712 0.9349 L0.3588 0.9346 L0.3457 0.9357 L0.3320 0.9377 L0.3178 0.9399 L0.3033 0.9417 L0.2890 0.9424 L0.2751 0.9415 L0.2620 0.9384 L0.2500 0.9330 L0.2394 0.9253 L0.2302 0.9155 L0.2224 0.9040 L0.2158 0.8912 L0.2101 0.8778 L0.2050 0.8644 L0.1998 0.8515 L0.1943 0.8396 L0.1878 0.8290 L0.1801 0.8199 L0.1710 0.8122 L0.1604 0.8057 L0.1485 0.8002 L0.1356 0.7950 L0.1222 0.7899 L0.1088 0.7842 L0.0960 0.7776 L0.0845 0.7698 L0.0747 0.7606 L0.0670 0.7500 L0.0616 0.7380 L0.0585 0.7249 L0.0576 0.7110 L0.0583 0.6967 L0.0601 0.6822 L0.0623 0.6680 L0.0643 0.6543 L0.0654 0.6412 L0.0651 0.6288 L0.0630 0.6171 L0.0590 0.6059 L0.0531 0.5950 L0.0455 0.5842 L0.0369 0.5733 L0.0279 0.5622 L0.0191 0.5505 L0.0113 0.5385 L0.0052 0.5259 L0.0013 0.5131 L0.0000 0.5000 L0.0013 0.4869 L0.0052 0.4741 L0.0113 0.4615 L0.0191 0.4495 L0.0279 0.4378 L0.0369 0.4267 L0.0455 0.4158 L0.0531 0.4050 L0.0590 0.3941 L0.0630 0.3829 L0.0651 0.3712 L0.0654 0.3588 L0.0643 0.3457 L0.0623 0.3320 L0.0601 0.3178 L0.0583 0.3033 L0.0576 0.2890 L0.0585 0.2751 L0.0616 0.2620 L0.0670 0.2500 L0.0747 0.2394 L0.0845 0.2302 L0.0960 0.2224 L0.1088 0.2158 L0.1222 0.2101 L0.1356 0.2050 L0.1485 0.1998 L0.1604 0.1943 L0.1710 0.1878 L0.1801 0.1801 L0.1878 0.1710 L0.1943 0.1604 L0.1998 0.1485 L0.2050 0.1356 L0.2101 0.1222 L0.2158 0.1088 L0.2224 0.0960 L0.2302 0.0845 L0.2394 0.0747 L0.2500 0.0670 L0.2620 0.0616 L0.2751 0.0585 L0.2890 0.0576 L0.3033 0.0583 L0.3178 0.0601 L0.3320 0.0623 L0.3457 0.0643 L0.3588 0.0654 L0.3712 0.0651 L0.3829 0.0630 L0.3941 0.0590 L0.4050 0.0531 L0.4158 0.0455 L0.4267 0.0369 L0.4378 0.0279 L0.4495 0.0191 L0.4615 0.0113 L0.4741 0.0052 L0.4869 0.0013 L0.5000 0.0000 L0.5131 0.0013 L0.5259 0.0052 L0.5385 0.0113 L0.5505 0.0191 L0.5622 0.0279 L0.5733 0.0369 L0.5842 0.0455 L0.5950 0.0531 L0.6059 0.0590 L0.6171 0.0630 L0.6288 0.0651 L0.6412 0.0654 L0.6543 0.0643 L0.6680 0.0623 L0.6822 0.0601 L0.6967 0.0583 L0.7110 0.0576 L0.7249 0.0585 L0.7380 0.0616 L0.7500 0.0670 L0.7606 0.0747 L0.7698 0.0845 L0.7776 0.0960 L0.7842 0.1088 L0.7899 0.1222 L0.7950 0.1356 L0.8002 0.1485 L0.8057 0.1604 L0.8122 0.1710 L0.8199 0.1801 L0.8290 0.1878 L0.8396 0.1943 L0.8515 0.1998 L0.8644 0.2050 L0.8778 0.2101 L0.8912 0.2158 L0.9040 0.2224 L0.9155 0.2302 L0.9253 0.2394 L0.9330 0.2500 L0.9384 0.2620 L0.9415 0.2751 L0.9424 0.2890 L0.9417 0.3033 L0.9399 0.3178 L0.9377 0.3320 L0.9357 0.3457 L0.9346 0.3588 L0.9349 0.3712 L0.9370 0.3829 L0.9410 0.3941 L0.9469 0.4050 L0.9545 0.4158 L0.9631 0.4267 L0.9721 0.4378 L0.9809 0.4495 L0.9887 0.4615 L0.9948 0.4741 L0.9987 0.4869Z"/></clipPath><clipPath id="c7" clipPathUnits="objectBoundingBox"><path d="M1.0000 0.5000 L0.9991 0.5131 L0.9966 0.5260 L0.9924 0.5388 L0.9867 0.5512 L0.9797 0.5632 L0.9716 0.5747 L0.9626 0.5857 L0.9529 0.5963 L0.9429 0.6063 L0.9328 0.6160 L0.9228 0.6252 L0.9132 0.6343 L0.9042 0.6431 L0.8959 0.6520 L0.8886 0.6609 L0.8822 0.6702 L0.8768 0.6797 L0.8724 0.6897 L0.8689 0.7003 L0.8663 0.7115 L0.8644 0.7233 L0.8629 0.7357 L0.8618 0.7487 L0.8608 0.7621 L0.8596 0.7760 L0.8582 0.7900 L0.8561 0.8042 L0.8534 0.8182 L0.8497 0.8319 L0.8450 0.8450 L0.8392 0.8574 L0.8322 0.8689 L0.8240 0.8793 L0.8146 0.8885 L0.8042 0.8964 L0.7927 0.9029 L0.7804 0.9079 L0.7673 0.9116 L0.7537 0.9140 L0.7397 0.9151 L0.7255 0.9152 L0.7112 0.9145 L0.6970 0.9131 L0.6831 0.9112 L0.6695 0.9092 L0.6563 0.9073 L0.6436 0.9056 L0.6314 0.9045 L0.6197 0.9041 L0.6084 0.9046 L0.5975 0.9060 L0.5868 0.9085 L0.5764 0.9121 L0.5660 0.9167 L0.5556 0.9223 L0.5451 0.9287 L0.5343 0.9358 L0.5232 0.9433 L0.5118 0.9510 L0.5000 0.9587 L0.4878 0.9661 L0.4752 0.9729 L0.4623 0.9788 L0.4492 0.9837 L0.4359 0.9873 L0.4225 0.9894 L0.4092 0.9900 L0.3961 0.9889 L0.3833 0.9861 L0.3710 0.9816 L0.3591 0.9756 L0.3479 0.9680 L0.3374 0.9592 L0.3276 0.9492 L0.3184 0.9384 L0.3099 0.9269 L0.3021 0.9150 L0.2947 0.9030 L0.2877 0.8910 L0.2810 0.8794 L0.2743 0.8683 L0.2676 0.8578 L0.2607 0.8481 L0.2535 0.8393 L0.2457 0.8315 L0.2373 0.8244 L0.2282 0.8183 L0.2183 0.8129 L0.2077 0.8081 L0.1963 0.8037 L0.1842 0.7997 L0.1716 0.7957 L0.1585 0.7917 L0.1452 0.7873 L0.1318 0.7825 L0.1186 0.7771 L0.1057 0.7710 L0.0935 0.7640 L0.0821 0.7561 L0.0718 0.7472 L0.0627 0.7374 L0.0549 0.7268 L0.0487 0.7152 L0.0441 0.7030 L0.0410 0.6901 L0.0394 0.6768 L0.0394 0.6631 L0.0407 0.6492 L0.0431 0.6353 L0.0466 0.6215 L0.0508 0.6078 L0.0555 0.5945 L0.0605 0.5815 L0.0654 0.5688 L0.0701 0.5566 L0.0743 0.5447 L0.0778 0.5332 L0.0804 0.5220 L0.0820 0.5109 L0.0826 0.5000 L0.0820 0.4891 L0.0804 0.4780 L0.0778 0.4668 L0.0743 0.4553 L0.0701 0.4434 L0.0654 0.4312 L0.0605 0.4185 L0.0555 0.4055 L0.0508 0.3922 L0.0466 0.3785 L0.0431 0.3647 L0.0407 0.3508 L0.0394 0.3369 L0.0394 0.3232 L0.0410 0.3099 L0.0441 0.2970 L0.0487 0.2848 L0.0549 0.2732 L0.0627 0.2626 L0.0718 0.2528 L0.0821 0.2439 L0.0935 0.2360 L0.1057 0.2290 L0.1186 0.2229 L0.1318 0.2175 L0.1452 0.2127 L0.1585 0.2083 L0.1716 0.2043 L0.1842 0.2003 L0.1963 0.1963 L0.2077 0.1919 L0.2183 0.1871 L0.2282 0.1817 L0.2373 0.1756 L0.2457 0.1685 L0.2535 0.1607 L0.2607 0.1519 L0.2676 0.1422 L0.2743 0.1317 L0.2810 0.1206 L0.2877 0.1090 L0.2947 0.0970 L0.3021 0.0850 L0.3099 0.0731 L0.3184 0.0616 L0.3276 0.0508 L0.3374 0.0408 L0.3479 0.0320 L0.3591 0.0244 L0.3710 0.0184 L0.3833 0.0139 L0.3961 0.0111 L0.4092 0.0100 L0.4225 0.0106 L0.4359 0.0127 L0.4492 0.0163 L0.4623 0.0212 L0.4752 0.0271 L0.4878 0.0339 L0.5000 0.0413 L0.5118 0.0490 L0.5232 0.0567 L0.5343 0.0642 L0.5451 0.0713 L0.5556 0.0777 L0.5660 0.0833 L0.5764 0.0879 L0.5868 0.0915 L0.5975 0.0940 L0.6084 0.0954 L0.6197 0.0959 L0.6314 0.0955 L0.6436 0.0944 L0.6563 0.0927 L0.6695 0.0908 L0.6831 0.0888 L0.6970 0.0869 L0.7112 0.0855 L0.7255 0.0848 L0.7397 0.0849 L0.7537 0.0860 L0.7673 0.0884 L0.7804 0.0921 L0.7927 0.0971 L0.8042 0.1036 L0.8146 0.1115 L0.8240 0.1207 L0.8322 0.1311 L0.8392 0.1426 L0.8450 0.1550 L0.8497 0.1681 L0.8534 0.1818 L0.8561 0.1958 L0.8582 0.2100 L0.8596 0.2240 L0.8608 0.2379 L0.8618 0.2513 L0.8629 0.2643 L0.8644 0.2767 L0.8663 0.2885 L0.8689 0.2997 L0.8724 0.3103 L0.8768 0.3203 L0.8822 0.3298 L0.8886 0.3391 L0.8959 0.3480 L0.9042 0.3569 L0.9132 0.3657 L0.9228 0.3748 L0.9328 0.3840 L0.9429 0.3937 L0.9529 0.4037 L0.9626 0.4143 L0.9716 0.4253 L0.9797 0.4368 L0.9867 0.4488 L0.9924 0.4612 L0.9966 0.4740 L0.9991 0.4869Z"/></clipPath><clipPath id="c6" clipPathUnits="objectBoundingBox"><path d="M1.0000 0.5000 L0.9993 0.5131 L0.9971 0.5261 L0.9935 0.5388 L0.9886 0.5514 L0.9825 0.5635 L0.9753 0.5753 L0.9672 0.5866 L0.9584 0.5974 L0.9489 0.6078 L0.9391 0.6176 L0.9290 0.6271 L0.9189 0.6361 L0.9090 0.6448 L0.8994 0.6533 L0.8903 0.6616 L0.8817 0.6699 L0.8737 0.6783 L0.8665 0.6867 L0.8600 0.6955 L0.8543 0.7045 L0.8493 0.7140 L0.8450 0.7240 L0.8412 0.7345 L0.8380 0.7456 L0.8351 0.7571 L0.8325 0.7692 L0.8299 0.7818 L0.8274 0.7948 L0.8246 0.8080 L0.8214 0.8214 L0.8178 0.8349 L0.8135 0.8482 L0.8086 0.8613 L0.8029 0.8740 L0.7963 0.8861 L0.7888 0.8975 L0.7804 0.9080 L0.7711 0.9175 L0.7610 0.9258 L0.7500 0.9330 L0.7383 0.9389 L0.7260 0.9435 L0.7131 0.9468 L0.6998 0.9488 L0.6862 0.9496 L0.6725 0.9493 L0.6586 0.9479 L0.6448 0.9457 L0.6311 0.9426 L0.6176 0.9391 L0.6045 0.9351 L0.5916 0.9309 L0.5791 0.9266 L0.5669 0.9226 L0.5551 0.9188 L0.5437 0.9155 L0.5325 0.9128 L0.5215 0.9108 L0.5107 0.9095 L0.5000 0.9091 L0.4893 0.9095 L0.4785 0.9108 L0.4675 0.9128 L0.4563 0.9155 L0.4449 0.9188 L0.4331 0.9226 L0.4209 0.9266 L0.4084 0.9309 L0.3955 0.9351 L0.3824 0.9391 L0.3689 0.9426 L0.3552 0.9457 L0.3414 0.9479 L0.3275 0.9493 L0.3138 0.9496 L0.3002 0.9488 L0.2869 0.9468 L0.2740 0.9435 L0.2617 0.9389 L0.2500 0.9330 L0.2390 0.9258 L0.2289 0.9175 L0.2196 0.9080 L0.2112 0.8975 L0.2037 0.8861 L0.1971 0.8740 L0.1914 0.8613 L0.1865 0.8482 L0.1822 0.8349 L0.1786 0.8214 L0.1754 0.8080 L0.1726 0.7948 L0.1701 0.7818 L0.1675 0.7692 L0.1649 0.7571 L0.1620 0.7456 L0.1588 0.7345 L0.1550 0.7240 L0.1507 0.7140 L0.1457 0.7045 L0.1400 0.6955 L0.1335 0.6867 L0.1263 0.6783 L0.1183 0.6699 L0.1097 0.6616 L0.1006 0.6533 L0.0910 0.6448 L0.0811 0.6361 L0.0710 0.6271 L0.0609 0.6176 L0.0511 0.6078 L0.0416 0.5974 L0.0328 0.5866 L0.0247 0.5753 L0.0175 0.5635 L0.0114 0.5514 L0.0065 0.5388 L0.0029 0.5261 L0.0007 0.5131 L0.0000 0.5000 L0.0007 0.4869 L0.0029 0.4739 L0.0065 0.4612 L0.0114 0.4486 L0.0175 0.4365 L0.0247 0.4247 L0.0328 0.4134 L0.0416 0.4026 L0.0511 0.3922 L0.0609 0.3824 L0.0710 0.3729 L0.0811 0.3639 L0.0910 0.3552 L0.1006 0.3467 L0.1097 0.3384 L0.1183 0.3301 L0.1263 0.3217 L0.1335 0.3133 L0.1400 0.3045 L0.1457 0.2955 L0.1507 0.2860 L0.1550 0.2760 L0.1588 0.2655 L0.1620 0.2544 L0.1649 0.2429 L0.1675 0.2308 L0.1701 0.2182 L0.1726 0.2052 L0.1754 0.1920 L0.1786 0.1786 L0.1822 0.1651 L0.1865 0.1518 L0.1914 0.1387 L0.1971 0.1260 L0.2037 0.1139 L0.2112 0.1025 L0.2196 0.0920 L0.2289 0.0825 L0.2390 0.0742 L0.2500 0.0670 L0.2617 0.0611 L0.2740 0.0565 L0.2869 0.0532 L0.3002 0.0512 L0.3138 0.0504 L0.3275 0.0507 L0.3414 0.0521 L0.3552 0.0543 L0.3689 0.0574 L0.3824 0.0609 L0.3955 0.0649 L0.4084 0.0691 L0.4209 0.0734 L0.4331 0.0774 L0.4449 0.0812 L0.4563 0.0845 L0.4675 0.0872 L0.4785 0.0892 L0.4893 0.0905 L0.5000 0.0909 L0.5107 0.0905 L0.5215 0.0892 L0.5325 0.0872 L0.5437 0.0845 L0.5551 0.0812 L0.5669 0.0774 L0.5791 0.0734 L0.5916 0.0691 L0.6045 0.0649 L0.6176 0.0609 L0.6311 0.0574 L0.6448 0.0543 L0.6586 0.0521 L0.6725 0.0507 L0.6862 0.0504 L0.6998 0.0512 L0.7131 0.0532 L0.7260 0.0565 L0.7383 0.0611 L0.7500 0.0670 L0.7610 0.0742 L0.7711 0.0825 L0.7804 0.0920 L0.7888 0.1025 L0.7963 0.1139 L0.8029 0.1260 L0.8086 0.1387 L0.8135 0.1518 L0.8178 0.1651 L0.8214 0.1786 L0.8246 0.1920 L0.8274 0.2052 L0.8299 0.2182 L0.8325 0.2308 L0.8351 0.2429 L0.8380 0.2544 L0.8412 0.2655 L0.8450 0.2760 L0.8493 0.2860 L0.8543 0.2955 L0.8600 0.3045 L0.8665 0.3133 L0.8737 0.3217 L0.8817 0.3301 L0.8903 0.3384 L0.8994 0.3467 L0.9090 0.3552 L0.9189 0.3639 L0.9290 0.3729 L0.9391 0.3824 L0.9489 0.3922 L0.9584 0.4026 L0.9672 0.4134 L0.9753 0.4247 L0.9825 0.4365 L0.9886 0.4486 L0.9935 0.4612 L0.9971 0.4739 L0.9993 0.4869Z"/></clipPath><clipPath id="c16" clipPathUnits="objectBoundingBox"><path d="M1.0000 0.5000 L0.9984 0.5131 L0.9937 0.5259 L0.9868 0.5383 L0.9787 0.5503 L0.9706 0.5620 L0.9636 0.5734 L0.9587 0.5850 L0.9564 0.5970 L0.9564 0.6096 L0.9585 0.6228 L0.9615 0.6367 L0.9644 0.6509 L0.9660 0.6650 L0.9654 0.6787 L0.9619 0.6913 L0.9554 0.7028 L0.9462 0.7128 L0.9351 0.7217 L0.9230 0.7297 L0.9110 0.7373 L0.9002 0.7453 L0.8913 0.7541 L0.8845 0.7643 L0.8798 0.7759 L0.8766 0.7889 L0.8741 0.8029 L0.8713 0.8171 L0.8674 0.8308 L0.8616 0.8432 L0.8536 0.8536 L0.8432 0.8616 L0.8308 0.8674 L0.8171 0.8713 L0.8029 0.8741 L0.7889 0.8766 L0.7759 0.8798 L0.7643 0.8845 L0.7541 0.8913 L0.7453 0.9002 L0.7373 0.9110 L0.7297 0.9230 L0.7217 0.9351 L0.7128 0.9462 L0.7028 0.9554 L0.6913 0.9619 L0.6787 0.9654 L0.6650 0.9660 L0.6509 0.9644 L0.6367 0.9615 L0.6228 0.9585 L0.6096 0.9564 L0.5970 0.9564 L0.5850 0.9587 L0.5734 0.9636 L0.5620 0.9706 L0.5503 0.9787 L0.5383 0.9868 L0.5259 0.9937 L0.5131 0.9984 L0.5000 1.0000 L0.4869 0.9984 L0.4741 0.9937 L0.4617 0.9868 L0.4497 0.9787 L0.4380 0.9706 L0.4266 0.9636 L0.4150 0.9587 L0.4030 0.9564 L0.3904 0.9564 L0.3772 0.9585 L0.3633 0.9615 L0.3491 0.9644 L0.3350 0.9660 L0.3213 0.9654 L0.3087 0.9619 L0.2972 0.9554 L0.2872 0.9462 L0.2783 0.9351 L0.2703 0.9230 L0.2627 0.9110 L0.2547 0.9002 L0.2459 0.8913 L0.2357 0.8845 L0.2241 0.8798 L0.2111 0.8766 L0.1971 0.8741 L0.1829 0.8713 L0.1692 0.8674 L0.1568 0.8616 L0.1464 0.8536 L0.1384 0.8432 L0.1326 0.8308 L0.1287 0.8171 L0.1259 0.8029 L0.1234 0.7889 L0.1202 0.7759 L0.1155 0.7643 L0.1087 0.7541 L0.0998 0.7453 L0.0890 0.7373 L0.0770 0.7297 L0.0649 0.7217 L0.0538 0.7128 L0.0446 0.7028 L0.0381 0.6913 L0.0346 0.6787 L0.0340 0.6650 L0.0356 0.6509 L0.0385 0.6367 L0.0415 0.6228 L0.0436 0.6096 L0.0436 0.5970 L0.0413 0.5850 L0.0364 0.5734 L0.0294 0.5620 L0.0213 0.5503 L0.0132 0.5383 L0.0063 0.5259 L0.0016 0.5131 L0.0000 0.5000 L0.0016 0.4869 L0.0063 0.4741 L0.0132 0.4617 L0.0213 0.4497 L0.0294 0.4380 L0.0364 0.4266 L0.0413 0.4150 L0.0436 0.4030 L0.0436 0.3904 L0.0415 0.3772 L0.0385 0.3633 L0.0356 0.3491 L0.0340 0.3350 L0.0346 0.3213 L0.0381 0.3087 L0.0446 0.2972 L0.0538 0.2872 L0.0649 0.2783 L0.0770 0.2703 L0.0890 0.2627 L0.0998 0.2547 L0.1087 0.2459 L0.1155 0.2357 L0.1202 0.2241 L0.1234 0.2111 L0.1259 0.1971 L0.1287 0.1829 L0.1326 0.1692 L0.1384 0.1568 L0.1464 0.1464 L0.1568 0.1384 L0.1692 0.1326 L0.1829 0.1287 L0.1971 0.1259 L0.2111 0.1234 L0.2241 0.1202 L0.2357 0.1155 L0.2459 0.1087 L0.2547 0.0998 L0.2627 0.0890 L0.2703 0.0770 L0.2783 0.0649 L0.2872 0.0538 L0.2972 0.0446 L0.3087 0.0381 L0.3213 0.0346 L0.3350 0.0340 L0.3491 0.0356 L0.3633 0.0385 L0.3772 0.0415 L0.3904 0.0436 L0.4030 0.0436 L0.4150 0.0413 L0.4266 0.0364 L0.4380 0.0294 L0.4497 0.0213 L0.4617 0.0132 L0.4741 0.0063 L0.4869 0.0016 L0.5000 0.0000 L0.5131 0.0016 L0.5259 0.0063 L0.5383 0.0132 L0.5503 0.0213 L0.5620 0.0294 L0.5734 0.0364 L0.5850 0.0413 L0.5970 0.0436 L0.6096 0.0436 L0.6228 0.0415 L0.6367 0.0385 L0.6509 0.0356 L0.6650 0.0340 L0.6787 0.0346 L0.6913 0.0381 L0.7028 0.0446 L0.7128 0.0538 L0.7217 0.0649 L0.7297 0.0770 L0.7373 0.0890 L0.7453 0.0998 L0.7541 0.1087 L0.7643 0.1155 L0.7759 0.1202 L0.7889 0.1234 L0.8029 0.1259 L0.8171 0.1287 L0.8308 0.1326 L0.8432 0.1384 L0.8536 0.1464 L0.8616 0.1568 L0.8674 0.1692 L0.8713 0.1829 L0.8741 0.1971 L0.8766 0.2111 L0.8798 0.2241 L0.8845 0.2357 L0.8913 0.2459 L0.9002 0.2547 L0.9110 0.2627 L0.9230 0.2703 L0.9351 0.2783 L0.9462 0.2872 L0.9554 0.2972 L0.9619 0.3087 L0.9654 0.3213 L0.9660 0.3350 L0.9644 0.3491 L0.9615 0.3633 L0.9585 0.3772 L0.9564 0.3904 L0.9564 0.4030 L0.9587 0.4150 L0.9636 0.4266 L0.9706 0.4380 L0.9787 0.4497 L0.9868 0.4617 L0.9937 0.4741 L0.9984 0.4869Z"/></clipPath><clipPath id="c5" clipPathUnits="objectBoundingBox"><path d="M1.0000 0.5000 L0.9994 0.5131 L0.9975 0.5261 L0.9944 0.5389 L0.9901 0.5515 L0.9847 0.5638 L0.9783 0.5758 L0.9710 0.5873 L0.9629 0.5984 L0.9540 0.6090 L0.9446 0.6191 L0.9347 0.6288 L0.9246 0.6380 L0.9142 0.6467 L0.9038 0.6550 L0.8935 0.6630 L0.8834 0.6707 L0.8735 0.6782 L0.8640 0.6855 L0.8550 0.6927 L0.8464 0.7000 L0.8384 0.7074 L0.8310 0.7150 L0.8241 0.7228 L0.8178 0.7309 L0.8120 0.7394 L0.8067 0.7484 L0.8018 0.7578 L0.7973 0.7677 L0.7930 0.7780 L0.7889 0.7889 L0.7849 0.8002 L0.7808 0.8119 L0.7766 0.8239 L0.7722 0.8362 L0.7675 0.8486 L0.7624 0.8612 L0.7568 0.8737 L0.7507 0.8860 L0.7440 0.8981 L0.7366 0.9098 L0.7286 0.9210 L0.7199 0.9315 L0.7105 0.9413 L0.7004 0.9502 L0.6898 0.9582 L0.6785 0.9651 L0.6668 0.9709 L0.6545 0.9755 L0.6419 0.9790 L0.6289 0.9812 L0.6158 0.9822 L0.6025 0.9821 L0.5891 0.9807 L0.5758 0.9783 L0.5625 0.9749 L0.5495 0.9706 L0.5366 0.9655 L0.5241 0.9597 L0.5119 0.9533 L0.5000 0.9464 L0.4885 0.9393 L0.4774 0.9320 L0.4666 0.9246 L0.4561 0.9173 L0.4460 0.9103 L0.4361 0.9035 L0.4264 0.8972 L0.4168 0.8913 L0.4073 0.8860 L0.3978 0.8812 L0.3883 0.8771 L0.3786 0.8736 L0.3687 0.8708 L0.3586 0.8685 L0.3481 0.8667 L0.3373 0.8654 L0.3261 0.8646 L0.3145 0.8640 L0.3025 0.8637 L0.2902 0.8634 L0.2775 0.8632 L0.2644 0.8628 L0.2511 0.8622 L0.2376 0.8612 L0.2240 0.8597 L0.2103 0.8577 L0.1968 0.8551 L0.1834 0.8517 L0.1703 0.8475 L0.1575 0.8425 L0.1453 0.8366 L0.1338 0.8298 L0.1229 0.8221 L0.1128 0.8135 L0.1037 0.8041 L0.0955 0.7939 L0.0883 0.7829 L0.0822 0.7713 L0.0772 0.7591 L0.0732 0.7464 L0.0703 0.7333 L0.0685 0.7199 L0.0676 0.7062 L0.0677 0.6925 L0.0686 0.6787 L0.0703 0.6650 L0.0726 0.6514 L0.0754 0.6380 L0.0787 0.6248 L0.0822 0.6120 L0.0858 0.5994 L0.0895 0.5872 L0.0931 0.5754 L0.0965 0.5639 L0.0995 0.5527 L0.1022 0.5418 L0.1043 0.5311 L0.1059 0.5207 L0.1068 0.5103 L0.1071 0.5000 L0.1068 0.4897 L0.1059 0.4793 L0.1043 0.4689 L0.1022 0.4582 L0.0995 0.4473 L0.0965 0.4361 L0.0931 0.4246 L0.0895 0.4128 L0.0858 0.4006 L0.0822 0.3880 L0.0787 0.3752 L0.0754 0.3620 L0.0726 0.3486 L0.0703 0.3350 L0.0686 0.3213 L0.0677 0.3075 L0.0676 0.2938 L0.0685 0.2801 L0.0703 0.2667 L0.0732 0.2536 L0.0772 0.2409 L0.0822 0.2287 L0.0883 0.2171 L0.0955 0.2061 L0.1037 0.1959 L0.1128 0.1865 L0.1229 0.1779 L0.1338 0.1702 L0.1453 0.1634 L0.1575 0.1575 L0.1703 0.1525 L0.1834 0.1483 L0.1968 0.1449 L0.2103 0.1423 L0.2240 0.1403 L0.2376 0.1388 L0.2511 0.1378 L0.2644 0.1372 L0.2775 0.1368 L0.2902 0.1366 L0.3025 0.1363 L0.3145 0.1360 L0.3261 0.1354 L0.3373 0.1346 L0.3481 0.1333 L0.3586 0.1315 L0.3687 0.1292 L0.3786 0.1264 L0.3883 0.1229 L0.3978 0.1188 L0.4073 0.1140 L0.4168 0.1087 L0.4264 0.1028 L0.4361 0.0965 L0.4460 0.0897 L0.4561 0.0827 L0.4666 0.0754 L0.4774 0.0680 L0.4885 0.0607 L0.5000 0.0536 L0.5119 0.0467 L0.5241 0.0403 L0.5366 0.0345 L0.5495 0.0294 L0.5625 0.0251 L0.5758 0.0217 L0.5891 0.0193 L0.6025 0.0179 L0.6158 0.0178 L0.6289 0.0188 L0.6419 0.0210 L0.6545 0.0245 L0.6668 0.0291 L0.6785 0.0349 L0.6898 0.0418 L0.7004 0.0498 L0.7105 0.0587 L0.7199 0.0685 L0.7286 0.0790 L0.7366 0.0902 L0.7440 0.1019 L0.7507 0.1140 L0.7568 0.1263 L0.7624 0.1388 L0.7675 0.1514 L0.7722 0.1638 L0.7766 0.1761 L0.7808 0.1881 L0.7849 0.1998 L0.7889 0.2111 L0.7930 0.2220 L0.7973 0.2323 L0.8018 0.2422 L0.8067 0.2516 L0.8120 0.2606 L0.8178 0.2691 L0.8241 0.2772 L0.8310 0.2850 L0.8384 0.2926 L0.8464 0.3000 L0.8550 0.3073 L0.8640 0.3145 L0.8735 0.3218 L0.8834 0.3293 L0.8935 0.3370 L0.9038 0.3450 L0.9142 0.3533 L0.9246 0.3620 L0.9347 0.3712 L0.9446 0.3809 L0.9540 0.3910 L0.9629 0.4016 L0.9710 0.4127 L0.9783 0.4242 L0.9847 0.4362 L0.9901 0.4485 L0.9944 0.4611 L0.9975 0.4739 L0.9994 0.4869Z"/></clipPath><clipPath id="c8" clipPathUnits="objectBoundingBox"><path d="M1.0000 0.5000 L0.9990 0.5131 L0.9961 0.5260 L0.9914 0.5387 L0.9851 0.5510 L0.9774 0.5628 L0.9686 0.5742 L0.9590 0.5851 L0.9491 0.5955 L0.9390 0.6054 L0.9293 0.6150 L0.9201 0.6244 L0.9118 0.6338 L0.9045 0.6432 L0.8984 0.6529 L0.8935 0.6630 L0.8898 0.6736 L0.8873 0.6847 L0.8858 0.6966 L0.8851 0.7091 L0.8849 0.7222 L0.8850 0.7359 L0.8850 0.7500 L0.8847 0.7644 L0.8838 0.7789 L0.8820 0.7931 L0.8790 0.8069 L0.8748 0.8201 L0.8692 0.8324 L0.8621 0.8436 L0.8536 0.8536 L0.8436 0.8621 L0.8324 0.8692 L0.8201 0.8748 L0.8069 0.8790 L0.7931 0.8820 L0.7789 0.8838 L0.7644 0.8847 L0.7500 0.8850 L0.7359 0.8850 L0.7222 0.8849 L0.7091 0.8851 L0.6966 0.8858 L0.6847 0.8873 L0.6736 0.8898 L0.6630 0.8935 L0.6529 0.8984 L0.6432 0.9045 L0.6338 0.9118 L0.6244 0.9201 L0.6150 0.9293 L0.6054 0.9390 L0.5955 0.9491 L0.5851 0.9590 L0.5742 0.9686 L0.5628 0.9774 L0.5510 0.9851 L0.5387 0.9914 L0.5260 0.9961 L0.5131 0.9990 L0.5000 1.0000 L0.4869 0.9990 L0.4740 0.9961 L0.4613 0.9914 L0.4490 0.9851 L0.4372 0.9774 L0.4258 0.9686 L0.4149 0.9590 L0.4045 0.9491 L0.3946 0.9390 L0.3850 0.9293 L0.3756 0.9201 L0.3662 0.9118 L0.3568 0.9045 L0.3471 0.8984 L0.3370 0.8935 L0.3264 0.8898 L0.3153 0.8873 L0.3034 0.8858 L0.2909 0.8851 L0.2778 0.8849 L0.2641 0.8850 L0.2500 0.8850 L0.2356 0.8847 L0.2211 0.8838 L0.2069 0.8820 L0.1931 0.8790 L0.1799 0.8748 L0.1676 0.8692 L0.1564 0.8621 L0.1464 0.8536 L0.1379 0.8436 L0.1308 0.8324 L0.1252 0.8201 L0.1210 0.8069 L0.1180 0.7931 L0.1162 0.7789 L0.1153 0.7644 L0.1150 0.7500 L0.1150 0.7359 L0.1151 0.7222 L0.1149 0.7091 L0.1142 0.6966 L0.1127 0.6847 L0.1102 0.6736 L0.1065 0.6630 L0.1016 0.6529 L0.0955 0.6432 L0.0882 0.6338 L0.0799 0.6244 L0.0707 0.6150 L0.0610 0.6054 L0.0509 0.5955 L0.0410 0.5851 L0.0314 0.5742 L0.0226 0.5628 L0.0149 0.5510 L0.0086 0.5387 L0.0039 0.5260 L0.0010 0.5131 L0.0000 0.5000 L0.0010 0.4869 L0.0039 0.4740 L0.0086 0.4613 L0.0149 0.4490 L0.0226 0.4372 L0.0314 0.4258 L0.0410 0.4149 L0.0509 0.4045 L0.0610 0.3946 L0.0707 0.3850 L0.0799 0.3756 L0.0882 0.3662 L0.0955 0.3568 L0.1016 0.3471 L0.1065 0.3370 L0.1102 0.3264 L0.1127 0.3153 L0.1142 0.3034 L0.1149 0.2909 L0.1151 0.2778 L0.1150 0.2641 L0.1150 0.2500 L0.1153 0.2356 L0.1162 0.2211 L0.1180 0.2069 L0.1210 0.1931 L0.1252 0.1799 L0.1308 0.1676 L0.1379 0.1564 L0.1464 0.1464 L0.1564 0.1379 L0.1676 0.1308 L0.1799 0.1252 L0.1931 0.1210 L0.2069 0.1180 L0.2211 0.1162 L0.2356 0.1153 L0.2500 0.1150 L0.2641 0.1150 L0.2778 0.1151 L0.2909 0.1149 L0.3034 0.1142 L0.3153 0.1127 L0.3264 0.1102 L0.3370 0.1065 L0.3471 0.1016 L0.3568 0.0955 L0.3662 0.0882 L0.3756 0.0799 L0.3850 0.0707 L0.3946 0.0610 L0.4045 0.0509 L0.4149 0.0410 L0.4258 0.0314 L0.4372 0.0226 L0.4490 0.0149 L0.4613 0.0086 L0.4740 0.0039 L0.4869 0.0010 L0.5000 0.0000 L0.5131 0.0010 L0.5260 0.0039 L0.5387 0.0086 L0.5510 0.0149 L0.5628 0.0226 L0.5742 0.0314 L0.5851 0.0410 L0.5955 0.0509 L0.6054 0.0610 L0.6150 0.0707 L0.6244 0.0799 L0.6338 0.0882 L0.6432 0.0955 L0.6529 0.1016 L0.6630 0.1065 L0.6736 0.1102 L0.6847 0.1127 L0.6966 0.1142 L0.7091 0.1149 L0.7222 0.1151 L0.7359 0.1150 L0.7500 0.1150 L0.7644 0.1153 L0.7789 0.1162 L0.7931 0.1180 L0.8069 0.1210 L0.8201 0.1252 L0.8324 0.1308 L0.8436 0.1379 L0.8536 0.1464 L0.8621 0.1564 L0.8692 0.1676 L0.8748 0.1799 L0.8790 0.1931 L0.8820 0.2069 L0.8838 0.2211 L0.8847 0.2356 L0.8850 0.2500 L0.8850 0.2641 L0.8849 0.2778 L0.8851 0.2909 L0.8858 0.3034 L0.8873 0.3153 L0.8898 0.3264 L0.8935 0.3370 L0.8984 0.3471 L0.9045 0.3568 L0.9118 0.3662 L0.9201 0.3756 L0.9293 0.3850 L0.9390 0.3946 L0.9491 0.4045 L0.9590 0.4149 L0.9686 0.4258 L0.9774 0.4372 L0.9851 0.4490 L0.9914 0.4613 L0.9961 0.4740 L0.9990 0.4869Z"/></clipPath></defs></svg><svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></symbol><symbol id="i-calx" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18M10 13.5l4 4m0-4l-4 4"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="3"/><path d="M8 11V8a4 4 0 018 0v3"/><circle cx="12" cy="16" r="1" fill="currentColor"/></symbol><symbol id="i-wifioff" viewBox="0 0 24 24"><path d="M2 8.8a15 15 0 0112-3.8M5.5 12.5a10 10 0 015-2.6M9 16.2a5 5 0 013-1.2M3 3l18 18"/><circle cx="12" cy="19.5" r=".8" fill="currentColor"/></symbol><symbol id="i-vib" viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="18" rx="2"/><path d="M4 8v8M20 8v8M1.5 10.5v3M22.5 10.5v3"/></symbol><symbol id="i-sync" viewBox="0 0 24 24"><path d="M20 11a8 8 0 00-14.5-4M4 4v4h4M4 13a8 8 0 0014.5 4M20 20v-4h-4"/></symbol><symbol id="i-theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 010 18z" fill="currentColor"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v13M6 12l6 6 6-6M5 21h14"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol><symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 010 11H11"/></symbol><symbol id="i-clip" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1.5"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2M9 14l2 2 4-4"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1a6 6 0 016-6h2a6 6 0 016 6v1M17 4.5a4 4 0 010 7M22 21v-1a6 6 0 00-4-5.6"/></symbol><symbol id="i-tablet" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M12 17h.01"/></symbol><symbol id="i-phone" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></symbol><symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 16l.8 2.200L22 19l-2.2.8L19 22l-.8-2.200L16 19l2.2-.8z"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2.2 2.200L15.5 10"/></symbol><symbol id="i-ext" viewBox="0 0 24 24"><path d="M7 17L17 7M8 7h9v9"/></symbol><symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol><symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.900l1.4 1.400M17.7 17.700l1.4 1.400M2 12h2M20 12h2M4.9 19.100l1.4-1.400M17.7 6.300l1.4-1.4"/></symbol><symbol id="i-dice" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/><circle cx="9" cy="15" r="1" fill="currentColor"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol><symbol id="i-gh" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></symbol><symbol id="i-apple" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></symbol><symbol id="i-android" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 1.23 12.95 1 12 1c-.96 0-1.86.23-2.66.63L7.85.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.97 3.26 6 5.01 6 7h12c0-1.99-.97-3.75-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></symbol></defs></svg>
-
-<header class="appbar" data-scroll-bar>
-  <a class="brand" href="#top" aria-label="Journal — наверх"><img src="../assets/icon-192.png" data-theme-icon alt="" width="38" height="38">Journal</a>
-  <button class="ibtn" type="button" data-cycle-mode aria-label="Сменить тему страницы: авто, светлая, тёмная"><svg class="i" aria-hidden="true"><use href="#i-theme"/></svg></button>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></symbol>
+<symbol id="i-calx" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18M10 13.5l4 4m0-4l-4 4"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="3"/><path d="M8 11V8a4 4 0 018 0v3"/><circle cx="12" cy="16" r="1" fill="currentColor"/></symbol>
+<symbol id="i-wifioff" viewBox="0 0 24 24"><path d="M2 8.8a15 15 0 0112-3.8M5.5 12.5a10 10 0 015-2.6M9 16.2a5 5 0 013-1.2M3 3l18 18"/><circle cx="12" cy="19.5" r=".8" fill="currentColor"/></symbol>
+<symbol id="i-vib" viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="18" rx="2"/><path d="M4 8v8M20 8v8M1.5 10.5v3M22.5 10.5v3"/></symbol>
+<symbol id="i-sync" viewBox="0 0 24 24"><path d="M20 11a8 8 0 00-14.5-4M4 4v4h4M4 13a8 8 0 0014.5 4M20 20v-4h-4"/></symbol>
+<symbol id="i-theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 010 18z" fill="currentColor"/></symbol>
+<symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 004-4c0-4-4-8-9-8z"/><circle cx="7.5" cy="11" r="1" fill="currentColor"/><circle cx="10.5" cy="7.5" r="1" fill="currentColor"/><circle cx="15" cy="7.5" r="1" fill="currentColor"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"/></symbol>
+<symbol id="i-apps" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="3"/><path d="M11 18.5h2"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-5 4 4 3-3 5 5"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.8.6-1.5 1-1.5 2M12 17h.01"/></symbol>
+<symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+<symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></symbol>
+<symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9 9 9 0 00-7 3.4M3 4v4h4M12 7v5l3 2"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5C6 4.5 9 4.5 12 6c3-1.5 6-1.5 8-.5V19c-2-1-5-1-8 .5-3-1.5-6-1.5-8-.5zM12 6v13.5"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></symbol>
+<symbol id="i-gh" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></symbol>
+<symbol id="i-apple" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></symbol>
+<symbol id="i-android" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 1.23 12.95 1 12 1c-.96 0-1.86.23-2.66.63L7.85.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.97 3.26 6 5.01 6 7h12c0-1.99-.97-3.75-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5zM6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5M22 9v6"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M16 4.8a3.5 3.5 0 010 6.4M18 14.8c1.9.7 3.2 2.3 3.5 5.2"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="3"/><path d="M5 15V6a2 2 0 012-2h9"/></symbol>
+<symbol id="i-tablet" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M11 17h2"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="i-swipe" viewBox="0 0 24 24"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3A4 4 0 0011 18.7l1-1"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5zM6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5M22 9v6"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M16 4.8a3.5 3.5 0 010 6.4M18 14.8c1.9.7 3.2 2.3 3.5 5.2"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="3"/><path d="M5 15V6a2 2 0 012-2h9"/></symbol>
+<symbol id="i-tablet" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M11 17h2"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="i-swipe" viewBox="0 0 24 24"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3A4 4 0 0011 18.7l1-1"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5zM6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5M22 9v6"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M16 4.8a3.5 3.5 0 010 6.4M18 14.8c1.9.7 3.2 2.3 3.5 5.2"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="3"/><path d="M5 15V6a2 2 0 012-2h9"/></symbol>
+<symbol id="i-tablet" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M11 17h2"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="i-swipe" viewBox="0 0 24 24"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3A4 4 0 0011 18.7l1-1"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5zM6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5M22 9v6"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M16 4.8a3.5 3.5 0 010 6.4M18 14.8c1.9.7 3.2 2.3 3.5 5.2"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="3"/><path d="M5 15V6a2 2 0 012-2h9"/></symbol>
+<symbol id="i-tablet" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M11 17h2"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="i-swipe" viewBox="0 0 24 24"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3A4 4 0 0011 18.7l1-1"/></symbol>
+</defs></svg>
+<header class="topbar">
+  <a class="brand" href="#top" aria-label="Journal — наверх"><img src="../assets/icon-192.png" alt="" width="40" height="40">Journal</a>
+  <span class="secpill" data-sec aria-live="polite" hidden></span>
+  <button class="iconbtn tonal" type="button" data-menu-btn aria-haspopup="true" aria-expanded="false" aria-label="Оформление и цвет"><svg class="i "><use href="#i-palette"/></svg></button>
+  <i class="prog" aria-hidden="true"></i>
 </header>
-
-<main id="top">
-<section class="hero pad">
-  <span class="pill"><b><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg></b>МГТЭК · Дневник</span>
-  <h1>Расписание, оценки и пропуски — <em>в одном месте</em></h1>
-  <p class="lead">Пары вашей группы на любую дату, средний балл и лимит пропусков. Быстро, красиво и даже без интернета.</p>
-  <div class="stores" id="heroActions"><a class="store and" href="https://github.com/eugggeneee/journal/releases/latest" data-dl="android"><svg class="i " aria-hidden="true"><use href="#i-android"/></svg><span><small>Скачать для</small><strong>Android</strong></span></a><a class="store ios" href="https://github.com/eugggeneee/journal/releases/latest" data-dl="ios"><svg class="i " aria-hidden="true"><use href="#i-apple"/></svg><span><small>Скачать для</small><strong>iPhone</strong></span></a></div>
-  <p class="ver">Версия <b data-version>…</b> · бесплатно · без рекламы</p>
-  <div class="facts">
-    <span><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg>Данные на устройстве</span>
-    <span><svg class="i" aria-hidden="true"><use href="#i-wifioff"/></svg>Офлайн</span>
-    <span><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg>Отмена действий</span>
+<div class="menu" id="menu" role="dialog" aria-label="Оформление страницы"><h3>Тема</h3><div data-theme-seg></div><h3>Цвет</h3><div data-swatches></div></div>
+<main>
+<section class="hero" id="top">
+  <div class="hero-top rise" style="--d:0"><span class="badge"><b><svg class="i "><use href="#i-cal"/></svg></b>МГТЭК · Дневник</span><a class="chip ver" href="#release" data-ver hidden><svg class="i "><use href="#i-bolt"/></svg><b></b><span>— что нового</span></a></div>
+  <h1 class="display rise" style="--d:1">Расписание, оценки и пропуски — в одном месте</h1>
+  <p class="lead rise" style="--d:2">Пары группы на любую дату, средний балл и учёт пропусков. Всё под рукой, даже без интернета.</p>
+  <div class="stores rise" style="--d:3"><a class="store ios" data-dl="ios" href="https://github.com/eugggeneee/journal/releases/latest"><svg class="i "><use href="#i-apple"/></svg><span><small>Скачать для</small><strong>iOS</strong></span></a><a class="store and" data-dl="android" href="https://github.com/eugggeneee/journal/releases/latest"><svg class="i "><use href="#i-android"/></svg><span><small>Скачать для</small><strong>Android</strong></span></a></div>
+  <ul class="facts rise" style="--d:4"><li class="chip"><svg class="i "><use href="#i-lock"/></svg>Без аккаунтов</li><li class="chip"><svg class="i "><use href="#i-wifioff"/></svg>Офлайн</li><li class="chip"><svg class="i "><use href="#i-star"/></svg>10 баллов</li></ul>
+  <div class="hero-art"><div class="stage" data-hero>
+        <div class="art">
+          <div class="ring shape morph2" aria-hidden="true"></div>
+          <div class="blob shape morph" aria-hidden="true"></div>
+          <div class="plate" aria-hidden="true"></div>
+          <div class="ph" data-pos="0"><img src="../assets/phone-5-sm.webp" alt="Расписание Journal на день" width="500" height="1007" draggable="false"></div>
+          <div class="ph" data-pos="1"><img src="../assets/phone-7-sm.webp" alt="Оценки со средним баллом 8,08" width="500" height="1007" draggable="false"></div>
+          <div class="ph" data-pos="-1"><img src="../assets/phone-6-sm.webp" alt="Пропуски и лимит часов" width="500" height="1007" draggable="false"></div>
+          <div class="stk a" data-loop aria-hidden="true"><svg class="i "><use href="#i-cal"/></svg></div>
+          <div class="stk p" data-loop aria-hidden="true"><svg class="i "><use href="#i-wifioff"/></svg>Офлайн</div>
+          <div class="stk b" data-loop aria-hidden="true"><span>8,08<small>средний балл</small></span></div>
+          <div class="stk c" data-loop aria-hidden="true"><svg class="i "><use href="#i-calx"/></svg></div>
+          <div class="spark s1" aria-hidden="true"></div><div class="spark s2" aria-hidden="true"></div><div class="spark s3" aria-hidden="true"></div>
+        </div>
+      </div>
+      <div class="hero-ctl">
+        <button class="iconbtn tonal" type="button" data-hprev aria-label="Предыдущий экран"><svg class="i "><use href="#i-left"/></svg></button>
+        <div class="seg" role="group" aria-label="Экраны приложения">
+          <button type="button" data-hs aria-pressed="true"><svg class="i "><use href="#i-check"/></svg>Расписание</button>
+          <button type="button" data-hs aria-pressed="false"><svg class="i "><use href="#i-check"/></svg>Оценки</button>
+          <button type="button" data-hs aria-pressed="false"><svg class="i "><use href="#i-check"/></svg>Пропуски</button>
+        </div>
+        <button class="iconbtn tonal" type="button" data-hnext aria-label="Следующий экран"><svg class="i "><use href="#i-right"/></svg></button>
+      </div></div>
+</section>
+<div class="marquee" aria-hidden="true"><div class="track"><span>Расписание</span><span>Оценки</span><span>Пропуски</span><span>Без интернета</span><span>20 цветов</span><span>Без рекламы</span><span>Расписание</span><span>Оценки</span><span>Пропуски</span><span>Без интернета</span><span>20 цветов</span><span>Без рекламы</span></div></div>
+<section class="sec" id="features" style="padding-bottom:0">
+  <div class="pad"><h2 class="headline">Три вещи, ради которых открывают дневник</h2><p class="lead">Каждое со своим цветом, как в приложении. Выбирайте вкладку или проведите по карточке — виджеты рабочие.</p></div>
+  <div class="showcase" data-showcase><div class="sc-tabs" role="tablist" aria-label="Возможности"><button type="button" class="sc-tab w-sched" role="tab" id="sc-t0" aria-controls="sc-p0" aria-selected="true" tabindex="0"><span class="ic"><svg class="i"><use href="#i-cal"/></svg></span><span class="lb"><small>01</small>Расписание</span><i class="bar" aria-hidden="true"></i></button><button type="button" class="sc-tab w-grades" role="tab" id="sc-t1" aria-controls="sc-p1" aria-selected="false" tabindex="-1"><span class="ic"><svg class="i"><use href="#i-star"/></svg></span><span class="lb"><small>02</small>Оценки</span><i class="bar" aria-hidden="true"></i></button><button type="button" class="sc-tab w-abs" role="tab" id="sc-t2" aria-controls="sc-p2" aria-selected="false" tabindex="-1"><span class="ic"><svg class="i"><use href="#i-calx"/></svg></span><span class="lb"><small>03</small>Пропуски</span><i class="bar" aria-hidden="true"></i></button></div><div class="sc-stage" data-scstage>
+<article role="tabpanel" id="sc-p0" aria-labelledby="sc-t0" class="world w-sched">
+    <div class="wshape shape sh-cookie9 s1"></div><div class="wshape shape sh-sunny12 s2"></div>
+    <span class="tag sc-i" style="--k:0"><b><svg class="i "><use href="#i-cal"/></svg></b>Расписание</span>
+    <h2 class="headline sc-i" style="--k:1">Любой день — под рукой</h2>
+    <p class="t sc-i" style="--k:2">Пары вашей группы на любую дату: листайте дни свайпом или выберите дату в календаре.</p>
+    <ul class="pts sc-i" style="--k:3"><li><svg class="i "><use href="#i-check"/></svg><span>Нажмите на пару — предмет, аудитория, преподаватель</span></li><li><svg class="i "><use href="#i-check"/></svg><span>Загруженные дни открываются без интернета</span></li><li><svg class="i "><use href="#i-check"/></svg><span>Подгруппы: все предметы и аудитории в одной паре</span></li></ul>
+    <div class="widget sc-i" style="--k:4" role="group" aria-label="Пример: выбор дня">
+  <div class="week" id="week">
+    <button type="button" aria-pressed="false" data-d="Пятница, 6 ноября">Пт<b>6</b></button>
+    <button type="button" aria-pressed="false" data-d="Суббота, 7 ноября">Сб<b>7</b></button>
+    <button type="button" aria-pressed="true" data-d="Воскресенье, 8 ноября">Вс<b>8</b></button>
+    <button type="button" aria-pressed="false" data-d="Понедельник, 9 ноября">Пн<b>9</b></button>
+    <button type="button" aria-pressed="false" data-d="Вторник, 10 ноября">Вт<b>10</b></button>
   </div>
-  <div class="stage">
-    <div class="s-big cookie"></div><div class="s-b2 cookie12"></div>
-    <div class="ph left"><img src="../assets/phone-7-sm.webp" alt="Экран «Оценки»" width="480" height="978"></div>
-    <div class="ph right"><img src="../assets/phone-6-sm.webp" alt="Экран «Пропуски»" width="480" height="978"></div>
-    <div class="ph main"><img src="../assets/phone-5-lg.webp" alt="Экран «Расписание»" width="860" height="1752"></div>
-  </div>
+  <div class="wnote"><svg class="i "><use href="#i-cal"/></svg><span id="wtxt">Воскресенье, 8 ноября — выходной</span></div>
+</div>
+    <div class="shot"><img src="../assets/phone-5-sm.webp" alt="Journal: расписание" width="500" height="1007" loading="lazy"><span class="fl a"><svg class="i"><use href="#i-wifioff"/></svg>Работает офлайн</span><span class="fl b"><svg class="i"><use href="#i-cal"/></svg>Любая дата</span></div>
+  </article>
+<article role="tabpanel" id="sc-p1" aria-labelledby="sc-t1" class="world w-grades">
+    <div class="wshape shape sh-clover4 s1"></div><div class="wshape shape sh-cookie9 s2"></div>
+    <span class="tag sc-i" style="--k:0"><b><svg class="i "><use href="#i-star"/></svg></b>Оценки</span>
+    <h2 class="headline sc-i" style="--k:1">Средний балл всегда на виду</h2>
+    <p class="t sc-i" style="--k:2">Записывайте оценки по 10-балльной шкале и смотрите, как меняется средний балл.</p>
+    <ul class="pts sc-i" style="--k:3"><li><svg class="i "><use href="#i-check"/></svg><span>Тип работы, дата и заметка к каждой оценке</span></li><li><svg class="i "><use href="#i-check"/></svg><span>Средний балл общий и по каждому предмету</span></li><li><svg class="i "><use href="#i-check"/></svg><span>«Ещё одну» — вносите оценки серией</span></li></ul>
+    <div class="widget sc-i" style="--k:4" role="group" aria-label="Пример: гистограмма оценок">
+  <div class="avg"><b id="avg">8,00</b><span id="avgn">3 оценки</span></div>
+  <div class="hist" id="hist"></div>
+  <p class="hint">Нажмите на цифру — оценка добавится</p>
+</div>
+    <div class="shot"><img src="../assets/phone-7-sm.webp" alt="Journal: оценки" width="500" height="1007" loading="lazy"><span class="fl a"><b>8,08</b><small>средний балл</small></span><span class="fl b"><svg class="i"><use href="#i-star"/></svg>10-балльная шкала</span></div>
+  </article>
+<article role="tabpanel" id="sc-p2" aria-labelledby="sc-t2" class="world w-abs">
+    <div class="wshape shape sh-flower6 s1"></div><div class="wshape shape sh-petal5 s2"></div>
+    <span class="tag sc-i" style="--k:0"><b><svg class="i "><use href="#i-calx"/></svg></b>Пропуски</span>
+    <h2 class="headline sc-i" style="--k:1">Пропуск — одно касание</h2>
+    <p class="t sc-i" style="--k:2">Отмечайте пропуски прямо на паре или сразу за весь день и следите за часами.</p>
+    <ul class="pts sc-i" style="--k:3"><li><svg class="i "><use href="#i-check"/></svg><span>Без уважительной и по уважительной — отдельно</span></li><li><svg class="i "><use href="#i-check"/></svg><span>Счётчик лимита предупредит заранее</span></li><li><svg class="i "><use href="#i-check"/></svg><span>Свайп вправо меняет причину, влево — удаляет</span></li></ul>
+    <div class="widget sc-i" style="--k:4">
+  <button class="abs" id="abs" type="button" aria-pressed="true">
+    <span class="n">2</span><span class="tx">Математика<small>1 пара · 2 часа</small></span>
+    <span class="mk"><svg class="i "><use href="#i-calx"/></svg></span>
+  </button>
+  <div class="tot"><span>Всего пропущено</span><b id="tot">2 часа</b></div>
+</div>
+    <div class="shot"><img src="../assets/phone-6-sm.webp" alt="Journal: пропуски" width="500" height="1007" loading="lazy"><span class="fl a"><svg class="i"><use href="#i-calx"/></svg>2 часа</span><span class="fl b"><svg class="i"><use href="#i-bolt"/></svg>Счётчик лимита</span></div>
+  </article>
+</div></div>
 </section>
 
-<section class="stats" aria-label="Коротко о Journal">
-  <div class="stat rv"><i class="sh cookie"></i><b>20</b><span>цветовых тем и значков</span></div>
-  <div class="stat rv"><i class="sh cookie12"></i><b>1 тап</b><span>чтобы отметить пропуск</span></div>
-  <div class="stat rv"><i class="sh cookie7"></i><b>400</b><span>дней расписания офлайн</span></div>
-  <div class="stat rv"><i class="sh cookie6"></i><b>0 ₽</b><span>без рекламы и аккаунтов</span></div>
-</section>
-
-<section class="worlds" id="features" aria-label="Возможности">
-  <article class="world w-sched rv">
-    <div class="in">
-      <div class="copy">
-        <span class="tag"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg>Расписание</span>
-        <h2>Любой день — под рукой</h2>
-        <p class="t">Пары вашей группы с сайта колледжа на любую дату. Листайте дни свайпом, возвращайтесь к сегодняшнему одной кнопкой.</p>
-        <ul class="checks">
-          <li><i><svg class="i"><use href="#i-check"/></svg></i>Уже загруженные дни открываются без интернета</li>
-          <li><i><svg class="i"><use href="#i-check"/></svg></i>Подгруппы: несколько предметов и аудиторий в одной паре</li>
-          <li><i><svg class="i"><use href="#i-check"/></svg></i>Нажали на пару — предмет, аудитория, преподаватель, пропуск и оценка</li>
+<section class="sec" id="more">
+  <div class="in">
+    <div class="sec-head"><h2 class="headline">Мелочи, которые решают</h2><p class="lead">Ничего лишнего: только то, что экономит время на перемене и перед сессией. Плитки ниже — рабочие, нажимайте.</p></div>
+    <div class="bento">
+      <article class="tile c5 w-abs t-limit" data-limit>
+        <div class="wshape shape sh-flower6" style="width:260px;right:-90px;top:-100px;background:var(--w-shape)"></div>
+        <div class="lim-row">
+          <div class="ring-w"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="rb" cx="60" cy="60" r="50"/><circle class="rf" id="lim-arc" cx="60" cy="60" r="50"/></svg><div class="c"><b id="lim-n">7</b><small>из 10</small></div></div>
+          <div class="lim-txt"><h3>Лимит пропусков под контролем</h3><p id="lim-txt">Осталось 3 часа до лимита</p></div>
+        </div>
+        <div class="stepper" role="group" aria-label="Часы без уважительной причины"><button class="iconbtn on-tile" type="button" data-lim="-1" aria-label="Убрать час"><svg class="i "><use href="#i-minus"/></svg></button><span>часов без уважительной</span><button class="iconbtn on-tile" type="button" data-lim="1" aria-label="Добавить час"><svg class="i "><use href="#i-plus"/></svg></button></div>
+      </article>
+      <article class="tile c7 t-undo">
+        <h3>Ошиблись? Нажмите «Отменить»</h3>
+        <p>Любое добавление, правка и удаление отменяется. Подтверждающих окон нет — поэтому всё делается быстро.</p>
+        <ul class="ulist" id="undo-list">
+          <li><span class="g" style="background:#9bdd9e;color:#00531d">9</span><span class="nm">Математика</span><button type="button" aria-label="Удалить оценку: Математика"><svg class="i "><use href="#i-trash"/></svg></button></li>
+          <li><span class="g" style="background:#e8e07a;color:#3a3500">7</span><span class="nm">Английский язык</span><button type="button" aria-label="Удалить оценку: Английский язык"><svg class="i "><use href="#i-trash"/></svg></button></li>
+          <li><span class="g" style="background:#9bdd9e;color:#00531d">8</span><span class="nm">Базы данных</span><button type="button" aria-label="Удалить оценку: Базы данных"><svg class="i "><use href="#i-trash"/></svg></button></li>
         </ul>
-        <div class="wg" role="group" aria-label="Пример: выбор дня недели">
-          <div class="week" id="week">
-            <button type="button" data-day="5" aria-pressed="false">Чт<b>5</b></button>
-            <button type="button" data-day="6" aria-pressed="false">Пт<b>6</b></button>
-            <button type="button" data-day="7" aria-pressed="false">Сб<b>7</b></button>
-            <button type="button" data-day="8" aria-pressed="true">Вс<b>8</b></button>
-            <button type="button" data-day="9" aria-pressed="false">Пн<b>9</b></button>
-            <button type="button" data-day="10" aria-pressed="false">Вт<b>10</b></button>
-            <button type="button" data-day="11" aria-pressed="false">Ср<b>11</b></button>
-          </div>
-          <div class="wlabel"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg><span id="wtxt">Воскресенье, 8 ноября · выходной</span></div>
-          <ul id="wlist" aria-live="polite"></ul>
-        </div>
-      </div>
-      <div class="shot">
-        <div class="bl cookie"></div><div class="bl b2 cookie12"></div>
-        <img src="../assets/phone-5-lg.webp" alt="Экран расписания в приложении" loading="lazy" decoding="async" width="860" height="1752">
-      </div>
-    </div>
-  </article>
-
-  <article class="world w-grades flip rv">
-    <div class="in">
-      <div class="copy">
-        <span class="tag"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>Оценки</span>
-        <h2>Средний балл всегда на виду</h2>
-        <p class="t">Записывайте оценки по 10-балльной шкале — с типом работы, датой и заметкой. Средний балл и распределение считаются сами.</p>
-        <ul class="checks">
-          <li><i><svg class="i"><use href="#i-check"/></svg></i>Предмет из расписания дня или любой другой, можно добавить свой</li>
-          <li><i><svg class="i"><use href="#i-check"/></svg></i>«Ещё одну» — быстрый ввод серии оценок подряд</li>
-          <li><i><svg class="i"><use href="#i-check"/></svg></i>Средний балл по каждому предмету, минимум и максимум</li>
-        </ul>
-        <div class="gcard" role="group" aria-label="Пример: ввод оценок">
-          <div class="gtop"><div><small>Средний балл</small><b id="avg">8,08</b></div><span id="avgn">8 оценок</span></div>
-          <div class="hist" id="hist"></div>
-          <div class="gacts">
-            <span class="hint">Нажмите на цифру — оценка добавится</span>
-            <button type="button" class="chipb" id="gundo"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg>Отменить</button>
-            <button type="button" class="chipb line" id="gclear">Очистить</button>
-          </div>
-        </div>
-      </div>
-      <div class="shot">
-        <div class="bl cookie7"></div><div class="bl b2 cookie12"></div>
-        <img src="../assets/phone-7-lg.webp" alt="Экран оценок со средним баллом 8,08" loading="lazy" decoding="async" width="860" height="1752">
-      </div>
-    </div>
-  </article>
-
-  <article class="world w-abs rv">
-    <div class="in">
-      <div class="copy">
-        <span class="tag"><svg class="i" aria-hidden="true"><use href="#i-calx"/></svg>Пропуски</span>
-        <h2>Пропуск — одно касание</h2>
-        <p class="t">Значок у пары отмечает пропуск сразу. А счётчик лимита заранее предупредит, пока ещё не поздно.</p>
-        <ul class="checks">
-          <li><i><svg class="i"><use href="#i-check"/></svg></i>Весь день, несколько пар, 1 или 2 часа — по уважительной и без</li>
-          <li><i><svg class="i"><use href="#i-check"/></svg></i>С 7 часов без уважительной — кольцо «N из 10», с 10 — яркая карточка</li>
-          <li><i><svg class="i"><use href="#i-check"/></svg></i>Часы по каждому предмету и доля уважительных</li>
-        </ul>
-        <div class="wg awrap" role="group" aria-label="Пример: пропуски и лимит">
-          <div class="asum">
-            <div class="row1"><div><small>Всего пропущено</small><div class="big"><span id="absTotal">10</span><em id="absTotalWord">часов</em></div></div><span class="pr" id="absPairs">≈ 5 пар</span></div>
-            <div class="sbar" id="absBar"></div>
-            <div class="leg"><span>Без уважительной: <b id="absNo">8 ч</b></span><span class="y">По уважительной: <b id="absYes">2 ч</b></span></div>
-          </div>
-          <div class="limit" id="absLimit" hidden>
-            <div class="ring" id="absRingBox"><svg viewBox="0 0 80 80" aria-hidden="true"><circle class="tr" cx="40" cy="40" r="34"/><circle class="ar" id="absRing" cx="40" cy="40" r="34"/></svg><span id="absRingTxt">8 из 10</span></div>
-            <div><b id="absLimitTitle">Приближаетесь к лимиту</b><p id="absLimitMsg"></p></div>
-          </div>
-          <ul id="absList" aria-live="polite"></ul>
-          <p id="absEmpty" hidden>Пропусков нет — так держать!</p>
-          <div class="aacts">
-            <span class="hint">Свайп вправо — по уважительной, влево — удалить</span>
-            <button type="button" class="btn sm" id="absAdd">+ Пропуск</button>
-            <button type="button" class="btn sm tonal" id="absReset">Сбросить</button>
-          </div>
-        </div>
-      </div>
-      <div class="shot">
-        <div class="bl cookie12"></div><div class="bl b2 cookie6"></div>
-        <img src="../assets/phone-6-lg.webp" alt="Экран пропусков с лимитом и итогами" loading="lazy" decoding="async" width="860" height="1752">
-      </div>
-    </div>
-  </article>
-</section>
-
-<section class="sec" aria-label="Ещё удобства">
-  <div class="head rv"><h2>И ещё мелочи, которые делают жизнь проще</h2></div>
-  <div class="cards">
-      <div class="card c-undo rv">
-        <div class="ico"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg></div>
-        <h3>Любое действие можно отменить</h3>
-        <p>Добавили, исправили или удалили не то — нажмите «Отменить». Никаких окон «Вы уверены?».</p>
-        <div class="demo">
-          <div class="undoStage"><div class="mrow" id="undoRow"><span class="sc">8</span><span><b>Базы данных</b><small>Контрольная · сегодня</small></span></div></div>
-          <p style="margin-top:14px"><button type="button" class="btn sm" id="undoDemo" aria-pressed="false"><span>Удалить оценку</span></button></p>
-        </div>
-      </div>
-      <div class="card c-group rv">
-        <div class="ico"><svg class="i" aria-hidden="true"><use href="#i-users"/></svg></div>
-        <h3>Группа — за пять секунд</h3>
-        <p>Поиск по списку колледжа или ввод номера вручную. Сменить группу можно в любой момент.</p>
-        <div class="demo">
-          <div class="mgroup"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Найти группу<b>0000</b></div>
-          <div class="gridchips"><span>1101</span><span>1102</span><span>2201</span><span>2305</span><span>3101</span><span>3412</span></div>
-        </div>
-      </div>
-      <div class="card c-back rv">
-        <div class="ico"><svg class="i" aria-hidden="true"><use href="#i-clip"/></svg></div>
+        <div class="sn" id="undo-sn" role="status" aria-live="polite"><span>Оценка удалена</span><button type="button">Отменить</button></div>
+      </article>
+      <article class="tile c7 t-theme">
+        <div class="wshape shape sh-sunny12" style="width:300px;right:-100px;bottom:-130px;background:var(--hero-shape-2)"></div>
+        <div class="th-head"><div class="app-ico shape sh-cookie9" aria-hidden="true"><svg class="i "><use href="#i-cap"/></svg></div><div><h3>20 цветов — выбирайте свой</h3><p>Тема и значок приложения подстраиваются под цвет. Попробуйте прямо здесь: перекрасится весь сайт.</p></div></div>
+        <div data-theme-seg></div>
+        <div data-swatches></div>
+      </article>
+      <article class="tile c5 w-sched">
+        <div class="ico2"><svg class="i "><use href="#i-wifioff"/></svg></div>
+        <h3>Работает без интернета</h3>
+        <p>Расписание загружается при запуске и хранится на телефоне до 400 дней. Оценки и пропуски вообще не требуют сети.</p>
+      </article>
+      <article class="tile c4 t-group">
+        <div class="ico2"><svg class="i "><use href="#i-users"/></svg></div>
+        <h3>Ваша группа за пару касаний</h3>
+        <p>Выберите её из списка колледжа или введите номер вручную.</p>
+      </article>
+      <article class="tile c4 t-save">
+        <div class="ico2"><svg class="i "><use href="#i-save"/></svg></div>
         <h3>Резервная копия</h3>
-        <p>Копируйте оценки и пропуски в буфер обмена и восстанавливайте на новом телефоне.</p>
-      </div>
-      <div class="card c-wide rv">
-        <div class="ico"><svg class="i" aria-hidden="true"><use href="#i-tablet"/></svg></div>
+        <p>Скопируйте данные одним нажатием и восстановите их на новом телефоне.</p>
+      </article>
+      <article class="tile c4 w-grades">
+        <div class="ico2"><svg class="i "><use href="#i-tablet"/></svg></div>
         <h3>Телефон, планшет, складной</h3>
-        <p>На широких экранах навигация уходит вбок, а выбор группы открывается окном по центру.</p>
+        <p>Интерфейс подстраивается под размер экрана.</p>
+      </article>
+    </div>
+  </div>
+</section>
+<section class="sec" id="screens">
+  <div class="pad"><h2 class="headline">Экраны приложения</h2><p class="lead">Листайте: от главных экранов до первого запуска.</p></div>
+  <div class="gal-wrap" data-gal style="margin-top:24px">
+    <div class="gal" tabindex="0" aria-label="Скриншоты приложения"><figure><img src="../assets/phone-5-sm.webp" alt="Экран «Расписание»: пары на выбранный день" width="500" height="1007"><figcaption>Расписание</figcaption></figure><figure><img src="../assets/phone-7-sm.webp" alt="Экран «Оценки»: средний балл и оценки по предметам" width="500" height="1007"><figcaption>Оценки</figcaption></figure><figure><img src="../assets/phone-6-sm.webp" alt="Экран «Пропуски»: лимит и сумма часов" width="500" height="1007" loading="lazy"><figcaption>Пропуски</figcaption></figure><figure><img src="../assets/phone-1-sm.webp" alt="Приветственный экран Journal" width="500" height="1007" loading="lazy"><figcaption>Знакомство</figcaption></figure><figure><img src="../assets/phone-2-sm.webp" alt="Экран «Всё под рукой»: три главные возможности" width="500" height="1007" loading="lazy"><figcaption>Всё под рукой</figcaption></figure><figure><img src="../assets/phone-3-sm.webp" alt="Экран выбора группы" width="500" height="1007" loading="lazy"><figcaption>Ваша группа</figcaption></figure><figure><img src="../assets/phone-4-sm.webp" alt="Экран «Настройте под себя»" width="500" height="1007" loading="lazy"><figcaption>Настройка</figcaption></figure></div>
+    <div class="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+</section>
+<section class="sec" id="install">
+  <div class="in">
+    <div class="sec-head"><h2 class="headline">Как установить за пять минут</h2><p class="lead">Journal ставится файлом из релиза — в магазинах приложений его нет. Выберите свой телефон, дальше всё по шагам.</p></div>
+    <div class="inst" data-install>
+      <div class="seg os-seg" role="group" aria-label="Ваш телефон">
+        <button type="button" data-os="android" aria-pressed="true"><svg class="i "><use href="#i-check"/></svg>Android</button>
+        <button type="button" data-os="ios" aria-pressed="false"><svg class="i "><use href="#i-check"/></svg>iPhone / iPad</button>
       </div>
-      <div class="card c-off rv">
-        <div class="ico"><svg class="i" aria-hidden="true"><use href="#i-sync"/></svg></div>
-        <h3>Автообновление и вибро</h3>
-        <p>Расписание обновляется при запуске, а лёгкая вибрация подтверждает нажатия. Оба — по желанию.</p>
-        <div class="demo">
-          <div class="sw"><span class="tl">Вкл</span><button class="tg" type="button" role="switch" aria-checked="true" aria-label="Автообновление"></button></div>
+      <div data-os-panel="android">
+        <ol class="steps">
+          <li><span class="n">1</span><div><h3>Скачайте файл</h3><p>Нажмите кнопку — загрузится установочный файл .apk.</p><a class="btn btn-filled" data-dl="android" href="https://github.com/eugggeneee/journal/releases/latest"><svg class="i "><use href="#i-down"/></svg>Скачать для Android</a></div></li>
+          <li><span class="n">2</span><div><h3>Откройте его</h3><p>Файл появится в уведомлении о загрузке и в папке «Загрузки».</p></div></li>
+          <li><span class="n">3</span><div><h3>Разрешите установку</h3><p>Если Android спросит, разрешите установку из этого источника. Это нужно один раз.</p></div></li>
+          <li><span class="n">4</span><div><h3>Откройте Journal</h3><p>Выберите свою группу — расписание загрузится само.</p></div></li>
+        </ol>
+        <div class="inst-note"><svg class="i "><use href="#i-info"/></svg><p>Новые версии устанавливаются поверх предыдущей — просто скачайте и откройте свежий файл.</p></div>
+      </div>
+      <div data-os-panel="ios" hidden>
+        <p class="inst-intro">Приложение не подписано Apple, поэтому на iPhone его ставит бесплатная программа-установщик. Подойдёт любая из двух:</p>
+        <div class="instl">
+          <a class="inst-card" href="https://altstore.io" target="_blank" rel="noopener"><b>AltStore</b><span>Сам продлевает подпись, пока рядом компьютер с AltServer</span><svg class="i "><use href="#i-link"/></svg></a>
+          <a class="inst-card" href="https://sideloadly.io" target="_blank" rel="noopener"><b>Sideloadly</b><span>Проще для разовой установки: перетащили файл — готово</span><svg class="i "><use href="#i-link"/></svg></a>
+        </div>
+        <ol class="steps">
+          <li><span class="n">1</span><div><h3>Скачайте файл</h3><p>Нажмите кнопку — загрузится установочный файл .ipa.</p><a class="btn btn-filled" data-dl="ios" href="https://github.com/eugggeneee/journal/releases/latest"><svg class="i "><use href="#i-down"/></svg>Скачать для iOS</a></div></li>
+          <li><span class="n">2</span><div><h3>Подключите iPhone к компьютеру</h3><p>Установите AltStore или Sideloadly на компьютер и разрешите доступ на телефоне.</p></div></li>
+          <li><span class="n">3</span><div><h3>Установите файл</h3><p>В AltStore откройте «Мои приложения» → «+» и выберите .ipa. В Sideloadly перетащите файл в окно, введите Apple ID и нажмите Start.</p></div></li>
+          <li><span class="n">4</span><div><h3>Включите доверие</h3><p>Настройки → Основные → VPN и управление устройством → доверять профилю. На iOS 16 и новее ещё включите «Режим разработчика» в разделе «Конфиденциальность и безопасность».</p></div></li>
+        </ol>
+        <div class="inst-note"><svg class="i "><use href="#i-info"/></svg><p>С бесплатным Apple ID подпись действует 7 дней — продлевайте её тем же установщиком, чтобы приложение продолжало открываться.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="sec" id="release">
+  <div class="in">
+    <div class="sec-head"><h2 class="headline">Последний релиз</h2><p class="lead">Что нового в Journal — версия, список изменений и файлы для скачивания. Данные обновляются сами.</p></div>
+    <div class="rel" id="rel" data-state="loading">
+      <div class="rel-main">
+        <div class="deco shape morph2" aria-hidden="true"></div><div class="deco2 shape sh-cookie7" aria-hidden="true"></div>
+        <div class="sk xl"></div><div class="sk l w50"></div><div class="sk xl" style="margin-top:auto"></div><div class="sk xl"></div>
+        <div class="rel-live">
+          <div class="rel-top"><span class="pillchip"><svg class="i "><use href="#i-check"/></svg>Последняя версия</span><span class="pillchip pre" id="rel-pre" hidden>Пре-релиз</span></div>
+          <div class="rel-ver tnum" id="rel-ver"></div>
+          <div class="rel-name" id="rel-name" hidden></div>
+          <div class="rel-date" id="rel-date"></div>
+          <div class="rel-assets" id="rel-assets"></div>
+          <div class="rel-links"><a class="btn btn-text" href="#install">Как установить</a><a class="btn btn-text" id="rel-gh" href="https://github.com/eugggeneee/journal/releases" target="_blank" rel="noopener">Страница релиза</a><a class="btn btn-text" href="https://github.com/eugggeneee/journal/releases" target="_blank" rel="noopener">Все релизы</a></div>
         </div>
       </div>
-    </div>
-</section>
-
-<section class="sec" id="themes" aria-label="Темы и значки">
-  <div class="tpanel rv">
-    <div>
-      <h2>20 тем. Цвет — ваш.</h2>
-      <p class="lead">Выберите цвет приложения и значок на экране телефона. На Android 12+ цвета можно взять из обоев. Попробуйте прямо здесь — этот сайт перекрасится так же.</p>
-      <div class="modes">
-        <div class="seg" role="group" aria-label="Режим оформления">
-          <button type="button" data-mode="system" aria-pressed="true">Авто</button>
-          <button type="button" data-mode="light" aria-pressed="false">Светлая</button>
-          <button type="button" data-mode="dark" aria-pressed="false">Тёмная</button>
-        </div>
+      <div class="rel-notes">
+        <h3>Что нового</h3><p class="sub">Изменения в последней версии</p>
+        <div class="sk l"></div><div class="sk l w80"></div><div class="sk l"></div><div class="sk l w50"></div><div class="sk xl" style="margin-top:20px"></div>
+        <div class="rel-live"><div id="rel-notes"></div></div>
       </div>
-      <div class="tgrid" id="themeGrid" role="group" aria-label="Цвет темы"></div>
-      <div class="tfoot">
-        <div class="tname"><small>Выбрано</small><span data-theme-name>Стандартная</span></div>
-        <button type="button" class="btn sm tonal" id="themeRandom"><svg class="i" aria-hidden="true"><use href="#i-dice"/></svg>Удивите меня</button>
-      </div>
+      <div class="rel-empty"><div class="shape sh-cookie9"><svg class="i "><use href="#i-history"/></svg></div><h3>Релизов пока нет</h3><p>Как только выйдет первая версия, она появится здесь вместе со списком изменений.</p><a class="btn btn-tonal" href="https://github.com/eugggeneee/journal" target="_blank" rel="noopener"><svg class="i "><use href="#i-gh"/></svg>Открыть GitHub</a></div>
+      <div class="rel-err"><div class="shape sh-flower6"><svg class="i "><use href="#i-wifioff"/></svg></div><h3>Не удалось загрузить релиз</h3><p>Проверьте соединение или откройте страницу релизов на GitHub напрямую.</p><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><button class="btn btn-filled" type="button" data-rel-retry><svg class="i "><use href="#i-sync"/></svg>Повторить</button><a class="btn btn-tonal" href="https://github.com/eugggeneee/journal/releases" target="_blank" rel="noopener"><svg class="i "><use href="#i-gh"/></svg>GitHub</a></div></div>
     </div>
-    <div class="tprev" aria-hidden="true">
-      <div class="bg1 cookie"></div>
-      <div class="mini">
-        <div class="mt"><img src="../assets/icons/default.webp" data-theme-icon alt="" width="56" height="56"><div><b>Journal</b><small>Значок на экране</small></div></div>
-        <div class="mc"><small>Средний балл</small><b>8,08</b></div>
-        <div class="mb">Расписание · сегодня</div>
-        <div class="mb2">Пропуски · лимит</div>
-        <div class="mf"><i></i><span>+ Оценка</span></div>
-        <div class="mnav"><i></i><i></i><i></i><i></i></div>
-      </div>
-    </div>
+    <div class="rel-hist" id="rel-hist" hidden><h3>Предыдущие версии</h3><div class="faq"></div></div>
   </div>
 </section>
-
-<section class="sec" aria-label="Первый запуск">
-  <div class="head rv"><h2>Начните за минуту</h2><p class="lead">Знакомство, выбор группы и пара настроек.</p></div>
-  <div class="carousel" data-carousel>
-    <div class="ctrack"><div class="ob cslide"><span class="n">ШАГ 1</span><h3>Знакомство</h3><p>Короткое приветствие — и можно двигаться дальше.</p><img src="../assets/phone-1-lg.webp" alt="Экран первого запуска: Знакомство" decoding="async" width="860" height="1752"></div><div class="ob cslide"><span class="n">ШАГ 2</span><h3>Возможности</h3><p>Расписание, оценки и пропуски — три вещи, ради которых вы открываете дневник.</p><img src="../assets/phone-2-lg.webp" alt="Экран первого запуска: Возможности" decoding="async" width="860" height="1752"></div><div class="ob cslide"><span class="n">ШАГ 3</span><h3>Ваша группа</h3><p>Выберите из списка колледжа или введите номер.</p><img src="../assets/phone-3-lg.webp" alt="Экран первого запуска: Ваша группа" decoding="async" width="860" height="1752"></div><div class="ob cslide"><span class="n">ШАГ 4</span><h3>Под себя</h3><p>Тема, быстрый пропуск, виброотклик и автообновление.</p><img src="../assets/phone-4-lg.webp" alt="Экран первого запуска: Под себя" decoding="async" width="860" height="1752"></div></div>
-    <div class="cdots"><button type="button" class="cdot" aria-label="Шаг 1"></button><button type="button" class="cdot" aria-label="Шаг 2"></button><button type="button" class="cdot" aria-label="Шаг 3"></button><button type="button" class="cdot" aria-label="Шаг 4"></button></div>
+<section class="sec" id="faq"><div class="pad"><h2 class="headline">Частые вопросы</h2></div><div class="faq" style="margin-top:22px"><details><summary><span>Это официальное приложение колледжа?</span><svg class="i "><use href="#i-plus"/></svg></summary><div class="a">Нет, Journal — неофициальный некоммерческий проект. Расписание берётся с сайта колледжа и может отличаться от актуального, поэтому важные изменения лучше сверять там.</div></details><details><summary><span>Нужен аккаунт, и сколько это стоит?</span><svg class="i "><use href="#i-plus"/></svg></summary><div class="a">Аккаунт не нужен, регистрации и рекламы нет. Приложение бесплатное и некоммерческое.</div></details><details><summary><span>Что с моими данными?</span><svg class="i "><use href="#i-plus"/></svg></summary><div class="a">Оценки, пропуски и настройки хранятся только на вашем телефоне. Единственное, что загружается из интернета, — расписание вашей группы.</div></details><details><summary><span>Моей группы нет в списке</span><svg class="i "><use href="#i-plus"/></svg></summary><div class="a">Введите её номер вручную (3–5 цифр). Если группы нет на сайте колледжа, расписание не загрузится, но оценки и пропуски будут работать как обычно.</div></details><details><summary><span>Можно открыть данные на другом телефоне?</span><svg class="i "><use href="#i-plus"/></svg></summary><div class="a">Автоматической синхронизации нет. Зато есть резервная копия: скопируйте данные в буфер обмена и вставьте на новом устройстве.</div></details><details><summary><span>Работает ли без интернета?</span><svg class="i "><use href="#i-plus"/></svg></summary><div class="a">Да. Уже загруженные дни расписания доступны офлайн, а оценки и пропуски сети не требуют.</div></details></div></section>
+<section class="sec" id="privacy"><div class="priv"><div class="lk shape sh-sunny12"><svg class="i "><use href="#i-lock"/></svg></div><h2 class="headline">Данные хранятся только на вашем устройстве</h2>
+      <p>Оценки, пропуски и настройки остаются в приложении. Из интернета подгружается только расписание группы с сайта колледжа.</p><ul class="facts"><li class="chip"><svg class="i "><use href="#i-lock"/></svg>Без аккаунтов</li><li class="chip"><svg class="i "><use href="#i-check"/></svg>Без рекламы</li><li class="chip"><svg class="i "><use href="#i-wifioff"/></svg>Без слежки</li><li class="chip"><svg class="i "><use href="#i-gh"/></svg>Некоммерческий</li></ul></div></section>
+<section class="sec" id="download">
+  <div class="dl">
+    <div class="wshape shape sh-cookie9 d1"></div><div class="wshape shape sh-flower6 d2"></div>
+    <img class="ic" src="../assets/icon-512.png" alt="Иконка Journal" width="116" height="116" data-loop>
+    <h2 class="display">Скачать Journal</h2>
+    <p>Бесплатно, без регистрации. Последняя версия для iPhone и Android.</p>
+    <div class="stores"><a class="store ios" data-dl="ios" href="https://github.com/eugggeneee/journal/releases/latest"><svg class="i "><use href="#i-apple"/></svg><span><small>Скачать для</small><strong>iOS</strong></span></a><a class="store and" data-dl="android" href="https://github.com/eugggeneee/journal/releases/latest"><svg class="i "><use href="#i-android"/></svg><span><small>Скачать для</small><strong>Android</strong></span></a></div>
+    <a class="btn btn-outlined more" href="#install">Как установить</a>
   </div>
-</section>
-
-<section class="sec" id="privacy" aria-label="Приватность">
-  <div class="pbig rv">
-    <div class="lk cookie"></div><div class="lkw"><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg></div>
-    <h2>Всё остаётся у вас на телефоне</h2>
-    <p>Оценки, пропуски и настройки хранятся только на устройстве. Из интернета загружается лишь расписание группы.</p>
-  </div>
-  <div class="plist">
-    <div class="pi rv"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-users"/></svg></div><div><h3>Без аккаунтов</h3><p>Никакой регистрации — установили и пользуетесь.</p></div></div>
-    <div class="pi rv"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg></div><div><h3>Без рекламы и слежки</h3><p>Нет рекламы и аналитики. Проект некоммерческий.</p></div></div>
-    <div class="pi rv"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-gh"/></svg></div><div><h3>Открытый код</h3><p>Лицензия MIT — можно посмотреть, как всё устроено.</p></div></div>
-  </div>
-</section>
-
-<section class="sec" id="install" aria-label="Установка">
-  <div class="head rv"><h2>Установка шаг за шагом</h2><p class="lead">Приложение скачивается напрямую, не из магазина. На Android — минута, на iPhone — минут десять в первый раз.</p></div>
-  <div class="tabs" role="tablist" aria-label="Платформа">
-    <button type="button" role="tab" id="tab-android" data-tab="android" aria-controls="panel-android" aria-selected="true"><svg class="i" aria-hidden="true"><use href="#i-android"/></svg>Android</button>
-    <button type="button" role="tab" id="tab-ios" data-tab="ios" aria-controls="panel-ios" aria-selected="false"><svg class="i" aria-hidden="true"><use href="#i-apple"/></svg>iPhone</button>
-  </div>
-  <div class="ipanel" id="panel-android" role="tabpanel" data-panel="android" aria-labelledby="tab-android">
-    <div class="dlcard"><i class="sh cookie"></i><h3>Journal для Android</h3><p>Файл установки APK, версия <b data-version>…</b></p><a class="btn" href="https://github.com/eugggeneee/journal/releases/latest" data-dl="android"><svg class="i " aria-hidden="true"><use href="#i-down"/></svg>Скачать APK</a></div>
-    <ol class="steps"><li><span class="sn">1</span><div><h4>Скачайте файл</h4><p>Нажмите «Скачать для Android» — файл <b>Journal-…-android.apk</b> сохранится в «Загрузки». Если браузер предупредит, что файл может быть небезопасным, выберите «Всё равно скачать»: так бывает с любыми приложениями не из магазина.</p></div></li><li><span class="sn">2</span><div><h4>Откройте скачанный файл</h4><p>Нажмите на него в уведомлении о загрузке или найдите в приложении «Файлы» → «Загрузки».</p></div></li><li><span class="sn">3</span><div><h4>Разрешите установку</h4><p>Android спросит разрешение для браузера или «Файлов». Включите «Разрешить установку из этого источника» и вернитесь назад. Это делается один раз.</p></div></li><li><span class="sn">4</span><div><h4>Нажмите «Установить»</h4><p>Если Google Play Protect покажет предупреждение о неизвестном разработчике, выберите «Всё равно установить».</p></div></li><li><span class="sn">5</span><div><h4>Запустите Journal</h4><p>Откройте приложение, выберите свою группу — и расписание сразу появится на экране.</p></div></li></ol>
-    <div class="note ok"><h4><svg class="i" aria-hidden="true"><use href="#i-sync"/></svg>Обновление</h4><p>Скачайте новую версию и установите поверх старой. Оценки, пропуски и настройки сохранятся — приложение подписано постоянным ключом.</p></div>
-  </div>
-  <div class="ipanel" id="panel-ios" role="tabpanel" data-panel="ios" aria-labelledby="tab-ios" hidden>
-    <div class="dlcard"><i class="sh cookie"></i><h3>Journal для iPhone и iPad</h3><p>Файл IPA, версия <b data-version>…</b>. Скачайте на компьютер.</p><a class="btn" href="https://github.com/eugggeneee/journal/releases/latest" data-dl="ios"><svg class="i " aria-hidden="true"><use href="#i-down"/></svg>Скачать IPA</a></div>
-    <ol class="steps"><li><span class="sn">1</span><div><h4>Выберите программу установки</h4><p>Приложение для iPhone не подписано Apple, поэтому его ставят через бесплатную программу. Подойдёт любая из двух — способы ниже.</p></div></li><li><span class="sn">2</span><div><h4>Установите приложение</h4><p>Подключите iPhone к компьютеру, добавьте файл <b>.ipa</b> в программу и войдите своим Apple ID — он нужен только для подписи на вашем устройстве.</p></div></li><li><span class="sn">3</span><div><h4>Доверьте профиль</h4><p>На iPhone: Настройки → Основные → VPN и управление устройством → ваш Apple ID → «Доверять».</p></div></li><li><span class="sn">4</span><div><h4>Включите режим разработчика</h4><p>На iOS 16 и новее: Настройки → Конфиденциальность и безопасность → Режим разработчика → включить. Телефон перезагрузится — подтвердите включение.</p></div></li><li><span class="sn">5</span><div><h4>Запустите Journal</h4><p>Откройте значок на экране, выберите группу и пользуйтесь.</p></div></li></ol>
-    <p class="ihead">Два способа установки</p>
-    <div class="opts">
-      <div class="opt"><span class="lab">СПОСОБ А · ПРОЩЕ</span><h3>Sideloadly</h3><p>Нужен компьютер с Windows или Mac и кабель.</p><ol><li>Скачайте файл <b>Journal-…-ios.ipa</b> на компьютер (кнопка справа).</li><li>Установите <a href="https://sideloadly.io" target="_blank" rel="noopener">Sideloadly</a> для Windows или Mac и запустите.</li><li>Подключите iPhone кабелем и нажмите «Доверять» на телефоне.</li><li>Перетащите <b>.ipa</b> в окно Sideloadly, введите свой Apple ID и нажмите Start.</li></ol></div>
-      <div class="opt"><span class="lab">СПОСОБ Б · АВТОПРОДЛЕНИЕ</span><h3>AltStore</h3><p>Подпись продлевается сама, пока рядом включён компьютер.</p><ol><li>Установите <a href="https://altstore.io" target="_blank" rel="noopener">AltServer</a> на компьютер с Windows или Mac.</li><li>Подключите iPhone и установите через AltServer приложение AltStore.</li><li>Откройте на iPhone скачанный <b>.ipa</b> через AltStore — Journal установится.</li><li>Пока AltServer запущен рядом, AltStore сам продлевает подпись.</li></ol></div>
-    </div>
-    <div class="note"><h4><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg>Раз в 7 дней</h4><ul><li>С бесплатным Apple ID подпись действует 7 дней — приложение нужно переподписать. AltStore делает это сам.</li><li>На бесплатном Apple ID одновременно можно держать до 3 таких приложений.</li></ul></div>
-  </div>
-</section>
-
-<section class="faq" aria-label="Частые вопросы">
-  <h2 class="rv">Частые вопросы</h2>
-  <div class="qas"><details class="qa"><summary>Это официальное приложение колледжа?</summary><div class="qa-a"><p><b>Нет.</b> Journal — неофициальный некоммерческий проект. Расписание берётся с общедоступной страницы сайта колледжа и может отличаться от актуального — сверяйтесь с официальными объявлениями.</p></div></details><details class="qa"><summary>Сколько это стоит?</summary><div class="qa-a"><p>Ничего. Приложение бесплатное, без рекламы и без аккаунтов.</p></div></details><details class="qa"><summary>Нужен ли интернет?</summary><div class="qa-a"><p>Только чтобы обновить расписание. Уже загруженные дни (до 400) открываются без интернета, а оценки и пропуски работают всегда.</p></div></details><details class="qa"><summary>Где хранятся мои оценки и пропуски?</summary><div class="qa-a"><p>Только на вашем устройстве. Единственный запрос в интернет — загрузка расписания. Аналитики нет.</p></div></details><details class="qa"><summary>Моей группы нет в списке</summary><div class="qa-a"><p>Введите номер группы вручную (3–5 цифр). Если группы нет на сайте колледжа, расписание не загрузится, но оценки и пропуски работают как обычно.</p></div></details><details class="qa"><summary>Как перенести данные на новый телефон?</summary><div class="qa-a"><p>В профиле сохраните резервную копию в буфер обмена, а на новом устройстве восстановите её оттуда. Копии старого формата тоже подходят. Автосинхронизации между устройствами нет.</p></div></details><details class="qa"><summary>Случайно удалил оценку. Что делать?</summary><div class="qa-a"><p>Нажмите «Отменить» на появившейся внизу плашке. Любое добавление, правка и удаление отменяются, поэтому подтверждений нет.</p></div></details><details class="qa"><summary>Это безопасно?</summary><div class="qa-a"><p>Исходный код открыт (лицензия MIT). Android-версия подписана постоянным ключом, а в описании каждого релиза есть контрольные суммы для проверки файла.</p></div></details></div>
-</section>
-
-<section class="rel" id="whatsnew" aria-label="Что нового">
-  <div class="head rv"><h2>Что нового <span class="rbadge" data-version>…</span></h2><p class="lead">Описание последней версии подтягивается с GitHub.</p></div>
-  <div id="release" data-state="loading"><div class="rload"><i></i>Загружаем последнюю версию…</div></div>
-</section>
-
-<section class="dl" id="download">
-  <i class="shp d1 cookie"></i><i class="shp d2 cookie12"></i>
-  <img class="ic" src="../assets/icons/default.webp" data-theme-icon alt="Значок Journal" width="96" height="96">
-  <h2>Скачайте Journal</h2>
-  <p>Бесплатно, без рекламы и без аккаунтов.</p>
-  <div class="stores"><a class="store and" href="https://github.com/eugggeneee/journal/releases/latest" data-dl="android"><svg class="i " aria-hidden="true"><use href="#i-android"/></svg><span><small>Скачать для</small><strong>Android</strong></span></a><a class="store ios" href="https://github.com/eugggeneee/journal/releases/latest" data-dl="ios"><svg class="i " aria-hidden="true"><use href="#i-apple"/></svg><span><small>Скачать для</small><strong>iPhone</strong></span></a></div>
-  <a class="more" href="https://github.com/eugggeneee/journal"><svg class="i " aria-hidden="true"><use href="#i-gh"/></svg>Исходный код на GitHub</a>
 </section>
 </main>
-
 <footer>
-  <nav aria-label="Ссылки">
-    <a href="https://github.com/eugggeneee/journal"><svg class="i " aria-hidden="true"><use href="#i-gh"/></svg>GitHub</a>
-    <a href="https://github.com/eugggeneee/journal/releases">Все версии</a>
-    <a href="https://github.com/eugggeneee/journal/issues">Сообщить об ошибке</a>
-    <a href="../?view=desktop">Версия для компьютера</a>
-  </nav>
+  <div class="links"><a href="https://github.com/eugggeneee/journal"><svg class="i "><use href="#i-gh"/></svg>GitHub</a><a href="https://github.com/eugggeneee/journal/issues">Сообщить об ошибке</a><a href="../?view=desktop">Версия для компьютера</a></div>
+  <p class="copy">Journal · МГТЭК · Дневник · неофициальный проект</p>
+  <svg class="wordmark" viewBox="0 0 1000 215" role="img" aria-label="Journal"><text x="6" y="205" textLength="988" lengthAdjust="spacingAndGlyphs" font-size="300">Journal</text></svg>
 </footer>
-<p class="disc">Journal — неофициальное приложение, не является продуктом колледжа. Расписание берётся с общедоступной страницы сайта колледжа и может отличаться от актуального.</p>
-
-<a id="fab" href="#install"><svg class="i" aria-hidden="true"><use href="#i-down"/></svg>Скачать</a>
-
-<nav class="bnav" aria-label="Разделы">
-  <a href="#top" data-spy="top"><span class="pl"><svg class="i" aria-hidden="true"><use href="#i-home"/></svg></span>Главная</a>
-  <a href="#features" data-spy="features"><span class="pl"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg></span>Функции</a>
-  <a href="#install" data-spy="install"><span class="pl"><svg class="i" aria-hidden="true"><use href="#i-down"/></svg></span>Установка</a>
-  <a href="#whatsnew" data-spy="whatsnew"><span class="pl"><svg class="i" aria-hidden="true"><use href="#i-spark"/></svg></span>Новое</a>
-</nav>
-
-<div id="snack" role="status" aria-live="polite"><span class="sm"></span><button type="button" hidden>Отменить</button></div>
-<script src="../assets/site.js"></script>
-<script src="../assets/release.js"></script>
+<nav class="bnav" aria-label="Навигация"><a href="#top" data-spy><span class="pill"><svg class="i "><use href="#i-home"/></svg></span>Главная</a><a href="#features" data-spy><span class="pill"><svg class="i "><use href="#i-apps"/></svg></span>Функции</a><a href="#install" data-spy><span class="pill"><svg class="i "><use href="#i-phone"/></svg></span>Установка</a><a href="#release" data-spy><span class="pill"><svg class="i "><use href="#i-history"/></svg></span>Релиз</a><a href="#download" data-spy class="cta"><span class="pill"><svg class="i "><use href="#i-down"/></svg></span>Скачать</a></nav>
+<script src="../assets/js/core.js"></script>
 </body>
 </html>
