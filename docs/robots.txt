@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://eugggeneee.github.io/journal/sitemap.xml

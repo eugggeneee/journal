@@ -1,35 +1,25 @@
-# Journal — лендинг
+# Сайт Journal (GitHub Pages)
 
-Статический лендинг для приложения **Journal** (МГТЭК · Дневник). Без сборки и зависимостей — чистый HTML/CSS/JS.
+Публикуется из папки `docs/` ветки `main`: **Settings → Pages → Deploy from a branch → main / docs**.
 
 ## Структура
 
-```
-index.html       — переключатель версий (телефон → mobile/, компьютер → desktop/)
-desktop/         — версия для компьютера
-mobile/          — версия для телефона
-assets/          — мокапы, иконки, og-картинка
-404.html, .nojekyll, robots.txt
-```
+| Файл | Назначение |
+|---|---|
+| `index.html` | Выбирает версию сайта (телефон / компьютер) и задаёт превью ссылки |
+| `desktop/index.html` | Версия для компьютера |
+| `mobile/index.html` | Версия для телефона (нижняя навигация, Material 3) |
+| `assets/release.js`, `assets/release.css` | Блок «Что нового»: подтягивает описание последнего релиза с GitHub, таблицу рисует как таблицу (на телефоне — карточками) и подставляет прямые ссылки на APK/IPA |
+| `assets/site.js` | Темы (20 цветов), демо-блоки, меню |
+| `assets/og.png` | Картинка превью ссылки, 1200×630 |
+| `assets/phone-*.webp` | Скриншоты-мокапы для сайта (оригиналы — в `assets/screenshots/` в корне репозитория) |
+| `assets/icons/*.webp` | Значки приложения всех 20 тем |
 
-Принудительно открыть нужную версию: `?view=desktop` или `?view=mobile`
-(выбор запоминается; ссылки «Версия для…» есть в подвалах обеих страниц).
+## Что нового из релиза
 
-## Публикация на GitHub Pages
+Текст берётся из описания последнего релиза на GitHub, поэтому достаточно оформить релиз как обычно:
+заголовок, таблица «Платформа / Файл / Как установить» и список «Что нового». Менять сайт для нового релиза не нужно.
 
-**Вариант 1 — папка `docs/` (проще всего)**
-1. Скопируйте всё содержимое архива в папку `docs/` репозитория `eugggeneee/journal`.
-2. Settings → Pages → Source: *Deploy from a branch* → Branch: `main`, папка `/docs` → Save.
-3. Через минуту сайт откроется на `https://eugggeneee.github.io/journal/`.
+## Если поменяли картинку превью
 
-**Вариант 2 — отдельная ветка `gh-pages`**
-1. Создайте ветку `gh-pages` и положите содержимое архива в её корень.
-2. Settings → Pages → Branch: `gh-pages`, папка `/ (root)`.
-
-## Что поправить под себя
-
-- Кнопки «Скачать для iOS / Android» ведут на `https://github.com/eugggeneee/journal/releases/latest`.
-  Если появятся прямые ссылки (TestFlight, APK) — замените `href` у `.store` в `desktop/index.html` и `mobile/index.html`.
-- Адрес в `og:image` и `canonical` рассчитан на `https://eugggeneee.github.io/journal/`.
-  Если домен другой — замените в трёх `index.html`.
-- Шрифты Unbounded и Onest подгружаются с Google Fonts; без сети используются системные.
+Мессенджеры кэшируют `og.png`. Увеличьте номер в `?v=` у `og:image` и `twitter:image` в `docs/index.html`, `docs/desktop/index.html`, `docs/mobile/index.html`.
