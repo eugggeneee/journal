@@ -8,6 +8,12 @@
   fg.png       432×432, передний слой адаптивного значка Android
   bg.png       432×432, задний слой адаптивного значка Android
   legacy.png   144×144, скруглённый значок для Android до 8.0
+и assets/icons/layer_mono.png — одноцветный слой для «тематических значков» Android 13+.
+
+Адаптивный значок Android рисуется на холсте 108×108 dp, но лаунчер показывает только центральные
+72×72 dp (остальное срезает маска). Поэтому композиция iOS-значка целиком (с кругами по углам)
+масштабируется в эту центральную область, а фон за её пределами дорисовывается продолжением кругов.
+Так значок на Android выглядит точно так же, как на iPhone, и не «увеличивается» при смене.
 и assets/icons/preview/<id>.png — превью для экрана «Оформление».
 Значок «default» повторяет исходный, остальные перекрашены в оттенок темы.
 """
@@ -31,6 +37,14 @@ HUES = {
 }
 # Исходный значок: тёмный фон (23,30,50), круги (38,51,79) и (48,63,93), шапочка (190,195,255).
 STOPS_R = [23, 38, 48]
+
+# Адаптивный слой Android: холст 432 px = 108 dp, видимая область 72 dp = 288 px по центру.
+CANVAS = 432
+VISIBLE = 288
+OFFSET = (CANVAS - VISIBLE) // 2
+# Круги исходного фона: центры в углах значка 1024×1024, радиусы (внутренний и внешний).
+CIRCLE_R_INNER = 245.0
+CIRCLE_R_OUTER = 348.0
 
 
 def hls(h, l, s):
@@ -62,6 +76,29 @@ def recolor_bg(bg_src, stops):
     return out
 
 
+def adaptive_levels():
+    """Карта фона адаптивного слоя: 0 — основа, 1 — внешнее кольцо, 2 — внутренний круг (с плавным краем)."""
+    k = VISIBLE / 1024.0
+    yy, xx = np.mgrid[0:CANVAS, 0:CANVAS].astype(np.float64) + 0.5
+    centers = [(OFFSET, OFFSET), (OFFSET + VISIBLE, OFFSET + VISIBLE)]
+    d = np.minimum(*[np.hypot(xx - cx, yy - cy) for cx, cy in centers])
+    cov_outer = np.clip(CIRCLE_R_OUTER * k - d + 0.5, 0, 1)
+    cov_inner = np.clip(CIRCLE_R_INNER * k - d + 0.5, 0, 1)
+    return cov_outer, cov_inner
+
+
+def adaptive_layers(stops, cap, fg_alpha):
+    cov_o, cov_i = adaptive_levels()
+    bg = np.zeros((CANVAS, CANVAS, 3))
+    bg[:] = stops[0]
+    bg = bg * (1 - cov_o[..., None]) + stops[1] * cov_o[..., None]
+    bg = bg * (1 - cov_i[..., None]) + stops[2] * cov_i[..., None]
+    alpha = Image.fromarray((fg_alpha * 255 + .5).astype(np.uint8), 'L').resize((VISIBLE, VISIBLE), Image.LANCZOS)
+    layer = Image.new('L', (CANVAS, CANVAS), 0)
+    layer.paste(alpha, (OFFSET, OFFSET))
+    return bg, layer
+
+
 def build(icon_id, bg_src, fg_alpha, round_alpha):
     stops, cap = palette(icon_id)
     bg = recolor_bg(bg_src, stops)
@@ -70,10 +107,12 @@ def build(icon_id, bg_src, fg_alpha, round_alpha):
     to_img = lambda arr, mode='RGB': Image.fromarray(np.clip(arr + .5, 0, 255).astype(np.uint8), mode)
 
     ios_img = to_img(ios)
-    bg_img = to_img(bg)
-    fg_arr = np.zeros(fg_alpha.shape + (4,))
+    # адаптивные слои Android: та же композиция, что и на iOS, внутри видимой области 72 dp
+    bg_ad, layer = adaptive_layers(stops, cap, fg_alpha)
+    bg_img = to_img(bg_ad)
+    fg_arr = np.zeros((CANVAS, CANVAS, 4))
     fg_arr[..., :3] = cap
-    fg_arr[..., 3] = fg_alpha[..., ] * 255
+    fg_arr[..., 3] = np.array(layer, dtype=np.float64)
     fg_img = to_img(fg_arr, 'RGBA')
 
     legacy = ios_img.convert('RGBA')
@@ -93,11 +132,16 @@ def main():
         d = os.path.join(OUT, icon_id)
         os.makedirs(d, exist_ok=True)
         ios.save(os.path.join(d, 'ios.png'), optimize=True)
-        bg.resize((432, 432), Image.LANCZOS).save(os.path.join(d, 'bg.png'), optimize=True)
-        fg.resize((432, 432), Image.LANCZOS).save(os.path.join(d, 'fg.png'), optimize=True)
+        bg.save(os.path.join(d, 'bg.png'), optimize=True)
+        fg.save(os.path.join(d, 'fg.png'), optimize=True)
         legacy.resize((144, 144), Image.LANCZOS).save(os.path.join(d, 'legacy.png'), optimize=True)
         legacy.resize((160, 160), Image.LANCZOS).save(os.path.join(OUT, 'preview', f'{icon_id}.png'), optimize=True)
         print('ok', icon_id)
+    # одноцветный слой для «тематических значков» Android 13+ (общий для всех тем)
+    mono = Image.new('RGBA', (CANVAS, CANVAS), (0, 0, 0, 0))
+    _, layer = adaptive_layers(palette('default')[0], None, fg_alpha)
+    mono.putalpha(layer)
+    mono.save(os.path.join(OUT, 'layer_mono.png'), optimize=True)
     with open(os.path.join(OUT, 'icons.json'), 'w', encoding='utf-8') as f:
         json.dump(ids, f)
 

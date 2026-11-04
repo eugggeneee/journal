@@ -4,6 +4,7 @@ import '../absences/absence_sheet.dart';
 import '../grades/grade_sheet.dart';
 import '../kit/ctx.dart';
 import '../kit/sheet.dart';
+import 'marks.dart';
 
 /// Выбор: что добавить на выбранную дату.
 Future<void> showAddMenu(BuildContext context, DateTime date) =>
@@ -41,6 +42,15 @@ class _AddMenu extends StatelessWidget {
           title: 'Пропуск',
           text: 'Выбрать причину и отметить пары',
           onTap: () => _open(context, (h) => showAbsenceSheet(h, date: date)),
+        ),
+        const SizedBox(height: 10),
+        _BigTile(
+          icon: Icons.bookmark_rounded,
+          bg: markTone(context).bg,
+          fg: markTone(context).fg,
+          title: 'Пометка',
+          text: 'ОКР, зачёт, практика — на день или пару',
+          onTap: () => _open(context, (h) => showMarkSheet(h, date)),
         ),
         const SizedBox(height: 8),
       ],

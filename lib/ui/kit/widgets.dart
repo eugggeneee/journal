@@ -63,12 +63,16 @@ class LargePage extends StatelessWidget {
     this.subtitle,
     this.actions = const [],
     this.onRefresh,
+    this.bottomGap = kFabClearance,
   });
   final String title;
   final String? subtitle;
   final List<Widget> slivers;
   final List<Widget> actions;
   final Future<void> Function()? onRefresh;
+
+  /// Запас снизу: под плавающую кнопку нужен [kFabClearance], на страницах без кнопки достаточно небольшого.
+  final double bottomGap;
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +92,7 @@ class LargePage extends StatelessWidget {
           actions: actions,
         ),
         ...slivers,
-        const SliverToBoxAdapter(child: SizedBox(height: kFabClearance)),
+        SliverToBoxAdapter(child: SizedBox(height: bottomGap)),
       ],
     );
     return ContentFrame(child: onRefresh == null ? view : RefreshIndicator(onRefresh: onRefresh!, child: view));

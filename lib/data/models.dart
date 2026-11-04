@@ -210,6 +210,184 @@ class Absence {
   }
 }
 
+
+/// Профили звонков: будни, суббота и сокращённый день.
+const String kBellWeek = 'week';
+const String kBellSat = 'sat';
+const String kBellShort = 'short';
+const List<String> kBellKeys = [kBellWeek, kBellSat, kBellShort];
+
+/// Максимальное число пар в расписании звонков.
+const int kMaxPairs = 7;
+
+/// Время одной пары (минуты от полуночи). Внутри пары может быть перерыв.
+class BellSlot {
+  const BellSlot({required this.start, required this.end, this.breakStart, this.breakEnd});
+  final int start;
+  final int end;
+  final int? breakStart;
+  final int? breakEnd;
+
+  bool get hasBreak => breakStart != null && breakEnd != null;
+  int get minutes => end - start;
+  int get breakMinutes => hasBreak ? breakEnd! - breakStart! : 0;
+
+  /// Время корректно: конец позже начала, перерыв целиком внутри пары.
+  bool get valid =>
+      start >= 0 &&
+      end <= 24 * 60 &&
+      end > start &&
+      (!hasBreak || (breakStart! > start && breakEnd! > breakStart! && breakEnd! < end));
+
+  BellSlot withoutBreak() => BellSlot(start: start, end: end);
+
+  List<int> toJson() => [start, end, breakStart ?? -1, breakEnd ?? -1];
+
+  static BellSlot? tryFromJson(Object? raw) {
+    try {
+      final l = (raw as List).map((e) => _int(e, -1)).toList();
+      if (l.length < 2 || l[0] < 0 || l[1] <= l[0]) return null;
+      final hasBreak = l.length >= 4 && l[2] >= 0 && l[3] > l[2];
+      final slot = BellSlot(start: l[0], end: l[1], breakStart: hasBreak ? l[2] : null, breakEnd: hasBreak ? l[3] : null);
+      return slot.valid ? slot : slot.withoutBreak();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is BellSlot &&
+      other.start == start &&
+      other.end == end &&
+      other.breakStart == breakStart &&
+      other.breakEnd == breakEnd;
+  @override
+  int get hashCode => Object.hash(start, end, breakStart, breakEnd);
+}
+
+/// Расписание звонков одного вида дней: время пар 1…7 и пара, после которой обед.
+class BellProfile {
+  const BellProfile({this.slots = const {}, this.lunchAfter = 0});
+  final Map<int, BellSlot> slots;
+
+  /// Номер пары, после которой обед; 0 — обеда нет.
+  final int lunchAfter;
+
+  bool get isEmpty => slots.isEmpty;
+  BellSlot? operator [](int n) => slots[n];
+
+  BellProfile withSlot(int n, BellSlot? slot) {
+    final m = {...slots};
+    if (slot == null) {
+      m.remove(n);
+    } else {
+      m[n] = slot;
+    }
+    return BellProfile(slots: m, lunchAfter: lunchAfter);
+  }
+
+  BellProfile withLunch(int n) => BellProfile(slots: slots, lunchAfter: n);
+
+  /// Номер следующей заданной пары после [n] (null — её нет).
+  int? nextPair(int n) {
+    for (var m = n + 1; m <= kMaxPairs; m++) {
+      if (slots[m] != null) return m;
+    }
+    return null;
+  }
+
+  /// Сколько минут перерыв между парой [n] и следующей заданной парой.
+  int? gapAfter(int n) {
+    final a = slots[n];
+    final next = nextPair(n);
+    if (a == null || next == null) return null;
+    return slots[next]!.start - a.end;
+  }
+
+  bool isLunchAfter(int n) => lunchAfter > 0 && lunchAfter == n;
+
+  /// Пара, идущая в указанную минуту суток (null — сейчас перерыв или занятий нет).
+  int? pairAt(int minute) {
+    for (final e in slots.entries) {
+      if (minute >= e.value.start && minute < e.value.end) return e.key;
+    }
+    return null;
+  }
+
+  Map<String, dynamic> toJson() => {
+        's': {for (final e in slots.entries) '${e.key}': e.value.toJson()},
+        'l': lunchAfter,
+      };
+
+  factory BellProfile.fromJson(Object? raw) {
+    try {
+      final j = Map<String, dynamic>.from(raw as Map);
+      final slots = <int, BellSlot>{};
+      for (final e in Map<String, dynamic>.from((j['s'] as Map?) ?? const {}).entries) {
+        final n = int.tryParse(e.key);
+        final slot = BellSlot.tryFromJson(e.value);
+        if (n != null && n >= 1 && n <= kMaxPairs && slot != null) slots[n] = slot;
+      }
+      final lunch = _int(j['l'], 0);
+      return BellProfile(slots: slots, lunchAfter: lunch >= 1 && lunch < kMaxPairs ? lunch : 0);
+    } catch (_) {
+      return const BellProfile();
+    }
+  }
+
+  /// Первая найденная проблема во времени пар (null — всё в порядке).
+  String? get problem {
+    final nums = slots.keys.toList()..sort();
+    for (var i = 0; i < nums.length; i++) {
+      final slot = slots[nums[i]]!;
+      if (!slot.valid) return '${nums[i]} пара: проверьте время и перерыв внутри пары';
+      if (i > 0) {
+        final prev = slots[nums[i - 1]]!;
+        if (slot.start < prev.end) return '${nums[i]} пара начинается раньше конца ${nums[i - 1]}-й';
+      }
+    }
+    return null;
+  }
+}
+
+/// Пометка к дате: «ОКР», «Зачёт», «Практика» или своя. [lesson] == 0 — на весь день.
+class DayMark {
+  DayMark({required this.id, required this.date, required this.lesson, required this.label});
+  final String id;
+  final DateTime date;
+  final int lesson;
+  final String label;
+
+  bool get wholeDay => lesson <= 0;
+
+  DayMark copyWith({DateTime? date, int? lesson, String? label}) =>
+      DayMark(id: id, date: date ?? this.date, lesson: lesson ?? this.lesson, label: label ?? this.label);
+
+  Map<String, dynamic> toJson() => {'id': id, 'd': ymd(date), 'l': lesson, 't': label};
+
+  static DayMark? tryFromJson(Object? raw) {
+    try {
+      final j = Map<String, dynamic>.from(raw as Map);
+      final d = parseYmd(_str(j['d']));
+      final label = _str(j['t']).trim();
+      if (d == null || label.isEmpty) return null;
+      final l = _int(j['l'], 0);
+      return DayMark(
+        id: _str(j['id']).isEmpty ? newId() : _str(j['id']),
+        date: d,
+        lesson: l < 0 ? 0 : l,
+        label: label,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
+/// Готовые названия пометок.
+const List<String> kMarkPresets = ['ОКР', 'Зачёт', 'Практика'];
+
 /// Настройки приложения. Часть из них выбирается на приветственных экранах.
 class Settings {
   Settings({
@@ -221,7 +399,13 @@ class Settings {
     this.absenceHours = 2,
     this.haptics = true,
     this.autoRefresh = true,
-  }) : extraSubjects = extraSubjects ?? [];
+    Map<String, BellProfile>? bells,
+    Map<String, String>? semesterSplits,
+    Map<String, int>? dismissed,
+  })  : extraSubjects = extraSubjects ?? [],
+        bells = bells ?? {},
+        semesterSplits = semesterSplits ?? {},
+        dismissed = dismissed ?? {};
 
   String group; // пусто — группа ещё не выбрана
   final List<String> extraSubjects; // предметы, добавленные вручную
@@ -233,6 +417,17 @@ class Settings {
   bool haptics; // тактильная отдача
   bool autoRefresh; // подгружать расписание при запуске и возвращении в приложение
 
+  /// Расписание звонков: 'week' (пн–пт), 'sat' (суббота), 'short' (сокращённый день).
+  final Map<String, BellProfile> bells;
+
+  /// Конец 1-го семестра по учебным годам: '2026' → '2027-01-24' (с этой даты идёт 2-й семестр).
+  final Map<String, String> semesterSplits;
+
+  /// Скрытые предупреждения о лимитах: ключ периода → самый высокий скрытый уровень (1 — «близко», 2 — «лимит»).
+  final Map<String, int> dismissed;
+
+  BellProfile bell(String key) => bells[key] ?? const BellProfile();
+
   Map<String, dynamic> toJson() => {
         'group': group,
         'extra': extraSubjects,
@@ -242,6 +437,9 @@ class Settings {
         'ah': absenceHours,
         'hap': haptics,
         'auto': autoRefresh,
+        'bells': {for (final e in bells.entries) e.key: e.value.toJson()},
+        'sem': semesterSplits,
+        'dis': dismissed,
       };
 
   factory Settings.fromJson(Object? raw) {
@@ -261,6 +459,17 @@ class Settings {
         absenceHours: hours == 1 ? 1 : 2,
         haptics: j['hap'] is bool ? j['hap'] as bool : true,
         autoRefresh: j['auto'] is bool ? j['auto'] as bool : true,
+        bells: {
+          for (final e in Map<String, dynamic>.from((j['bells'] as Map?) ?? const {}).entries)
+            if (kBellKeys.contains(e.key)) e.key: BellProfile.fromJson(e.value),
+        },
+        semesterSplits: {
+          for (final e in Map<String, dynamic>.from((j['sem'] as Map?) ?? const {}).entries)
+            if (int.tryParse(e.key) != null && parseYmd(_str(e.value)) != null) e.key: _str(e.value),
+        },
+        dismissed: {
+          for (final e in Map<String, dynamic>.from((j['dis'] as Map?) ?? const {}).entries) e.key: _int(e.value, 0),
+        },
       );
     } catch (_) {
       return Settings();

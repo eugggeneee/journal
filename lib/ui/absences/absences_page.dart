@@ -4,14 +4,17 @@ import '../../core/dates.dart';
 import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
+import '../../logic/limits.dart';
 import '../../logic/stats.dart';
 import '../kit/ctx.dart';
 import '../kit/feedback.dart';
 import '../kit/pickers.dart';
 import '../kit/reveal.dart';
 import '../kit/select_sheet.dart';
+import '../kit/sheet.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
+import '../settings/settings_pages.dart';
 import 'absence_limit.dart';
 import 'absence_sheet.dart';
 
@@ -21,17 +24,43 @@ class AbsencesPage extends StatefulWidget {
   State<AbsencesPage> createState() => _AbsencesPageState();
 }
 
-class _AbsencesPageState extends State<AbsencesPage> {
+class _AbsencesPageState extends State<AbsencesPage> with WidgetsBindingObserver {
   int _mode = 0;
   int _filter = 0; // 0 все, 1 без уважительной, 2 по уважительной
   final FreshTracker _fresh = FreshTracker();
   final FreshTracker _freshSubjects = FreshTracker();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Приложение могло пролежать в фоне до нового месяца — счётчики пересчитываются при возвращении.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) setState(() {});
+  }
+
+  void _openSemester(BuildContext context, Semester sem, int hours) {
+    showAdaptiveSheet<void>(context, (ctx) => _SemesterSheet(semester: sem, hours: hours));
+  }
+
+  @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
     final empty = store.absences.isEmpty;
     final stats = AbsenceStats.of(store.absences);
+    final now = DateTime.now();
+    final semester = store.semesterOn(now);
+    final monthHours = monthUnexcusedHours(store.absences, now);
+    final semesterHours = semesterUnexcusedHours(store.absences, semester);
     _fresh.sync(store.absences.map((a) => a.id));
     _freshSubjects.sync(stats.bySubjectHours.keys);
 
@@ -40,6 +69,14 @@ class _AbsencesPageState extends State<AbsencesPage> {
       subtitle: empty ? 'Посещаемость' : '${hoursText(stats.totalHours)} пропущено',
       slivers: empty
           ? [
+              Inset(children: [
+                LimitCounters(
+                  monthHours: monthHours,
+                  semesterHours: semesterHours,
+                  semester: semester,
+                  onSemesterTap: () => _openSemester(context, semester, semesterHours),
+                ),
+              ]),
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: EmptyState(
@@ -56,7 +93,14 @@ class _AbsencesPageState extends State<AbsencesPage> {
             ]
           : [
               Inset(children: [
-                AbsenceLimitBanner(unexcusedHours: stats.unexcusedHours),
+                LimitBanners(monthHours: monthHours, semesterHours: semesterHours, semester: semester),
+                LimitCounters(
+                  monthHours: monthHours,
+                  semesterHours: semesterHours,
+                  semester: semester,
+                  onSemesterTap: () => _openSemester(context, semester, semesterHours),
+                ),
+                const SizedBox(height: 12),
                 AbsencesHero(stats: stats),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -199,7 +243,7 @@ class AbsencesHero extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
       decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(32)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Всего пропущено', style: context.tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w600)),
+        Text('Всего за всё время', style: context.tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w600)),
         const SizedBox(height: 2),
         Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
           AnimatedNumber(value: stats.totalHours.toDouble(), format: (v) => '${v.round()}', style: context.tt.displayMedium?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1.05)),
@@ -366,6 +410,81 @@ class _AbsenceTile extends StatelessWidget {
           ),
         ]),
       ),
+    );
+  }
+}
+
+
+/// Подробности семестра: период, часы и переход к настройкам (там же кнопка «Завершить 1-й семестр»).
+class _SemesterSheet extends StatelessWidget {
+  const _SemesterSheet({required this.semester, required this.hours});
+  final Semester semester;
+  final int hours;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+    final left = kSemesterLimit - hours;
+    final period = semester.upcoming
+        ? 'Начнётся ${fullDate(semester.start)}'
+        : '${fullDate(semester.start)} — ${semester.number == 1 && !StoreScope.of(context).settings.semesterSplits.containsKey('${semester.year}') ? 'до конца 1-го семестра' : fullDate(semester.end)}';
+    return SheetScaffold(
+      title: semester.title,
+      subtitle: 'Учебный год ${semester.years}',
+      leading: CookieIcon(icon: Icons.school_rounded, size: 52, bg: cs.secondaryContainer, fg: cs.onSecondaryContainer),
+      footer: SizedBox(
+        width: double.infinity,
+        child: FilledButton.tonalIcon(
+          icon: const Icon(Icons.tune_rounded),
+          label: const Text('Настройки семестра'),
+          onPressed: () {
+            final nav = Navigator.of(context);
+            nav.pop();
+            nav.push(MaterialPageRoute<void>(builder: (_) => const AbsenceSettingsPage()));
+          },
+        ),
+      ),
+      children: [
+        _row(context, Icons.event_rounded, 'Период', period),
+        _row(context, Icons.event_busy_rounded, 'Без уважительной причины', '${hoursText(hours)} из $kSemesterLimit'),
+        _row(
+          context,
+          Icons.hourglass_bottom_rounded,
+          'Осталось до лимита',
+          left > 0 ? hoursText(left) : 'лимит ${left == 0 ? 'достигнут' : 'превышен'}',
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+          child: Text(
+            'Считаются только пропуски без уважительной причины. Первый семестр идёт с 1 сентября, пока вы не завершите его '
+            'в настройках; сразу после этого начинается второй — до 1 августа.',
+            style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.4),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _row(BuildContext context, IconData icon, String title, String value) {
+    final cs = context.cs;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(children: [
+        Container(
+          width: 40,
+          height: 40,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: cs.secondaryContainer, borderRadius: BorderRadius.circular(14)),
+          child: Icon(icon, size: 22, color: cs.onSecondaryContainer),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: context.tt.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+            Text(value, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      ]),
     );
   }
 }

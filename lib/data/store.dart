@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/dates.dart';
+import '../logic/bells.dart';
+import '../logic/limits.dart';
 import '../logic/subject_names.dart';
 import 'models.dart';
 
@@ -22,6 +24,8 @@ class AppStore extends ChangeNotifier {
   Settings settings = Settings();
   List<Grade> grades = [];
   List<Absence> absences = [];
+  List<DayMark> marks = [];
+  final Set<String> shortDays = {}; // даты сокращённых дней, 'yyyy-MM-dd'
   final Map<String, DaySchedule> _cache = {}; // 'группа|yyyy-MM-dd'
   bool get hasGroup => settings.group.isNotEmpty;
 
@@ -51,6 +55,10 @@ class AppStore extends ChangeNotifier {
     grades = ((j['grades'] as List?) ?? const []).map(Grade.tryFromJson).whereType<Grade>().toList();
     absences =
         ((j['absences'] as List?) ?? const []).map(Absence.tryFromJson).whereType<Absence>().toList();
+    marks = ((j['marks'] as List?) ?? const []).map(DayMark.tryFromJson).whereType<DayMark>().toList();
+    shortDays
+      ..clear()
+      ..addAll(((j['shortDays'] as List?) ?? const []).map((e) => '$e').where((e) => parseYmd(e) != null));
   }
 
   void _readCache() {
@@ -68,10 +76,12 @@ class AppStore extends ChangeNotifier {
 
   Map<String, dynamic> exportMap() => {
         'app': _kBackupId,
-        'version': 1,
+        'version': 2,
         'settings': settings.toJson(),
         'grades': grades.map((g) => g.toJson()).toList(),
         'absences': absences.map((a) => a.toJson()).toList(),
+        'marks': marks.map((m) => m.toJson()).toList(),
+        'shortDays': shortDays.toList()..sort(),
       };
 
   void _saveData() => _prefs.setString(_kData, jsonEncode(exportMap()));
@@ -188,6 +198,119 @@ class AppStore extends ChangeNotifier {
   }
 
   List<Absence> absencesOn(DateTime date) => absences.where((a) => sameDay(a.date, date)).toList();
+
+
+  // ───────────────────────── пометки к дате ─────────────────────────
+
+  /// Одна пометка на пару (или на весь день) в день: новая заменяет прежнюю.
+  void _putMark(DayMark m) {
+    marks.removeWhere((x) => x.id != m.id && x.lesson == m.lesson && sameDay(x.date, m.date));
+    final i = marks.indexWhere((x) => x.id == m.id);
+    if (i >= 0) {
+      marks[i] = m;
+    } else {
+      marks.add(m);
+    }
+  }
+
+  void saveMark(DayMark m) {
+    _putMark(m);
+    _changed();
+  }
+
+  void deleteMark(String id) {
+    marks.removeWhere((m) => m.id == id);
+    _changed();
+  }
+
+  List<DayMark> marksOn(DateTime date) {
+    final list = marks.where((m) => sameDay(m.date, date)).toList()..sort((a, b) => a.lesson.compareTo(b.lesson));
+    return list;
+  }
+
+  DayMark? markFor(DateTime date, int lesson) {
+    for (final m in marks) {
+      if (m.lesson == lesson && sameDay(m.date, date)) return m;
+    }
+    return null;
+  }
+
+  /// Снимок пометок дня и его восстановление — для «Отменить».
+  List<DayMark> snapshotMarks(DateTime date) => marksOn(date);
+
+  void restoreMarks(DateTime date, List<DayMark> snapshot) {
+    marks.removeWhere((m) => sameDay(m.date, date));
+    marks.addAll(snapshot);
+    _changed();
+  }
+
+  // ───────────────────────── сокращённые дни и звонки ─────────────────────────
+
+  bool isShortDay(DateTime date) => shortDays.contains(ymd(date));
+
+  void setShortDay(DateTime date, bool value) {
+    final k = ymd(date);
+    final changed = value ? shortDays.add(k) : shortDays.remove(k);
+    if (changed) _changed();
+  }
+
+  /// Расписание звонков, действующее в этот день.
+  BellProfile bellProfileFor(DateTime date) =>
+      settings.bell(bellKeyFor(date, shortDay: isShortDay(date)));
+
+  /// Время конкретной пары в этот день (null — не задано).
+  BellSlot? bellFor(DateTime date, int lesson) => bellProfileFor(date)[lesson];
+
+  void setBellProfile(String key, BellProfile profile) {
+    if (!kBellKeys.contains(key)) return;
+    if (profile.isEmpty && profile.lunchAfter == 0) {
+      settings.bells.remove(key);
+    } else {
+      settings.bells[key] = profile;
+    }
+    _changed();
+  }
+
+  // ───────────────────────── лимиты и семестры ─────────────────────────
+
+  /// Текущий семестр (на сегодня или на указанную дату).
+  Semester semesterOn([DateTime? now]) => semesterFor(now ?? DateTime.now(), settings.semesterSplits);
+
+  /// Завершает 1-й семестр: со дня [from] идёт 2-й, до 1 августа.
+  bool endFirstSemester(DateTime from) {
+    final now = dateOnly(from);
+    if (!canEndSemester(now, settings.semesterSplits)) return false;
+    final sem = semesterFor(now, settings.semesterSplits);
+    settings.semesterSplits['${sem.year}'] = ymd(now);
+    _changed();
+    return true;
+  }
+
+  /// Возвращает 1-й семестр (отмена завершения) в указанном учебном году.
+  void reopenFirstSemester(int year) {
+    if (settings.semesterSplits.remove('$year') != null) _changed();
+  }
+
+  int dismissedLevel(String key) => settings.dismissed[key] ?? 0;
+
+  /// Скрывает предупреждение периода [key] до уровня [level] включительно.
+  /// Записи о прошлых периодах стираются — месяц или семестр сменился, счётчик начинается заново.
+  void dismissLimit(String key, int level) {
+    final kind = key.substring(0, 2);
+    settings.dismissed.removeWhere((k, _) => k.startsWith(kind) && k != key);
+    if ((settings.dismissed[key] ?? 0) >= level) return;
+    settings.dismissed[key] = level;
+    _changed();
+  }
+
+  void undoDismissLimit(String key, int previous) {
+    if (previous <= 0) {
+      settings.dismissed.remove(key);
+    } else {
+      settings.dismissed[key] = previous;
+    }
+    _changed();
+  }
 
   // ───────────────────────── настройки ─────────────────────────
 

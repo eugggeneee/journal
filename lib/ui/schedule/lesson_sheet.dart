@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/dates.dart';
 import '../../core/haptics.dart';
 import '../../data/models.dart';
+import '../../logic/bells.dart';
 import '../absences/absence_sheet.dart';
 import '../grades/grade_sheet.dart';
 import '../kit/ctx.dart';
@@ -13,6 +14,7 @@ import '../kit/select_sheet.dart';
 import '../kit/sheet.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
+import 'marks.dart';
 
 /// Действия с парой: пропуск (причина и часы), снять пропуск, добавить оценку.
 Future<void> showLessonSheet(BuildContext context, DateTime date, LessonSlot slot) =>
@@ -72,7 +74,37 @@ class _LessonSheetState extends State<_LessonSheet> {
       showUndo(m, 'Пропуск снят', () => store.restoreDay(date, before));
     }
 
+    final bell = store.bellFor(date, slot.number);
+    final profile = store.bellProfileFor(date);
+    final mark = store.markFor(date, slot.number);
+    final gap = bell == null ? null : gapLabel(profile, slot.number);
+
     final info = <Widget>[
+      if (bell != null)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: cs.secondaryContainer, borderRadius: BorderRadius.circular(12)),
+              child: Icon(Icons.schedule_rounded, size: 20, color: cs.onSecondaryContainer),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(slotRange(bell), style: context.tt.bodyLarge?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w700)),
+                if (bell.hasBreak)
+                  Text(
+                    'Перерыв внутри пары: ${fmtMin(bell.breakStart!)} – ${fmtMin(bell.breakEnd!)} (${minText(bell.breakMinutes)})',
+                    style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                if (gap != null) Text('После пары: ${gap.toLowerCase()}', style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+              ]),
+            ),
+          ]),
+        ),
       for (final e in slot.entries)
         if (e.room.isNotEmpty || e.teacher.isNotEmpty)
           Padding(
@@ -185,6 +217,28 @@ class _LessonSheetState extends State<_LessonSheet> {
                 )
               : const SizedBox.shrink(key: ValueKey('absence-none')),
         ),
+        const FieldLabel('Пометка', top: 16),
+        Row(children: [
+          Expanded(
+            child: mark == null
+                ? Text('ОКР, зачёт, практика или своя', style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant))
+                : Align(
+                    alignment: Alignment.centerLeft,
+                    child: Pill(mark.label, tone: markTone(context), icon: Icons.bookmark_rounded),
+                  ),
+          ),
+          const SizedBox(width: 12),
+          FilledButton.tonalIcon(
+            style: FilledButton.styleFrom(minimumSize: const Size(64, 44)),
+            icon: Icon(mark == null ? Icons.bookmark_add_outlined : Icons.edit_outlined, size: 20),
+            label: Text(mark == null ? 'Добавить' : 'Изменить'),
+            onPressed: () {
+              final host = Navigator.of(context).context;
+              Navigator.of(context).pop();
+              showMarkSheet(host, date, lesson: slot.number, edit: mark);
+            },
+          ),
+        ]),
         const SizedBox(height: 4),
       ],
     );

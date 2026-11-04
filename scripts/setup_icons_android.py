@@ -28,29 +28,35 @@ def res_key(icon_id):
     return re.sub(r'([A-Z])', lambda m: '_' + m.group(1).lower(), icon_id)
 
 
+def write_adaptive(res, name, key):
+    """Адаптивный значок без вставок (inset): слои уже нарисованы под видимую область 72 dp."""
+    with open(os.path.join(res, 'mipmap-anydpi-v26', f'{name}.xml'), 'w', encoding='utf-8') as f:
+        f.write(
+            '<?xml version="1.0" encoding="utf-8"?>\n'
+            '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
+            f'    <background android:drawable="@drawable/ic_bg_{key}"/>\n'
+            f'    <foreground android:drawable="@drawable/ic_fg_{key}"/>\n'
+            '    <monochrome android:drawable="@drawable/ic_mono_shared"/>\n'
+            '</adaptive-icon>\n')
+
+
 def copy_resources(ids):
     res = os.path.join(ANDROID, 'res')
     for d in ('drawable-nodpi', 'mipmap-xxhdpi', 'mipmap-anydpi-v26'):
         os.makedirs(os.path.join(res, d), exist_ok=True)
     # одноцветный слой для «тематических значков» Android 13+ общий для всех
-    shutil.copy(os.path.join(ROOT, 'assets', 'icon', 'icon_mono.png'),
-                os.path.join(res, 'drawable-nodpi', 'ic_mono_shared.png'))
+    shutil.copy(os.path.join(ICONS, 'layer_mono.png'), os.path.join(res, 'drawable-nodpi', 'ic_mono_shared.png'))
     for icon_id in ids:
-        if icon_id == 'default':
-            continue
         k = res_key(icon_id)
         src = os.path.join(ICONS, icon_id)
         shutil.copy(os.path.join(src, 'bg.png'), os.path.join(res, 'drawable-nodpi', f'ic_bg_{k}.png'))
         shutil.copy(os.path.join(src, 'fg.png'), os.path.join(res, 'drawable-nodpi', f'ic_fg_{k}.png'))
+        if icon_id == 'default':
+            # основной значок: заменяем адаптивный значок flutter_launcher_icons (он сжимал рисунок на 16 %)
+            write_adaptive(res, 'ic_launcher', 'default')
+            continue
         shutil.copy(os.path.join(src, 'legacy.png'), os.path.join(res, 'mipmap-xxhdpi', f'ic_launcher_{k}.png'))
-        with open(os.path.join(res, 'mipmap-anydpi-v26', f'ic_launcher_{k}.xml'), 'w', encoding='utf-8') as f:
-            f.write(
-                '<?xml version="1.0" encoding="utf-8"?>\n'
-                '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
-                f'    <background android:drawable="@drawable/ic_bg_{k}"/>\n'
-                f'    <foreground android:drawable="@drawable/ic_fg_{k}"/>\n'
-                '    <monochrome android:drawable="@drawable/ic_mono_shared"/>\n'
-                '</adaptive-icon>\n')
+        write_adaptive(res, f'ic_launcher_{k}', k)
 
 
 def patch_manifest(ids):

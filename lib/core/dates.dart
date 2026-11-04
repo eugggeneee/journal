@@ -54,6 +54,18 @@ String monthYear(DateTime d) => '${_monthsNom[d.month - 1]} ${d.year}';
 
 String hhmm(DateTime d) => '${two(d.hour)}:${two(d.minute)}';
 
+/// Минуты от полуночи → «08:30».
+String fmtMin(int m) => '${two(m ~/ 60)}:${two(m % 60)}';
+
+/// «10 мин».
+String minText(int m) => '$m мин';
+
+/// Ключ месяца: «2026-11».
+String monthKey(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${two(d.month)}';
+
+/// Последний день месяца.
+DateTime monthEnd(DateTime d) => DateTime(d.year, d.month + 1, 0);
+
 /// Склонение: plural(2, 'час', 'часа', 'часов') → 'часа'.
 String plural(int n, String one, String few, String many) {
   final a = n.abs() % 100;

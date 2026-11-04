@@ -1,0 +1,20 @@
+name: Ошибка
+description: Что-то работает не так
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Что произошло
+      description: Опишите ошибку и приложите скриншот, если можно
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Как повторить
+  - type: input
+    id: version
+    attributes:
+      label: Версия приложения и устройство
+      placeholder: "v1.3.0, Android 15 / iPhone 15"

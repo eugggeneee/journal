@@ -2,7 +2,7 @@ name: Создать ключ подписи Android
 
 # Запускается вручную ОДИН раз: Actions → «Создать ключ подписи Android» → Run workflow.
 # Создаёт ключ и сам записывает четыре секрета ANDROID_KEYSTORE_* в репозиторий.
-# Нужен секрет SETUP_PAT (временный токен) — см. RELEASING.md. После запуска токен можно удалить.
+# Нужен секрет SETUP_PAT (временный токен) — см. docs/RELEASING.md. После запуска токен можно удалить.
 on:
   workflow_dispatch:
     inputs:
@@ -26,7 +26,7 @@ jobs:
       - name: Проверка токена
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo "::error::Не задан секрет SETUP_PAT. Создайте токен и добавьте его секретом (инструкция в RELEASING.md)."
+            echo "::error::Не задан секрет SETUP_PAT. Создайте токен и добавьте его секретом (инструкция в docs/RELEASING.md)."
             exit 1
           fi
           gh secret list >/dev/null

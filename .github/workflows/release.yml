@@ -138,7 +138,7 @@ jobs:
             rm -f "$RUNNER_TEMP/release.jks"
             echo "release-key" > dist/android-signing.txt
           else
-            echo "::warning::Секреты ANDROID_KEYSTORE_* не заданы — APK подписан отладочным ключом. См. RELEASING.md"
+            echo "::warning::Секреты ANDROID_KEYSTORE_* не заданы — APK подписан отладочным ключом. См. docs/RELEASING.md"
             cp "$SRC" "$OUT"
             echo "debug-key" > dist/android-signing.txt
           fi
@@ -241,7 +241,10 @@ jobs:
       - name: Описание релиза
         run: |
           PREV="$(git tag --sort=-v:refname | grep -vx "$TAG" | head -1 || true)"
-          if [ -n "$PREV" ]; then
+          if [ -f ".github/releases/$TAG.md" ]; then
+            # заранее написанный список изменений для этой версии (см. docs/RELEASING.md)
+            cp ".github/releases/$TAG.md" changes.txt
+          elif [ -n "$PREV" ]; then
             git log --no-merges --pretty='- %s' "$PREV..HEAD" > changes.txt
           else
             echo "- Первый публичный релиз" > changes.txt
