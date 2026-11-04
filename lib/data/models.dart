@@ -211,11 +211,10 @@ class Absence {
 }
 
 
-/// Профили звонков: будни, суббота и сокращённый день.
+/// Профили звонков: будни и суббота.
 const String kBellWeek = 'week';
 const String kBellSat = 'sat';
-const String kBellShort = 'short';
-const List<String> kBellKeys = [kBellWeek, kBellSat, kBellShort];
+const List<String> kBellKeys = [kBellWeek, kBellSat];
 
 /// Максимальное число пар в расписании звонков.
 const int kMaxPairs = 7;
@@ -231,6 +230,15 @@ class BellSlot {
   bool get hasBreak => breakStart != null && breakEnd != null;
   int get minutes => end - start;
   int get breakMinutes => hasBreak ? breakEnd! - breakStart! : 0;
+
+  /// Перерыв внутри пары — это обед (от 20 минут), как в расписании 2: «12:00–12:45, обед, 13:15–14:00».
+  bool get lunchInside => hasBreak && breakMinutes >= 20;
+
+  /// Первая половина пары (до перерыва); без перерыва — вся пара.
+  int get firstHalf => hasBreak ? breakStart! - start : minutes;
+
+  /// Вторая половина пары (после перерыва); без перерыва — 0.
+  int get secondHalf => hasBreak ? end - breakEnd! : 0;
 
   /// Время корректно: конец позже начала, перерыв целиком внутри пары.
   bool get valid =>
@@ -285,6 +293,15 @@ class BellProfile {
       m[n] = slot;
     }
     return BellProfile(slots: m, lunchAfter: lunchAfter);
+  }
+
+  /// Те же пары и тот же обед (для подсветки применённого готового расписания).
+  bool sameAs(BellProfile o) {
+    if (o.lunchAfter != lunchAfter || o.slots.length != slots.length) return false;
+    for (final e in slots.entries) {
+      if (o.slots[e.key] != e.value) return false;
+    }
+    return true;
   }
 
   BellProfile withLunch(int n) => BellProfile(slots: slots, lunchAfter: n);
@@ -385,8 +402,11 @@ class DayMark {
   }
 }
 
+/// Пометка «Сокращённый день» — шаблон пометки на весь день.
+const String kShortDayMark = 'Сокращённый день';
+
 /// Готовые названия пометок.
-const List<String> kMarkPresets = ['ОКР', 'Зачёт', 'Практика'];
+const List<String> kMarkPresets = ['ОКР', 'Зачёт', 'Практика', kShortDayMark];
 
 /// Настройки приложения. Часть из них выбирается на приветственных экранах.
 class Settings {
@@ -417,7 +437,7 @@ class Settings {
   bool haptics; // тактильная отдача
   bool autoRefresh; // подгружать расписание при запуске и возвращении в приложение
 
-  /// Расписание звонков: 'week' (пн–пт), 'sat' (суббота), 'short' (сокращённый день).
+  /// Расписание звонков: 'week' (пн–пт) и 'sat' (суббота).
   final Map<String, BellProfile> bells;
 
   /// Конец 1-го семестра по учебным годам: '2026' → '2027-01-24' (с этой даты идёт 2-й семестр).

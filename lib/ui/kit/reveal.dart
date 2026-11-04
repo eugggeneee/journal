@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 
 /// Запоминает, какие записи (оценки, пропуски) появились уже после первого показа списка —
@@ -142,4 +144,101 @@ class AnimatedNumber extends StatelessWidget {
         curve: Curves.easeOutCubic,
         builder: (context, v, _) => Text(format(v), style: style),
       );
+}
+
+/// Мягкое появление элемента при первом показе: проявляется и всплывает снизу.
+/// Элементы списка появляются каскадом — чем ниже, тем чуть позже ([index], не больше 7 шагов).
+/// Если в системе отключены анимации, элемент показывается сразу.
+class Appear extends StatefulWidget {
+  const Appear({super.key, required this.child, this.index = 0, this.offset = 0.12});
+  final Widget child;
+  final int index;
+
+  /// Насколько элемент «всплывает»: доля его высоты.
+  final double offset;
+
+  @override
+  State<Appear> createState() => _AppearState();
+}
+
+class _AppearState extends State<Appear> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 480));
+  late final Animation<double> _fade = _c.drive(CurveTween(curve: Curves.easeOut));
+  late final Animation<Offset> _slide =
+      _c.drive(CurveTween(curve: Curves.easeOutCubic)).drive(Tween<Offset>(begin: Offset(0, widget.offset), end: Offset.zero));
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    final reduce = WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations;
+    if (reduce) {
+      _c.value = 1;
+      return;
+    }
+    final step = widget.index < 0 ? 0 : (widget.index > 7 ? 7 : widget.index);
+    if (step == 0) {
+      _c.forward();
+    } else {
+      _timer = Timer(Duration(milliseconds: 45 * step), () {
+        if (mounted) _c.forward();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      FadeTransition(opacity: _fade, child: SlideTransition(position: _slide, child: widget.child));
+}
+
+/// Лёгкое «вдавливание» при нажатии: элемент чуть уменьшается и пружинит обратно.
+/// Не мешает нажатиям и смахиванию — только следит за пальцем.
+class PressScale extends StatefulWidget {
+  const PressScale({super.key, required this.child, this.enabled = true, this.scale = 0.985});
+  final Widget child;
+  final bool enabled;
+  final double scale;
+
+  @override
+  State<PressScale> createState() => _PressScaleState();
+}
+
+class _PressScaleState extends State<PressScale> {
+  bool _down = false;
+  Offset _start = Offset.zero;
+
+  void _set(bool v) {
+    if (_down != v && mounted) setState(() => _down = v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled) return widget.child;
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (e) {
+        _start = e.position;
+        _set(true);
+      },
+      // палец поехал — это прокрутка или смахивание, а не нажатие
+      onPointerMove: (e) {
+        if (_down && (e.position - _start).distance > 10) _set(false);
+      },
+      onPointerUp: (_) => _set(false),
+      onPointerCancel: (_) => _set(false),
+      child: AnimatedScale(
+        scale: _down ? widget.scale : 1,
+        duration: Duration(milliseconds: _down ? 90 : 220),
+        curve: _down ? Curves.easeOut : Curves.easeOutBack,
+        child: widget.child,
+      ),
+    );
+  }
 }

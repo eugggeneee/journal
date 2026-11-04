@@ -123,7 +123,6 @@ String bellsSummary(Settings s) {
   final parts = <String>[
     if (!week.isEmpty) 'будни ${week.slots.length} пар',
     if (!s.bell(kBellSat).isEmpty) 'суббота',
-    if (!s.bell(kBellShort).isEmpty) 'сокращённый',
   ];
   return parts.join(' · ');
 }

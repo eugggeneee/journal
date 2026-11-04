@@ -4,10 +4,14 @@ import '../../core/haptics.dart';
 import '../../data/store.dart';
 import '../group_picker.dart';
 import '../kit/ctx.dart';
+import '../kit/reveal.dart';
 import '../kit/selectors.dart';
+import '../kit/settings_tiles.dart';
 import '../kit/widgets.dart';
 import '../profile/theme_widgets.dart';
 import '../scope.dart';
+import '../settings/bells_page.dart';
+import '../settings/settings_pages.dart';
 
 /// Приветствие при первом запуске: знакомство → возможности → группа → стартовые настройки.
 class OnboardingFlow extends StatefulWidget {
@@ -144,7 +148,13 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          CookieIcon(icon: Icons.school_rounded, size: 156, bg: cs.primary, fg: cs.onPrimary),
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0.55, end: 1),
+            duration: const Duration(milliseconds: 1000),
+            curve: Curves.elasticOut,
+            builder: (context, v, child) => Opacity(opacity: v.clamp(0.0, 1.0).toDouble(), child: Transform.scale(scale: v, child: child)),
+            child: CookieIcon(icon: Icons.school_rounded, size: 156, bg: cs.primary, fg: cs.onPrimary),
+          ),
           const SizedBox(height: 36),
           Text('Journal', textAlign: TextAlign.center, style: context.tt.displaySmall?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
@@ -172,6 +182,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       _title(context, 'Всё под рукой', 'Три вещи, ради которых вы открываете дневник.'),
       const SizedBox(height: 28),
       _FeatureCard(
+        index: 0,
         icon: Icons.calendar_month_rounded,
         bg: cs.primaryContainer,
         fg: cs.onPrimaryContainer,
@@ -180,6 +191,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       ),
       const SizedBox(height: 12),
       _FeatureCard(
+        index: 1,
         icon: Icons.star_rounded,
         bg: cs.tertiaryContainer,
         fg: cs.onTertiaryContainer,
@@ -188,6 +200,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       ),
       const SizedBox(height: 12),
       _FeatureCard(
+        index: 2,
         icon: Icons.event_busy_rounded,
         bg: cs.errorContainer,
         fg: cs.onErrorContainer,
@@ -204,51 +217,94 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     return _scrolling([
       _title(context, 'Ваша группа', 'Выберите группу из списка на сайте колледжа или введите её номер.'),
       const SizedBox(height: 32),
-      Material(
-        color: has ? cs.primaryContainer : cs.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(28),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () {
-            Haptics.selection();
-            showGroupSheet(
-              context,
-              selected: group,
-              onSelected: (g) {
-                Haptics.selection();
-                store.setGroup(g);
-              },
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(children: [
-              CookieIcon(
-                icon: Icons.groups_rounded,
-                size: 64,
-                bg: has ? cs.primary : cs.secondaryContainer,
-                fg: has ? cs.onPrimary : cs.onSecondaryContainer,
-              ),
-              const SizedBox(width: 18),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(
-                    has ? 'Группа $group' : 'Выбрать группу',
-                    style: context.tt.headlineSmall?.copyWith(
-                      color: has ? cs.onPrimaryContainer : cs.onSurface,
-                      fontWeight: FontWeight.w800,
+      Appear(
+        child: PressScale(
+          scale: 0.99,
+          child: Material(
+            color: has ? cs.primaryContainer : cs.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(28),
+            clipBehavior: Clip.antiAlias,
+            child: ArtCircles(
+              color: has ? cs.primary : cs.secondary,
+              child: InkWell(
+                onTap: () {
+                  Haptics.selection();
+                  showGroupSheet(
+                    context,
+                    selected: group,
+                    onSelected: (g) {
+                      Haptics.selection();
+                      store.setGroup(g);
+                    },
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(children: [
+                    CookieIcon(
+                      icon: Icons.groups_rounded,
+                      size: 64,
+                      bg: has ? cs.primary : cs.secondaryContainer,
+                      fg: has ? cs.onPrimary : cs.onSecondaryContainer,
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    has ? 'Нажмите, чтобы сменить' : 'Нажмите, чтобы открыть список',
-                    style: context.tt.bodyMedium?.copyWith(color: has ? cs.onPrimaryContainer.withValues(alpha: 0.85) : cs.onSurfaceVariant),
-                  ),
-                ]),
+                    const SizedBox(width: 18),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(
+                          has ? 'Группа $group' : 'Выбрать группу',
+                          style: context.tt.headlineSmall?.copyWith(
+                            color: has ? cs.onPrimaryContainer : cs.onSurface,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          has ? 'Нажмите, чтобы сменить' : 'Нажмите, чтобы открыть список',
+                          style: context.tt.bodyMedium?.copyWith(color: has ? cs.onPrimaryContainer.withValues(alpha: 0.85) : cs.onSurfaceVariant),
+                        ),
+                      ]),
+                    ),
+                    Icon(Icons.expand_less_rounded, color: has ? cs.onPrimaryContainer : cs.onSurfaceVariant),
+                  ]),
+                ),
               ),
-              Icon(Icons.expand_less_rounded, color: has ? cs.onPrimaryContainer : cs.onSurfaceVariant),
-            ]),
+            ),
           ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      Appear(
+        index: 2,
+        child: PressScale(
+          scale: 0.99,
+          child: Material(
+            color: cs.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(28),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () {
+                Haptics.selection();
+                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const BellsPage()));
+              },
+              child: BadgeRow(
+                icon: Icons.notifications_active_rounded,
+                tone: Tone(cs.tertiaryContainer, cs.onTertiaryContainer),
+                title: 'Время пар',
+                subtitle: store.settings.bells.values.any((p) => !p.isEmpty) ? bellsSummary(store.settings) : 'По желанию: введите звонки своей группы',
+                trailing: store.settings.bells.values.any((p) => !p.isEmpty)
+                    ? Icon(Icons.check_circle_rounded, color: cs.primary)
+                    : Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+              ),
+            ),
+          ),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(12, 14, 12, 0),
+        child: Text(
+          'Это необязательно: время пар можно ввести позже в профиле.',
+          textAlign: TextAlign.center,
+          style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
         ),
       ),
     ]);
@@ -327,7 +383,8 @@ class _Orb extends StatelessWidget {
 }
 
 class _FeatureCard extends StatelessWidget {
-  const _FeatureCard({required this.icon, required this.bg, required this.fg, required this.title, required this.text});
+  const _FeatureCard({required this.index, required this.icon, required this.bg, required this.fg, required this.title, required this.text});
+  final int index;
   final IconData icon;
   final Color bg;
   final Color fg;
@@ -335,7 +392,9 @@ class _FeatureCard extends StatelessWidget {
   final String text;
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) => Appear(
+        index: index + 1,
+        child: Card(
         color: context.cs.surfaceContainerLow,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         child: Padding(
@@ -358,6 +417,7 @@ class _FeatureCard extends StatelessWidget {
             ),
           ]),
         ),
+      ),
       );
 }
 

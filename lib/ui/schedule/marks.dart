@@ -18,6 +18,8 @@ import '../scope.dart';
 Future<void> showMarkSheet(BuildContext context, DateTime date, {int? lesson, DayMark? edit}) =>
     showAdaptiveSheet<void>(context, (_) => _MarkSheet(date: date, lesson: lesson, edit: edit));
 
+IconData markIcon(String label) => label == kShortDayMark ? Icons.timelapse_rounded : Icons.bookmark_rounded;
+
 Tone markTone(BuildContext context) => Tone(context.cs.tertiaryContainer, context.cs.onTertiaryContainer);
 
 class _MarkSheet extends StatefulWidget {
@@ -115,11 +117,13 @@ class _MarkSheetState extends State<_MarkSheet> {
           for (final p in kMarkPresets)
             ChoiceTag(
               label: p,
-              icon: Icons.bookmark_outline_rounded,
+              icon: p == kShortDayMark ? Icons.timelapse_rounded : Icons.bookmark_outline_rounded,
               selected: !custom && preset == p,
               onTap: () => setState(() {
                 custom = false;
                 preset = p;
+                // «Сокращённый день» — всегда пометка на весь день
+                if (p == kShortDayMark) lesson = 0;
               }),
             ),
           ChoiceTag(
@@ -280,7 +284,7 @@ class _MarkTile extends StatelessWidget {
             height: 46,
             alignment: Alignment.center,
             decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(46 * 0.34)),
-            child: Icon(Icons.bookmark_rounded, color: tone.fg, size: 24),
+            child: Icon(markIcon(m.label), color: tone.fg, size: 24),
           ),
           const SizedBox(width: 14),
           Expanded(

@@ -21,7 +21,7 @@ class _BellsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
     final cs = context.cs;
-    final key = bellKeyFor(date, shortDay: store.isShortDay(date));
+    final key = bellKeyFor(date);
     final profile = store.settings.bell(key);
     return SheetScaffold(
       title: 'Звонки',
@@ -76,18 +76,18 @@ class BellTimeline extends StatelessWidget {
             Text(slotRange(slot), style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
             if (slot.hasBreak)
               Row(children: [
-                Icon(Icons.coffee_rounded, size: 14, color: cs.onSurfaceVariant),
+                Icon(slot.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded, size: 14, color: cs.tertiary),
                 const SizedBox(width: 4),
                 Flexible(
                   child: Text(
-                    'Перерыв внутри пары ${fmtMin(slot.breakStart!)} – ${fmtMin(slot.breakEnd!)}',
+                    '${fmtMin(slot.start)}–${fmtMin(slot.breakStart!)} · ${innerBreakWord(slot)} ${minText(slot.breakMinutes)} · ${fmtMin(slot.breakEnd!)}–${fmtMin(slot.end)}',
                     style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                   ),
                 ),
               ]),
           ]),
         ),
-        Text(minText(slot.minutes), style: context.tt.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+        Text(halvesText(slot), style: context.tt.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
       ]));
       final gap = gapLabel(profile, n);
       if (gap != null) {

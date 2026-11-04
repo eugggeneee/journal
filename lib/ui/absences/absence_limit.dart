@@ -9,6 +9,7 @@ import '../../logic/limits.dart';
 import '../kit/ctx.dart';
 import '../kit/feedback.dart';
 import '../kit/reveal.dart';
+import '../kit/widgets.dart';
 import '../scope.dart';
 
 /// Предупреждения о лимитах над счётчиками.
@@ -157,7 +158,8 @@ class _Banner extends StatelessWidget {
   }
 }
 
-/// Два счётчика рядом: пропуски без уважительной причины за месяц и за семестр.
+/// Два счётчика друг под другом, в том же стиле, что и пары в расписании:
+/// пропуски без уважительной причины за месяц и за семестр.
 class LimitCounters extends StatelessWidget {
   const LimitCounters({super.key, required this.monthHours, required this.semesterHours, required this.semester, required this.onSemesterTap});
   final int monthHours;
@@ -168,44 +170,39 @@ class LimitCounters extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final semSubtitle = semester.upcoming ? 'каникулы · с 1 сентября' : '${semester.title} · ${semester.years}';
-    return LayoutBuilder(builder: (context, box) {
-      final narrow = box.maxWidth < 360;
-      final month = LimitCard(
+    final semSubtitle = semester.upcoming ? 'Каникулы · с 1 сентября' : '${semester.title} · ${semester.years}';
+    return Column(children: [
+      LimitCard(
+        index: 0,
+        count: 2,
         icon: Icons.calendar_month_rounded,
-        title: 'Месяц',
+        title: 'За месяц',
         subtitle: monthYear(now),
         hours: monthHours,
         limit: kMonthLimit,
         warnFrom: kMonthWarnFrom,
-      );
-      final sem = LimitCard(
+      ),
+      LimitCard(
+        index: 1,
+        count: 2,
         icon: Icons.school_rounded,
-        title: 'Семестр',
+        title: 'За семестр',
         subtitle: semSubtitle,
         hours: semesterHours,
         limit: kSemesterLimit,
         warnFrom: kSemesterWarnFrom,
         onTap: onSemesterTap,
-      );
-      if (narrow) {
-        return Column(children: [month, const SizedBox(height: 10), sem]);
-      }
-      return IntrinsicHeight(
-        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Expanded(child: month),
-          const SizedBox(width: 10),
-          Expanded(child: sem),
-        ]),
-      );
-    });
+      ),
+    ]);
   }
 }
 
-/// Карточка-счётчик: кольцо «N из лимита», подпись периода и сколько осталось.
+/// Карточка-счётчик: кольцо с числом часов, период, сколько осталось до лимита и полоса прогресса.
 class LimitCard extends StatelessWidget {
   const LimitCard({
     super.key,
+    required this.index,
+    required this.count,
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -214,6 +211,8 @@ class LimitCard extends StatelessWidget {
     required this.warnFrom,
     this.onTap,
   });
+  final int index;
+  final int count;
   final IconData icon;
   final String title;
   final String subtitle;
@@ -236,68 +235,60 @@ class LimitCard extends StatelessWidget {
         tone = warnTone(context);
         accent = warnAccent(context);
       case LimitLevel.ok:
-        tone = Tone(cs.surfaceContainerHigh, cs.onSurface);
+        tone = Tone(cs.surfaceContainerLow, cs.onSurface);
         accent = cs.primary;
     }
     final left = limit - hours;
     final status = level == LimitLevel.reached
         ? (hours == limit ? 'Лимит достигнут' : 'Превышено на ${hoursText(hours - limit)}')
         : 'Осталось ${hoursText(left)}';
+    final muted = tone.fg.withValues(alpha: 0.78);
     return Semantics(
       container: true,
       label: '$title, $subtitle: $hours из $limit часов без уважительной причины. $status',
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-        decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(28)),
-        clipBehavior: Clip.antiAlias,
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Icon(icon, size: 18, color: tone.fg.withValues(alpha: 0.85)),
-                  const SizedBox(width: 6),
-                  Expanded(child: Text(title, style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w800))),
-                  if (onTap != null) Icon(Icons.chevron_right_rounded, size: 20, color: tone.fg.withValues(alpha: 0.7)),
-                ]),
-                Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall?.copyWith(color: tone.fg.withValues(alpha: 0.8))),
-                const SizedBox(height: 12),
-                Row(children: [
-                  SizedBox(
-                    width: 64,
-                    height: 64,
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween<double>(end: limit == 0 ? 0 : hours / limit),
-                      duration: const Duration(milliseconds: 700),
-                      curve: Curves.easeOutCubic,
-                      builder: (context, v, _) => CustomPaint(
-                        painter: _RingPainter(progress: v, color: accent, track: tone.fg.withValues(alpha: 0.14), stroke: 7),
-                        child: Center(
-                          child: AnimatedNumber(
-                            value: hours.toDouble(),
-                            format: (x) => '${x.round()}',
-                            style: context.tt.titleLarge?.copyWith(color: tone.fg, fontWeight: FontWeight.w800, height: 1),
-                          ),
-                        ),
-                      ),
+      child: SegmentCard(
+        index: index,
+        count: count,
+        color: tone.bg,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+          child: Row(children: [
+            SizedBox(
+              width: 62,
+              height: 62,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(end: limit == 0 ? 0 : hours / limit),
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeOutCubic,
+                builder: (context, v, _) => CustomPaint(
+                  painter: _RingPainter(progress: v, color: accent, track: tone.fg.withValues(alpha: 0.14), stroke: 7),
+                  child: Center(
+                    child: AnimatedNumber(
+                      value: hours.toDouble(),
+                      format: (x) => '${x.round()}',
+                      style: context.tt.titleLarge?.copyWith(color: tone.fg, fontWeight: FontWeight.w800, height: 1),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('из $limit ч', style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 2),
-                      Text(status, style: context.tt.bodySmall?.copyWith(color: tone.fg.withValues(alpha: 0.85), height: 1.25)),
-                    ]),
-                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Icon(icon, size: 18, color: muted),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800))),
                 ]),
+                const SizedBox(height: 1),
+                Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall?.copyWith(color: muted)),
+                const SizedBox(height: 6),
+                Text('$status · из $limit ч', style: context.tt.bodyMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w600)),
               ]),
             ),
-          ),
+            if (onTap != null) Icon(Icons.chevron_right_rounded, color: muted),
+          ]),
         ),
       ),
     );

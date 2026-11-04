@@ -10,6 +10,7 @@ import '../kit/feedback.dart';
 import '../kit/pickers.dart';
 import '../kit/reveal.dart';
 import '../kit/select_sheet.dart';
+import '../kit/settings_tiles.dart';
 import '../kit/sheet.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
@@ -146,6 +147,11 @@ class _BellsPageState extends State<BellsPage> {
     showUndo(messenger, message, () => store.setBellProfile(key, before));
   }
 
+  void _applyPreset(AppStore store, BellPreset preset) {
+    if (_profile(store).sameAs(preset.profile)) return;
+    _withUndo(store, '${preset.title} применено', preset.profile);
+  }
+
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
@@ -154,11 +160,29 @@ class _BellsPageState extends State<BellsPage> {
     final problem = p.problem;
     final week = store.settings.bell(kBellWeek);
 
-    final hint = switch (_key) {
-      kBellSat => 'В субботу время пар обычно другое — задайте его отдельно.',
-      kBellShort => 'Применяется в дни, отмеченные в расписании кнопкой «Сокращённый день».',
-      _ => 'Применяется с понедельника по пятницу. У разных групп время может отличаться — введите своё.',
-    };
+    final hint = _key == kBellSat
+        ? 'В субботу время пар обычно другое — задайте его отдельно.'
+        : 'Применяется с понедельника по пятницу. У разных групп время может отличаться — введите своё.';
+
+    final presets = [for (final x in kBellPresets) if (x.key == _key) x];
+    final presetCards = <Widget>[
+      if (presets.isNotEmpty) const SectionHeader('Готовые расписания', top: 8),
+      for (var i = 0; i < presets.length; i++)
+        SegmentCard(
+          index: i,
+          count: presets.length,
+          onTap: () => _applyPreset(store, presets[i]),
+          child: BadgeRow(
+            icon: Icons.schedule_rounded,
+            tone: Tone(cs.secondaryContainer, cs.onSecondaryContainer),
+            title: presets[i].title,
+            subtitle: presets[i].subtitle,
+            trailing: p.sameAs(presets[i].profile)
+                ? Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.check_circle_rounded, color: cs.primary))
+                : Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.add_circle_outline_rounded, color: cs.onSurfaceVariant)),
+          ),
+        ),
+    ];
 
     final nums = [for (var n = 1; n <= kMaxPairs; n++) n];
     final rows = <Widget>[];
@@ -173,6 +197,7 @@ class _BellsPageState extends State<BellsPage> {
         onBreakEnd: () => _pickBreak(store, n, start: false),
         onToggleBreak: () => _toggleBreak(store, n),
         onClear: () => _clearPair(store, n),
+        index: n - 1,
       ));
       final next = p.nextPair(n);
       final gap = (p[n] != null && next == n + 1) ? gapLabel(p, n) : null;
@@ -204,7 +229,10 @@ class _BellsPageState extends State<BellsPage> {
                 width: double.infinity,
                 child: SegmentedButton<String>(
                   showSelectedIcon: false,
-                  segments: [for (final k in kBellKeys) ButtonSegment(value: k, label: Text(k == kBellShort ? 'Сокращённый' : bellTitle(k)))],
+                  segments: [
+                    for (final k in kBellKeys)
+                      ButtonSegment(value: k, label: Text(bellTitle(k)), icon: Icon(k == kBellSat ? Icons.weekend_rounded : Icons.work_outline_rounded)),
+                  ],
                   selected: {_key},
                   onSelectionChanged: (s) {
                     Haptics.selection();
@@ -216,7 +244,9 @@ class _BellsPageState extends State<BellsPage> {
                 padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
                 child: Text(hint, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.35)),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
+              ...presetCards,
+              const SectionHeader('Вручную'),
               Row(children: [
                 Expanded(
                   child: FilledButton.tonalIcon(
@@ -279,7 +309,7 @@ class _BellsPageState extends State<BellsPage> {
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                 child: Text(
                   'Время показывается справа в карточке каждой пары. Значки: ☕ — перерыв внутри пары, 🍴 — после пары обед. '
-                  'Перерывы между парами считаются сами — по времени конца и начала.',
+                  'Перерывы между парами считаются сами — по времени конца и начала. Внутри пары можно задать перерыв — например, две половины по 45 минут.',
                   style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.4),
                 ),
               ),
@@ -311,10 +341,12 @@ class _BellsPageState extends State<BellsPage> {
       );
 }
 
-/// Карточка одной пары: начало и конец, перерыв внутри пары и меню действий.
+/// Карточка одной пары: начало и конец, а ниже — переключатель «Перерыв внутри пары»
+/// с наглядной схемой «половина · перерыв · половина».
 class _PairCard extends StatelessWidget {
   const _PairCard({
     super.key,
+    required this.index,
     required this.n,
     required this.slot,
     required this.onStart,
@@ -324,6 +356,7 @@ class _PairCard extends StatelessWidget {
     required this.onToggleBreak,
     required this.onClear,
   });
+  final int index;
   final int n;
   final BellSlot? slot;
   final VoidCallback onStart;
@@ -337,62 +370,126 @@ class _PairCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.cs;
     final s = slot;
-    final set = s != null;
-    return SegmentCard(
-      index: 0,
-      count: 1,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 4, 12),
-        child: Column(children: [
-          Row(children: [
-            NumberBadge('$n', tone: set ? Tone(cs.primaryContainer, cs.onPrimaryContainer) : neutralTone(context), size: 46, round: false),
-            const SizedBox(width: 12),
-            Expanded(child: _TimeField(label: 'Начало', minutes: s?.start, onTap: onStart)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Icon(Icons.arrow_forward_rounded, size: 18, color: cs.onSurfaceVariant),
-            ),
-            Expanded(child: _TimeField(label: 'Конец', minutes: s?.end, onTap: onEnd)),
-            PopupMenuButton<String>(
-              tooltip: 'Действия',
-              icon: const Icon(Icons.more_vert_rounded),
-              enabled: set,
-              onSelected: (v) {
-                if (v == 'break') onToggleBreak();
-                if (v == 'clear') onClear();
-              },
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                  value: 'break',
-                  child: ListTile(
-                    leading: const Icon(Icons.coffee_rounded),
-                    title: Text(s != null && s.hasBreak ? 'Убрать перерыв внутри' : 'Перерыв внутри пары'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
+    return Appear(
+      index: index,
+      child: Material(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(28),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 6, 6),
+          child: Column(children: [
+            Row(children: [
+              NumberBadge('$n', tone: s != null ? Tone(cs.primaryContainer, cs.onPrimaryContainer) : neutralTone(context), size: 46, round: false),
+              const SizedBox(width: 12),
+              Expanded(child: _TimeField(label: 'Начало', minutes: s?.start, onTap: onStart)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Icon(Icons.arrow_forward_rounded, size: 18, color: cs.onSurfaceVariant),
+              ),
+              Expanded(child: _TimeField(label: 'Конец', minutes: s?.end, onTap: onEnd)),
+              SizedBox(
+                width: 48,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
+                  child: s != null
+                      ? IconButton(key: const ValueKey('clear'), tooltip: 'Очистить пару', icon: const Icon(Icons.close_rounded), onPressed: onClear)
+                      : const SizedBox.shrink(key: ValueKey('no-clear')),
                 ),
-                const PopupMenuItem(
-                  value: 'clear',
-                  child: ListTile(leading: Icon(Icons.delete_outline_rounded), title: Text('Очистить пару'), contentPadding: EdgeInsets.zero),
-                ),
-              ],
+              ),
+            ]),
+            Smooth(
+              child: s != null
+                  ? Padding(
+                      key: ValueKey('break-block-${s.hasBreak}'),
+                      padding: const EdgeInsets.fromLTRB(0, 4, 8, 6),
+                      child: Column(children: [
+                        InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: onToggleBreak,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 4, 0, 4),
+                            child: Row(children: [
+                              const SizedBox(width: 8),
+                              Icon(s.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded, size: 20, color: s.hasBreak ? cs.tertiary : cs.onSurfaceVariant),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Text('Перерыв внутри пары', style: context.tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                                  Text(
+                                    s.hasBreak ? (s.lunchInside ? 'Обед внутри пары: ${halvesText(s)}' : 'Две половины: ${halvesText(s)}') : 'Например, две половины по 45 минут',
+                                    style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                                  ),
+                                ]),
+                              ),
+                              SettingsSwitch(value: s.hasBreak, onChanged: (_) => onToggleBreak()),
+                            ]),
+                          ),
+                        ),
+                        if (s.hasBreak) ...[
+                          const SizedBox(height: 8),
+                          _HalvesBar(slot: s),
+                          const SizedBox(height: 10),
+                          Row(children: [
+                            const SizedBox(width: 8),
+                            Expanded(child: _TimeField(label: s.lunchInside ? 'Обед с' : 'Перерыв с', minutes: s.breakStart, onTap: onBreakStart, dense: true)),
+                            const SizedBox(width: 10),
+                            Expanded(child: _TimeField(label: s.lunchInside ? 'Обед до' : 'Перерыв до', minutes: s.breakEnd, onTap: onBreakEnd, dense: true)),
+                          ]),
+                          const SizedBox(height: 4),
+                        ],
+                      ]),
+                    )
+                  : const SizedBox(key: ValueKey('no-break-block'), height: 6, width: double.infinity),
             ),
           ]),
-          Smooth(
-            child: (s != null && s.hasBreak)
-                ? Padding(
-                    key: const ValueKey('break'),
-                    padding: const EdgeInsets.fromLTRB(0, 10, 10, 2),
-                    child: Row(children: [
-                      const SizedBox(width: 58),
-                      Icon(Icons.coffee_rounded, size: 18, color: cs.onSurfaceVariant),
-                      const SizedBox(width: 8),
-                      Expanded(child: _TimeField(label: 'Перерыв с', minutes: s.breakStart, onTap: onBreakStart, dense: true)),
-                      const SizedBox(width: 8),
-                      Expanded(child: _TimeField(label: 'до', minutes: s.breakEnd, onTap: onBreakEnd, dense: true)),
-                    ]),
-                  )
-                : const SizedBox.shrink(key: ValueKey('break-none')),
+        ),
+      ),
+    );
+  }
+}
+
+/// Схема пары: первая половина, перерыв и вторая половина — длины пропорциональны минутам.
+class _HalvesBar extends StatelessWidget {
+  const _HalvesBar({required this.slot});
+  final BellSlot slot;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+    final a = slot.firstHalf < 1 ? 1 : slot.firstHalf;
+    final gap = slot.breakMinutes < 1 ? 1 : slot.breakMinutes;
+    final b = slot.secondHalf < 1 ? 1 : slot.secondHalf;
+    Widget half(int flex, String text) => Expanded(
+          flex: flex,
+          child: Container(
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(12)),
+            child: Text(text, maxLines: 1, overflow: TextOverflow.clip, style: context.tt.labelLarge?.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w800)),
           ),
+        );
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: TweenAnimationBuilder<double>(
+        key: ValueKey('${slot.firstHalf}-${slot.breakMinutes}-${slot.secondHalf}'),
+        tween: Tween<double>(begin: 0.85, end: 1),
+        duration: const Duration(milliseconds: 380),
+        curve: Curves.easeOutBack,
+        builder: (context, v, child) => Transform.scale(scale: v, child: child),
+        child: Row(children: [
+          half(a, '${slot.firstHalf}'),
+          Expanded(
+            flex: gap,
+            child: Container(
+              height: 34,
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              decoration: BoxDecoration(color: cs.tertiaryContainer, borderRadius: BorderRadius.circular(12)),
+              child: Icon(slot.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded, size: 16, color: cs.onTertiaryContainer),
+            ),
+          ),
+          half(b, '${slot.secondHalf}'),
         ]),
       ),
     );
@@ -506,7 +603,7 @@ class _AutoFillSheetState extends State<_AutoFillSheet> {
         _Stepper(label: 'Пар в день', value: count, min: 1, max: kMaxPairs, step: 1, suffix: '', onChanged: (v) => setState(() => count = v)),
         _Stepper(label: 'Длительность пары', value: pair, min: 30, max: 180, step: 5, suffix: ' мин', onChanged: (v) => setState(() => pair = v)),
         _Stepper(label: 'Перерыв между парами', value: brk, min: 0, max: 60, step: 5, suffix: ' мин', onChanged: (v) => setState(() => brk = v)),
-        _Stepper(label: 'Перерыв внутри пары', value: inner, min: 0, max: 20, step: 5, suffix: ' мин', onChanged: (v) => setState(() => inner = v)),
+        _Stepper(label: 'Перерыв внутри пары (0 — нет)', value: inner, min: 0, max: 20, step: 5, suffix: ' мин', onChanged: (v) => setState(() => inner = v)),
         const SizedBox(height: 8),
         SelectField<int>(
           label: 'Обед',
@@ -532,7 +629,10 @@ class _AutoFillSheetState extends State<_AutoFillSheet> {
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 14, 4, 4),
           child: Text(
-            last == null ? 'Слишком поздно: пары не помещаются в сутки.' : 'Получится: 1 пара в ${fmtMin(preview.slots[1]!.start)}, ${preview.slots.length}-я заканчивается в ${fmtMin(last.end)}.',
+            last == null
+                ? 'Слишком поздно: пары не помещаются в сутки.'
+                : 'Получится: 1 пара в ${fmtMin(preview.slots[1]!.start)}, ${preview.slots.length}-я заканчивается в ${fmtMin(last.end)}.'
+                    '${preview.slots[1]!.hasBreak ? ' Пара: ${halvesText(preview.slots[1]!)}.' : ''}',
             style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
           ),
         ),

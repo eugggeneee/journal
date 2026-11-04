@@ -25,7 +25,6 @@ class AppStore extends ChangeNotifier {
   List<Grade> grades = [];
   List<Absence> absences = [];
   List<DayMark> marks = [];
-  final Set<String> shortDays = {}; // даты сокращённых дней, 'yyyy-MM-dd'
   final Map<String, DaySchedule> _cache = {}; // 'группа|yyyy-MM-dd'
   bool get hasGroup => settings.group.isNotEmpty;
 
@@ -56,9 +55,6 @@ class AppStore extends ChangeNotifier {
     absences =
         ((j['absences'] as List?) ?? const []).map(Absence.tryFromJson).whereType<Absence>().toList();
     marks = ((j['marks'] as List?) ?? const []).map(DayMark.tryFromJson).whereType<DayMark>().toList();
-    shortDays
-      ..clear()
-      ..addAll(((j['shortDays'] as List?) ?? const []).map((e) => '$e').where((e) => parseYmd(e) != null));
   }
 
   void _readCache() {
@@ -81,7 +77,6 @@ class AppStore extends ChangeNotifier {
         'grades': grades.map((g) => g.toJson()).toList(),
         'absences': absences.map((a) => a.toJson()).toList(),
         'marks': marks.map((m) => m.toJson()).toList(),
-        'shortDays': shortDays.toList()..sort(),
       };
 
   void _saveData() => _prefs.setString(_kData, jsonEncode(exportMap()));
@@ -244,19 +239,10 @@ class AppStore extends ChangeNotifier {
     _changed();
   }
 
-  // ───────────────────────── сокращённые дни и звонки ─────────────────────────
-
-  bool isShortDay(DateTime date) => shortDays.contains(ymd(date));
-
-  void setShortDay(DateTime date, bool value) {
-    final k = ymd(date);
-    final changed = value ? shortDays.add(k) : shortDays.remove(k);
-    if (changed) _changed();
-  }
+  // ───────────────────────── звонки ─────────────────────────
 
   /// Расписание звонков, действующее в этот день.
-  BellProfile bellProfileFor(DateTime date) =>
-      settings.bell(bellKeyFor(date, shortDay: isShortDay(date)));
+  BellProfile bellProfileFor(DateTime date) => settings.bell(bellKeyFor(date));
 
   /// Время конкретной пары в этот день (null — не задано).
   BellSlot? bellFor(DateTime date, int lesson) => bellProfileFor(date)[lesson];

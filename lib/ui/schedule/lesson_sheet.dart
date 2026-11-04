@@ -97,7 +97,7 @@ class _LessonSheetState extends State<_LessonSheet> {
                 Text(slotRange(bell), style: context.tt.bodyLarge?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w700)),
                 if (bell.hasBreak)
                   Text(
-                    'Перерыв внутри пары: ${fmtMin(bell.breakStart!)} – ${fmtMin(bell.breakEnd!)} (${minText(bell.breakMinutes)})',
+                    'Две половины ${halvesText(bell)}: ${fmtMin(bell.start)}–${fmtMin(bell.breakStart!)} и ${fmtMin(bell.breakEnd!)}–${fmtMin(bell.end)}, между ними ${innerBreakWord(bell)} ${minText(bell.breakMinutes)}',
                     style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
                   ),
                 if (gap != null) Text('После пары: ${gap.toLowerCase()}', style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
@@ -224,7 +224,7 @@ class _LessonSheetState extends State<_LessonSheet> {
                 ? Text('ОКР, зачёт, практика или своя', style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant))
                 : Align(
                     alignment: Alignment.centerLeft,
-                    child: Pill(dayMark.label, tone: markTone(context), icon: Icons.bookmark_rounded),
+                    child: Pill(dayMark.label, tone: markTone(context), icon: markIcon(dayMark.label)),
                   ),
           ),
           const SizedBox(width: 12),

@@ -237,11 +237,16 @@ class AbsencesHero extends StatelessWidget {
         : '≈ ${pairsValue.toStringAsFixed(1).replaceAll('.', ',')} пары';
     final unexColor = absenceAccent(context, excused: false);
     final exColor = absenceAccent(context, excused: true);
-    return AnimatedContainer(
+    return Appear(
+      child: AnimatedContainer(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeOutCubic,
-      padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
       decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(32)),
+      child: ArtCircles(
+      color: fg,
+      radius: 32,
+      child: Padding(
+      padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Всего за всё время', style: context.tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w600)),
         const SizedBox(height: 2),
@@ -261,6 +266,9 @@ class AbsencesHero extends StatelessWidget {
           Expanded(child: _Legend(color: exColor, label: 'По уважительной', hours: ex, fg: fg)),
         ]),
       ]),
+      ),
+      ),
+      ),
     );
   }
 }

@@ -17,7 +17,7 @@ class Shell extends StatefulWidget {
   State<Shell> createState() => _ShellState();
 }
 
-class _ShellState extends State<Shell> {
+class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
   static const _wide = 640.0;
 
   static const _items = [
@@ -29,6 +29,12 @@ class _ShellState extends State<Shell> {
 
   int _tab = 0;
   bool _prefetched = false;
+
+  // Смена вкладки: содержимое проявляется и чуть всплывает (состояние страниц сохраняется).
+  late final AnimationController _swap = AnimationController(vsync: this, duration: const Duration(milliseconds: 340), value: 1);
+  late final Animation<double> _swapFade = _swap.drive(CurveTween(curve: Curves.easeOut));
+  late final Animation<Offset> _swapSlide =
+      _swap.drive(CurveTween(curve: Curves.easeOutCubic)).drive(Tween<Offset>(begin: const Offset(0, 0.025), end: Offset.zero));
   final ScheduleController _sched = ScheduleController();
   late final List<Widget> _pages = [
     SchedulePage(controller: _sched),
@@ -48,6 +54,7 @@ class _ShellState extends State<Shell> {
 
   @override
   void dispose() {
+    _swap.dispose();
     _sched.dispose();
     super.dispose();
   }
@@ -56,6 +63,7 @@ class _ShellState extends State<Shell> {
     if (i == _tab) return;
     Haptics.selection();
     setState(() => _tab = i);
+    _swap.forward(from: 0);
   }
 
   Widget _fab(BuildContext context) {
@@ -92,12 +100,18 @@ class _ShellState extends State<Shell> {
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= _wide;
-    final body = IndexedStack(index: _tab, children: _pages);
+    final body = FadeTransition(
+      opacity: _swapFade,
+      child: SlideTransition(position: _swapSlide, child: IndexedStack(index: _tab, children: _pages)),
+    );
 
     return PopScope(
       canPop: _tab == 0,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) setState(() => _tab = 0);
+        if (!didPop) {
+          setState(() => _tab = 0);
+          _swap.forward(from: 0);
+        }
       },
       child: Scaffold(
         body: wide

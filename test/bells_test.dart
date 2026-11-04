@@ -5,11 +5,20 @@ import 'package:journal/logic/bells.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  test('профиль звонков: суббота и сокращённый день выбираются отдельно', () {
-    expect(bellKeyFor(DateTime(2026, 11, 4), shortDay: false), kBellWeek);
-    expect(bellKeyFor(DateTime(2026, 11, 7), shortDay: false), kBellSat);
-    expect(bellKeyFor(DateTime(2026, 11, 7), shortDay: true), kBellShort);
-    expect(bellKeyFor(DateTime(2026, 11, 4), shortDay: true), kBellShort);
+  test('профиль звонков: будни и суббота выбираются отдельно', () {
+    expect(bellKeyFor(DateTime(2026, 11, 4)), kBellWeek);
+    expect(bellKeyFor(DateTime(2026, 11, 6)), kBellWeek);
+    expect(bellKeyFor(DateTime(2026, 11, 7)), kBellSat);
+  });
+
+  test('две половины пары по 45 минут и перерыв между ними', () {
+    const s = BellSlot(start: 8 * 60 + 30, end: 10 * 60 + 5, breakStart: 9 * 60 + 15, breakEnd: 9 * 60 + 20);
+    expect(s.valid, isTrue);
+    expect(s.firstHalf, 45);
+    expect(s.secondHalf, 45);
+    expect(s.breakMinutes, 5);
+    expect(halvesText(s), '45 + 45 мин');
+    expect(halvesText(const BellSlot(start: 510, end: 600)), '90 мин');
   });
 
   test('автозаполнение: пары подряд, обед после выбранной', () {
@@ -33,6 +42,72 @@ void main() {
     expect(s.hasBreak, isTrue);
     expect(s.breakMinutes, 10);
     expect(s.valid, isTrue);
+  });
+
+  group('готовые расписания колледжа', () {
+    BellPreset preset(String id) => kBellPresets.firstWhere((p) => p.id == id);
+
+    test('все корректны, подходят к своим дням', () {
+      expect(kBellPresets.length, 3);
+      for (final p in kBellPresets) {
+        expect(p.profile.problem, isNull, reason: p.id);
+        for (final s in p.profile.slots.values) {
+          expect(s.valid, isTrue, reason: p.id);
+          expect(s.hasBreak, isTrue, reason: p.id);
+        }
+      }
+      expect(preset('week1').key, kBellWeek);
+      expect(preset('week2').key, kBellWeek);
+      expect(preset('sat').key, kBellSat);
+    });
+
+    test('расписание 1: обед между 2 и 3 парой, 3 пара с 12:20', () {
+      final p = preset('week1').profile;
+      expect(p.slots.length, 7);
+      expect(p[1]!.start, 8 * 60 + 20);
+      expect(p[1]!.firstHalf, 45);
+      expect(p[1]!.breakMinutes, 10);
+      expect(p[3]!.start, 12 * 60 + 20);
+      expect(p[3]!.end, 14 * 60);
+      expect(p.lunchAfter, 2);
+      expect(gapLabel(p, 2), 'Обед 30 мин');
+      expect(gapLabel(p, 1), 'Перерыв 10 мин');
+      expect(p[4]!.breakMinutes, 5);
+      expect(p[7]!.end, 21 * 60);
+    });
+
+    test('расписание 2: обед внутри 3 пары', () {
+      final p = preset('week2').profile;
+      final s = p[3]!;
+      expect(s.start, 12 * 60);
+      expect(s.breakStart, 12 * 60 + 45);
+      expect(s.breakEnd, 13 * 60 + 15);
+      expect(s.end, 14 * 60);
+      expect(s.lunchInside, isTrue);
+      expect(innerBreakWord(s), 'обед');
+      expect(p.lunchAfter, 0);
+      expect(p[1]!.lunchInside, isFalse);
+      expect(innerBreakWord(p[1]!), 'перерыв');
+    });
+
+    test('расписание 3 (суббота): 6 пар по 45 + 45 с перерывом 5 минут', () {
+      final p = preset('sat').profile;
+      expect(p.slots.length, 6);
+      expect(p[7], isNull);
+      expect(p[1]!.start, 8 * 60 + 20);
+      expect(p[1]!.breakMinutes, 5);
+      expect(p[2]!.start, 10 * 60 + 5);
+      expect(p[2]!.end, 11 * 60 + 40);
+      expect(p[6]!.end, 18 * 60 + 40);
+      expect(p.gapAfter(1), 10);
+    });
+
+    test('сравнение и сохранение: применённое расписание узнаётся', () {
+      final p = preset('week1').profile;
+      expect(p.sameAs(BellProfile.fromJson(p.toJson())), isTrue);
+      expect(p.sameAs(preset('week2').profile), isFalse);
+      expect(p.sameAs(p.withSlot(1, null)), isFalse);
+    });
   });
 
   test('проверка: наложение пар и перерыв вне пары', () {
@@ -70,18 +145,22 @@ void main() {
       store = await AppStore.load();
     });
 
-    test('звонки: будни, суббота и сокращённый день не смешиваются', () {
+    test('звонки: будни и суббота не смешиваются', () {
       store.setBellProfile(kBellWeek, generateBells(const BellPlan(firstStart: 8 * 60 + 30)));
       store.setBellProfile(kBellSat, generateBells(const BellPlan(firstStart: 9 * 60)));
       expect(store.bellFor(day, 1)!.start, 8 * 60 + 30);
       expect(store.bellFor(DateTime(2026, 11, 7), 1)!.start, 9 * 60);
       expect(store.bellFor(day, 1)!.start, 8 * 60 + 30);
-      store.setBellProfile(kBellShort, generateBells(const BellPlan(firstStart: 8 * 60, pairMinutes: 60)));
-      expect(store.bellFor(day, 1)!.start, 8 * 60 + 30);
-      store.setShortDay(day, true);
-      expect(store.bellFor(day, 1)!.end, 9 * 60);
-      store.setShortDay(day, false);
       expect(store.bellFor(day, 1)!.end, 10 * 60);
+    });
+
+    test('старые данные с профилем «short» читаются без ошибок и игнорируют его', () {
+      final j = {
+        'week': generateBells(const BellPlan()).toJson(),
+        'short': generateBells(const BellPlan()).toJson(),
+      };
+      final settings = Settings.fromJson({'bells': j});
+      expect(settings.bells.keys, ['week']);
     });
 
     test('пометки: на пару и на весь день, даже без расписания, одна на пару', () {
@@ -97,17 +176,24 @@ void main() {
       expect(store.marksOn(day).length, 2);
     });
 
-    test('пометки, сокращённые дни и звонки переживают резервную копию', () {
+    test('пометка «Сокращённый день» — обычная пометка на весь день', () {
+      expect(kMarkPresets, contains(kShortDayMark));
+      store.saveMark(DayMark(id: 's', date: day, lesson: 0, label: kShortDayMark));
+      final m = store.markFor(day, 0)!;
+      expect(m.wholeDay, isTrue);
+      expect(m.label, 'Сокращённый день');
+      store.deleteMark('s');
+      expect(store.markFor(day, 0), isNull);
+    });
+
+    test('пометки и звонки переживают резервную копию', () {
       store.saveMark(DayMark(id: 'a', date: day, lesson: 0, label: 'Консультация'));
-      store.setShortDay(day, true);
       store.setBellProfile(kBellWeek, generateBells(const BellPlan(lunchAfter: 2)));
       final json = store.exportJson();
       store.deleteMark('a');
-      store.setShortDay(day, false);
       store.setBellProfile(kBellWeek, const BellProfile());
       expect(store.importJson(json), isNull);
       expect(store.marksOn(day).single.label, 'Консультация');
-      expect(store.isShortDay(day), isTrue);
       expect(store.settings.bell(kBellWeek).lunchAfter, 2);
     });
 

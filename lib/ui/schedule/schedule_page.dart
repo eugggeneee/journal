@@ -16,7 +16,6 @@ import '../kit/reveal.dart';
 import '../kit/sheet.dart';
 import '../kit/widgets.dart';
 import '../scope.dart';
-import '../settings/bells_page.dart';
 import '../settings/bells_sheet.dart';
 import 'lesson_sheet.dart';
 import 'marks.dart';
@@ -161,17 +160,8 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
             if (v == 'refresh') StoreScope.repoOf(context).prefetch(force: true);
             if (v == 'group') openGroupPicker(context);
             if (v == 'bells') showBellsSheet(context, _selected);
-            if (v == 'short') toggleShortDay(context, StoreScope.of(context), _selected);
           },
           itemBuilder: (_) => [
-            PopupMenuItem(
-              value: 'short',
-              child: ListTile(
-                leading: Icon(store.isShortDay(_selected) ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded),
-                title: const Text('Сокращённый день'),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
             const PopupMenuItem(value: 'bells', child: ListTile(leading: Icon(Icons.notifications_active_outlined), title: Text('Звонки на этот день'), contentPadding: EdgeInsets.zero)),
             const PopupMenuItem(value: 'refresh', child: ListTile(leading: Icon(Icons.refresh_rounded), title: Text('Обновить расписание'), contentPadding: EdgeInsets.zero)),
             const PopupMenuItem(value: 'group', child: ListTile(leading: Icon(Icons.groups_rounded), title: Text('Сменить группу'), contentPadding: EdgeInsets.zero)),
@@ -308,29 +298,6 @@ class _DayChip extends StatelessWidget {
 
 // ───────────────────────── один день ─────────────────────────
 
-/// Сокращённый день: переключатель с отменой. Если время звонков для него не задано — предлагает настроить.
-void toggleShortDay(BuildContext context, AppStore store, DateTime date) {
-  final m = ScaffoldMessenger.of(context);
-  final was = store.isShortDay(date);
-  store.setShortDay(date, !was);
-  Haptics.selection();
-  m.hideCurrentSnackBar();
-  if (!was && store.settings.bell(kBellShort).isEmpty) {
-    final nav = Navigator.of(context);
-    m.showSnackBar(SnackBar(
-      content: const Text('Сокращённый день отмечен. Задайте для него время пар'),
-      persist: false,
-      duration: const Duration(seconds: 6),
-      action: SnackBarAction(
-        label: 'Настроить',
-        onPressed: () => nav.push(MaterialPageRoute<void>(builder: (_) => const BellsPage(initialKey: kBellShort))),
-      ),
-    ));
-    return;
-  }
-  showUndo(m, was ? 'Обычный день' : 'Сокращённый день отмечен', () => store.setShortDay(date, was));
-}
-
 class DayView extends StatefulWidget {
   const DayView({super.key, required this.date});
   final DateTime date;
@@ -394,7 +361,7 @@ class _DayViewState extends State<DayView> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, kFabClearance),
         children: [
-          if (st != null && st.status != DayStatus.ok) ..._plainChips(context, store),
+          if (st != null && st.status != DayStatus.ok) _chips(context),
           MarksSection(date: widget.date, store: store, slots: slots),
           content,
         ],
@@ -402,33 +369,42 @@ class _DayViewState extends State<DayView> {
     );
   }
 
-  /// Кнопки дня: сокращённый день и пометка.
-  Widget _chips(BuildContext context, AppStore store, {required bool showShort}) {
-    final short = store.isShortDay(widget.date);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 0, 12),
-      child: Wrap(spacing: 8, runSpacing: 8, children: [
-        if (showShort)
-          FilterChip(
-            avatar: Icon(short ? Icons.timelapse_rounded : Icons.schedule_rounded, size: 18),
-            label: const Text('Сокращённый день'),
-            selected: short,
-            showCheckmark: false,
-            onSelected: (_) => toggleShortDay(context, store, widget.date),
+  /// Кнопки дня: пометка (ОКР, зачёт, практика, сокращённый день или своя).
+  Widget _chips(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 0, 0, 12),
+        child: Wrap(spacing: 8, runSpacing: 8, children: [
+          ActionChip(
+            avatar: const Icon(Icons.bookmark_add_outlined, size: 18),
+            label: const Text('Пометка'),
+            onPressed: () {
+              Haptics.selection();
+              showMarkSheet(context, widget.date);
+            },
           ),
-        ActionChip(
-          avatar: const Icon(Icons.bookmark_add_outlined, size: 18),
-          label: const Text('Пометка'),
-          onPressed: () {
-            Haptics.selection();
-            showMarkSheet(context, widget.date);
-          },
-        ),
-      ]),
-    );
-  }
+          ActionChip(
+            avatar: const Icon(Icons.timelapse_rounded, size: 18),
+            label: const Text('Сокращённый день'),
+            onPressed: () => _markShortDay(context),
+          ),
+        ]),
+      );
 
-  List<Widget> _plainChips(BuildContext context, AppStore store) => [_chips(context, store, showShort: false)];
+  /// Шаблон пометки на весь день «Сокращённый день»: ставится одним нажатием, повторное — снимает.
+  void _markShortDay(BuildContext context) {
+    final store = StoreScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final date = widget.date;
+    final before = store.snapshotMarks(date);
+    final existing = store.markFor(date, 0);
+    Haptics.selection();
+    if (existing != null && existing.label == kShortDayMark) {
+      store.deleteMark(existing.id);
+      showUndo(messenger, 'Пометка снята', () => store.restoreMarks(date, before));
+    } else {
+      store.saveMark(DayMark(id: existing?.id ?? newId(), date: date, lesson: 0, label: kShortDayMark));
+      showUndo(messenger, 'Сокращённый день отмечен', () => store.restoreMarks(date, before));
+    }
+  }
 
   Widget _content(BuildContext context, AppStore store, DayState st) {
     final cs = context.cs;
@@ -500,7 +476,7 @@ class _DayViewState extends State<DayView> {
               ),
             ]),
           ),
-          _chips(context, store, showShort: true),
+          _chips(context),
           for (var i = 0; i < s.slots.length; i++)
             LessonCard(
               index: i,
@@ -675,7 +651,7 @@ class _TimeColumn extends StatelessWidget {
           line(
             fmtMin(slot.start),
             context.tt.labelLarge?.copyWith(fontWeight: FontWeight.w800, color: highlight ? cs.primary : cs.onSurface, fontFeatures: figures),
-            slot.hasBreak ? Icons.coffee_rounded : null,
+            slot.hasBreak ? (slot.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded) : null,
           ),
           const SizedBox(height: 2),
           line(

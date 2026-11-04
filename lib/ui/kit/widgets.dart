@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
 import 'ctx.dart';
+import 'reveal.dart';
 
 /// Запас снизу под плавающую кнопку, чтобы она не закрывала последние элементы списка.
 const double kFabClearance = 104;
@@ -354,17 +355,52 @@ class SegmentCard extends StatelessWidget {
       );
     }
     // Когда рядом появляется или исчезает карточка, скругления и зазоры меняются плавно.
-    return AnimatedPadding(
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
-      padding: EdgeInsets.only(bottom: index == count - 1 ? 0 : 2),
-      child: TweenAnimationBuilder<BorderRadius?>(
-        tween: BorderRadiusTween(end: r),
+    return Appear(
+      index: index,
+      child: AnimatedPadding(
         duration: const Duration(milliseconds: 260),
         curve: Curves.easeOutCubic,
-        builder: (context, radius, child) => ClipRRect(borderRadius: radius ?? r, child: child),
-        child: body,
+        padding: EdgeInsets.only(bottom: index == count - 1 ? 0 : 2),
+        child: PressScale(
+          enabled: onTap != null || onLongPress != null,
+          child: TweenAnimationBuilder<BorderRadius?>(
+            tween: BorderRadiusTween(end: r),
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutCubic,
+            builder: (context, radius, child) => ClipRRect(borderRadius: radius ?? r, child: child),
+            child: body,
+          ),
+        ),
       ),
     );
   }
+}
+
+/// Украшение карточки: два мягких круга в углах, как на значке приложения.
+class ArtCircles extends StatelessWidget {
+  const ArtCircles({super.key, required this.color, required this.child, this.radius = 28});
+  final Color color;
+  final Widget child;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: Stack(children: [
+          Positioned(top: -52, left: -40, child: _Disc(150, color.withValues(alpha: 0.16))),
+          Positioned(top: -22, left: -12, child: _Disc(84, color.withValues(alpha: 0.12))),
+          Positioned(bottom: -64, right: -48, child: _Disc(170, color.withValues(alpha: 0.14))),
+          child,
+        ]),
+      );
+}
+
+class _Disc extends StatelessWidget {
+  const _Disc(this.size, this.color);
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) =>
+      IgnorePointer(child: Container(width: size, height: size, decoration: BoxDecoration(color: color, shape: BoxShape.circle)));
 }
