@@ -177,7 +177,7 @@ class _MarkSheetState extends State<_MarkSheet> {
                   child: Text(
                     [
                       if (lessonName != null) '$lesson пара: $lessonName',
-                      if (replaces) 'Прежняя пометка «${existing!.label}» заменится.',
+                      if (replaces) 'Прежняя пометка «${existing.label}» заменится.',
                     ].join('\n'),
                     style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
                   ),

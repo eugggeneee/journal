@@ -76,7 +76,7 @@ class _LessonSheetState extends State<_LessonSheet> {
 
     final bell = store.bellFor(date, slot.number);
     final profile = store.bellProfileFor(date);
-    final mark = store.markFor(date, slot.number);
+    final dayMark = store.markFor(date, slot.number);
     final gap = bell == null ? null : gapLabel(profile, slot.number);
 
     final info = <Widget>[
@@ -220,22 +220,22 @@ class _LessonSheetState extends State<_LessonSheet> {
         const FieldLabel('Пометка', top: 16),
         Row(children: [
           Expanded(
-            child: mark == null
+            child: dayMark == null
                 ? Text('ОКР, зачёт, практика или своя', style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant))
                 : Align(
                     alignment: Alignment.centerLeft,
-                    child: Pill(mark.label, tone: markTone(context), icon: Icons.bookmark_rounded),
+                    child: Pill(dayMark.label, tone: markTone(context), icon: Icons.bookmark_rounded),
                   ),
           ),
           const SizedBox(width: 12),
           FilledButton.tonalIcon(
             style: FilledButton.styleFrom(minimumSize: const Size(64, 44)),
-            icon: Icon(mark == null ? Icons.bookmark_add_outlined : Icons.edit_outlined, size: 20),
-            label: Text(mark == null ? 'Добавить' : 'Изменить'),
+            icon: Icon(dayMark == null ? Icons.bookmark_add_outlined : Icons.edit_outlined, size: 20),
+            label: Text(dayMark == null ? 'Добавить' : 'Изменить'),
             onPressed: () {
               final host = Navigator.of(context).context;
               Navigator.of(context).pop();
-              showMarkSheet(host, date, lesson: slot.number, edit: mark);
+              showMarkSheet(host, date, lesson: slot.number, edit: dayMark);
             },
           ),
         ]),
