@@ -5,13 +5,14 @@ import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../logic/stats.dart';
-import '../kit/ctx.dart';
-import '../kit/feedback.dart';
-import '../kit/pickers.dart';
-import '../kit/reveal.dart';
-import '../kit/select_sheet.dart';
-import '../kit/widgets.dart';
-import '../scope.dart';
+import '../app/scope.dart';
+import '../kit/animation/motion.dart';
+import '../kit/animation/reveal.dart';
+import '../kit/components/feedback.dart';
+import '../kit/components/overview.dart';
+import '../kit/components/widgets.dart';
+import '../kit/foundation/ctx.dart';
+import '../kit/sheets/select_sheet.dart';
 import 'grade_sheet.dart';
 import 'subject_page.dart';
 
@@ -22,7 +23,7 @@ class GradesPage extends StatefulWidget {
 }
 
 class _GradesPageState extends State<GradesPage> {
-  int _mode = 0;
+  int _mode = 0; // 0 — предметы, 1 — журнал
   String? _filter; // предмет в журнале
   final FreshTracker _freshGrades = FreshTracker();
   final FreshTracker _freshSubjects = FreshTracker();
@@ -37,7 +38,7 @@ class _GradesPageState extends State<GradesPage> {
 
     return LargePage(
       title: 'Оценки',
-      subtitle: store.grades.isEmpty ? 'Успеваемость' : '${gradesText(stats.count)} · ${subjectsText(stats.subjects.length)}',
+      subtitle: empty ? 'Успеваемость' : '${gradesText(stats.count)} · ${subjectsText(stats.subjects.length)}',
       slivers: empty
           ? [
               SliverFillRemaining(
@@ -58,23 +59,12 @@ class _GradesPageState extends State<GradesPage> {
               Inset(children: [
                 GradesHero(stats: stats),
                 const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: SegmentedButton<int>(
-                    showSelectedIcon: false,
-                    segments: const [
-                      ButtonSegment(value: 0, icon: Icon(Icons.menu_book_rounded), label: Text('Предметы')),
-                      ButtonSegment(value: 1, icon: Icon(Icons.history_rounded), label: Text('Журнал')),
-                    ],
-                    selected: {_mode},
-                    onSelectionChanged: (s) {
-                      Haptics.selection();
-                      setState(() => _mode = s.first);
-                    },
-                  ),
-                ),
+                ModeSwitch(value: _mode, onChanged: (m) => setState(() => _mode = m)),
               ]),
-              if (_mode == 0) ..._subjects(context, store, stats) else ..._journal(context, store, stats),
+              FadeInSlivers(
+                key: ValueKey('grades-mode-$_mode'),
+                slivers: _mode == 0 ? _subjects(context, store, stats) : _journal(context, store, stats),
+              ),
             ],
     );
   }
@@ -107,29 +97,20 @@ class _GradesPageState extends State<GradesPage> {
       byMonth.putIfAbsent(monthYear(g.date), () => []).add(g);
     }
     return [
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: FilterButton(
-              icon: Icons.filter_list_rounded,
-              label: filter == null ? 'Все предметы' : store.subjectName(filter),
-              active: filter != null,
-              onClear: () => setState(() => _filter = null),
-              onTap: () => showSelectSheet<String>(
-                context,
-                title: 'Предмет',
-                subtitle: 'Показать оценки только по одному предмету',
-                value: filter ?? '',
-                options: [
-                  const MenuOption('', 'Все предметы', icon: Icons.apps_rounded),
-                  for (final s in subjects) MenuOption(s, store.subjectName(s), icon: Icons.menu_book_outlined),
-                ],
-                onSelected: (v) => setState(() => _filter = v.isEmpty ? null : v),
-              ),
-            ),
-          ),
+      SliverFilterRow(
+        label: filter == null ? 'Все предметы' : store.subjectName(filter),
+        active: filter != null,
+        onClear: () => setState(() => _filter = null),
+        onTap: () => showSelectSheet<String>(
+          context,
+          title: 'Предмет',
+          subtitle: 'Показать оценки только по одному предмету',
+          value: filter ?? '',
+          options: [
+            const MenuOption('', 'Все предметы', icon: Icons.apps_rounded),
+            for (final s in subjects) MenuOption(s, store.subjectName(s), icon: Icons.menu_book_outlined),
+          ],
+          onSelected: (v) => setState(() => _filter = v.isEmpty ? null : v),
         ),
       ),
       for (final e in byMonth.entries)
@@ -156,31 +137,20 @@ class GradesHero extends StatelessWidget {
     final avg = stats.average ?? 0;
     final tone = gradeTone(context, avg);
     final maxC = stats.distribution.reduce((a, b) => a > b ? a : b);
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOutCubic,
-      padding: const EdgeInsets.fromLTRB(24, 22, 24, 18),
-      decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(32)),
+    return HeroCard(
+      tone: tone,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Средний балл', style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 2),
-              AnimatedNumber(
-                value: avg,
-                format: fmtAvg,
-                style: context.tt.displayMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800, height: 1.05),
-              ),
-            ]),
+        HeroHeader(
+          caption: 'Средний балл',
+          fg: tone.fg,
+          value: AnimatedNumber(
+            value: avg,
+            format: fmtAvg,
+            style: context.tt.displayMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800, height: 1.05),
           ),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(gradesText(stats.count), style: context.tt.titleSmall?.copyWith(color: tone.fg)),
-            const SizedBox(height: 2),
-            Text(subjectsText(stats.subjects.length), style: context.tt.titleSmall?.copyWith(color: tone.fg)),
-          ]),
-        ]),
-        const SizedBox(height: 22),
+          aside: [gradesText(stats.count), subjectsText(stats.subjects.length)],
+        ),
+        const SizedBox(height: 18),
         SizedBox(
           height: 84,
           child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -190,8 +160,8 @@ class GradesHero extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 3),
                   child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
                     AnimatedContainer(
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.easeOutCubic,
+                      duration: Motion.long,
+                      curve: Motion.standard,
                       height: stats.distribution[i] == 0 || maxC == 0 ? 4 : 10 + 46 * stats.distribution[i] / maxC,
                       decoration: BoxDecoration(
                         color: stats.distribution[i] == 0 ? tone.fg.withValues(alpha: 0.2) : gradeAccent(context, i + 1),
@@ -219,45 +189,28 @@ class _SubjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.cs;
     final tone = gradeTone(context, stat.average);
     final impact = stat.lastImpact;
     final last = stat.grades.length > 12 ? stat.grades.sublist(stat.grades.length - 12) : stat.grades;
-    return SegmentCard(
+    return OverviewCard(
       index: index,
       count: count,
-      onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SubjectPage(subject: stat.subject))),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
-        child: Row(children: [
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(store.subjectName(stat.subject), maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 2),
-              Text('${gradesText(stat.count)} · последняя ${stat.last.value}', style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-              const SizedBox(height: 10),
-              Spark(grades: last),
-            ]),
-          ),
-          const SizedBox(width: 12),
-          Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(18)),
-              child: Text(fmtAvg(stat.average), style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800)),
+      title: store.subjectName(stat.subject),
+      subtitle: '${gradesText(stat.count)} · последняя ${stat.last.value}',
+      bottom: Spark(grades: last),
+      trailing: Column(mainAxisSize: MainAxisSize.min, children: [
+        ValuePill(tone: tone, child: AnimatedNumber(value: stat.average, format: fmtAvg)),
+        if (impact != null && impact.abs() >= 0.005)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Icon(
+              impact > 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+              size: 20,
+              color: impact > 0 ? gradeAccent(context, 9) : gradeAccent(context, 2),
             ),
-            if (impact != null && impact.abs() >= 0.005)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Icon(
-                  impact > 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded,
-                  size: 20,
-                  color: impact > 0 ? gradeAccent(context, 9) : gradeAccent(context, 2),
-                ),
-              ),
-          ]),
-        ]),
-      ),
+          ),
+      ]),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SubjectPage(subject: stat.subject))),
     );
   }
 }
@@ -276,7 +229,9 @@ class Spark extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             for (final g in grades)
-              Container(
+              AnimatedContainer(
+                duration: Motion.long,
+                curve: Motion.standard,
                 width: barWidth,
                 height: 4 + (height - 4) * g.value / 10,
                 margin: const EdgeInsets.only(right: 3),
@@ -304,12 +259,11 @@ class GradeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.cs;
     final tone = gradeTone(context, grade.value);
     final sub = [if (showSubject && grade.kind.isNotEmpty) grade.kind, if (grade.note.isNotEmpty) grade.note].join(' · ');
     final title = showSubject ? store.subjectName(grade.subject) : (grade.kind.isEmpty ? 'Без пометки' : grade.kind);
     final subtitle = showSubject ? sub : grade.note;
-    return SegmentCard(
+    return EntryTile(
       index: index,
       count: count,
       dismissKey: ValueKey('g-${grade.id}'),
@@ -320,22 +274,10 @@ class GradeTile extends StatelessWidget {
         showUndo(m, 'Оценка удалена', () => store.saveGrade(grade));
       },
       onTap: () => showGradeSheet(context, edit: grade),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: Row(children: [
-          NumberBadge('${grade.value}', tone: tone, size: 46, round: false),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-              if (subtitle.isNotEmpty)
-                Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-            ]),
-          ),
-          const SizedBox(width: 8),
-          Text(shortDate(grade.date), style: context.tt.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
-        ]),
-      ),
+      badge: NumberBadge('${grade.value}', tone: tone, size: 46, round: false),
+      title: title,
+      subtitle: subtitle,
+      trailing: shortDate(grade.date),
     );
   }
 }

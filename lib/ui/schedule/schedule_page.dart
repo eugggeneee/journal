@@ -7,16 +7,17 @@ import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../logic/bells.dart';
-import '../../logic/schedule_service.dart';
+import '../../logic/schedule/schedule_service.dart';
 import '../absences/absence_actions.dart';
-import '../group_picker.dart';
-import '../kit/ctx.dart';
-import '../kit/feedback.dart';
-import '../kit/reveal.dart';
-import '../kit/sheet.dart';
-import '../kit/widgets.dart';
-import '../scope.dart';
+import '../app/scope.dart';
+import '../kit/animation/motion.dart';
+import '../kit/animation/reveal.dart';
+import '../kit/components/feedback.dart';
+import '../kit/components/widgets.dart';
+import '../kit/foundation/ctx.dart';
+import '../kit/sheets/sheet.dart';
 import '../settings/bells_sheet.dart';
+import '../settings/group_picker.dart';
 import 'lesson_sheet.dart';
 import 'marks.dart';
 
@@ -543,6 +544,23 @@ class LessonCard extends StatelessWidget {
 
   static String roomText(String r) => r.isEmpty ? '' : (RegExp(r'\d').hasMatch(r) ? 'ауд. $r' : r);
 
+  /// Во сколько заканчивается обед после этой пары (null — обеда после неё нет).
+  int? _lunchEnd(BellProfile profile, BellSlot bell) {
+    if (!profile.isLunchAfter(slot.number)) return null;
+    final next = profile.nextPair(slot.number);
+    if (next == null) return null;
+    final start = profile[next]?.start;
+    return (start != null && start > bell.end) ? start : null;
+  }
+
+  /// Сейчас идёт перерыв внутри пары.
+  bool _inBreak(BellSlot bell) {
+    if (!bell.hasBreak) return false;
+    final now = DateTime.now();
+    final m = now.hour * 60 + now.minute;
+    return m >= bell.breakStart! && m < bell.breakEnd!;
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
@@ -606,7 +624,13 @@ class LessonCard extends StatelessWidget {
                 ),
             ]),
           ),
-          if (bell != null) _TimeColumn(slot: bell, lunch: profile.isLunchAfter(slot.number), highlight: isNow),
+          if (bell != null)
+            _TimeColumn(
+              slot: bell,
+              lunchTo: _lunchEnd(profile, bell),
+              highlight: isNow,
+              breakNow: isNow && _inBreak(bell),
+            ),
           IconButton(
             tooltip: absence == null ? 'Отметить пропуск' : 'Снять пропуск',
             icon: AnimatedSwitcher(
@@ -626,39 +650,77 @@ class LessonCard extends StatelessWidget {
   }
 }
 
-/// Время пары справа в карточке: начало и конец в две строки. Высота — две строки текста,
-/// меньше номера пары, поэтому размер карточки не меняется. Значки: ☕ — перерыв внутри пары, 🍴 — после пары обед.
+/// Время пары справа в карточке — как расписание на остановке:
+///
+///     08:20             начало пары
+///     09:05–09:15       перерыв (или обед) внутри пары, если есть
+///     10:00             конец пары
+///     обед 11:50–12:20  обед после пары, если есть
+///
+/// Строки плотные, поэтому обычная карточка по высоте не меняется. Во время перерыва он подсвечивается.
 class _TimeColumn extends StatelessWidget {
-  const _TimeColumn({required this.slot, required this.lunch, required this.highlight});
+  const _TimeColumn({required this.slot, required this.lunchTo, required this.highlight, required this.breakNow});
   final BellSlot slot;
-  final bool lunch;
+
+  /// Когда заканчивается обед после пары (минуты от полуночи); null — обеда нет.
+  final int? lunchTo;
   final bool highlight;
+
+  /// Прямо сейчас идёт перерыв внутри пары.
+  final bool breakNow;
+
+  /// Отступ справа: равен внутреннему отступу «таблетки» перерыва, чтобы правый край строк совпадал.
+  static const double _gutter = 5;
 
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
     const figures = [FontFeature.tabularFigures()];
-    Widget line(String text, TextStyle? style, IconData? icon) => Row(mainAxisSize: MainAxisSize.min, children: [
-          if (icon != null) ...[Icon(icon, size: 12, color: cs.onSurfaceVariant), const SizedBox(width: 3)],
-          Text(text, style: style),
-        ]);
+    const tight = 1.15;
+
+    Widget plain(String text, TextStyle? style) => Padding(
+          padding: const EdgeInsets.only(right: _gutter),
+          child: Text(text, style: style?.copyWith(height: tight, fontFeatures: figures)),
+        );
+
+    // Перерыв: акцентным цветом; пока он идёт — заливка с анимацией.
+    Widget pill(String text, {bool active = false}) => AnimatedContainer(
+          duration: Motion.medium,
+          curve: Motion.standard,
+          padding: const EdgeInsets.symmetric(horizontal: _gutter),
+          decoration: BoxDecoration(color: active ? cs.tertiary : Colors.transparent, borderRadius: BorderRadius.circular(6)),
+          child: AnimatedDefaultTextStyle(
+            duration: Motion.medium,
+            curve: Motion.standard,
+            style: (context.tt.labelSmall ?? const TextStyle()).copyWith(
+              fontWeight: FontWeight.w700,
+              height: tight,
+              color: active ? cs.onTertiary : cs.tertiary,
+              fontFeatures: figures,
+            ),
+            child: Text(text),
+          ),
+        );
+
+    // Только время: подпись сузила бы название предмета на узких экранах.
+    final inner = slot.hasBreak ? shortRange(slot.breakStart!, slot.breakEnd!) : null;
+    final lunch = lunchTo == null ? null : 'обед ${shortRange(slot.end, lunchTo!)}';
+
     return Semantics(
-      label: 'Время пары: ${slotRange(slot)}${slot.hasBreak ? ', внутри перерыв' : ''}${lunch ? ', после пары обед' : ''}',
+      label: 'Время пары: ${slotRange(slot)}'
+          '${slot.hasBreak ? ', ${innerBreakWord(slot)} ${shortRange(slot.breakStart!, slot.breakEnd!)}' : ''}'
+          '${lunch == null ? '' : ', после пары $lunch'}',
       excludeSemantics: true,
       child: Padding(
-        padding: const EdgeInsets.only(left: 8, right: 2),
+        padding: const EdgeInsets.only(left: 8, right: 0),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
-          line(
+          plain(
             fmtMin(slot.start),
-            context.tt.labelLarge?.copyWith(fontWeight: FontWeight.w800, color: highlight ? cs.primary : cs.onSurface, fontFeatures: figures),
-            slot.hasBreak ? (slot.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded) : null,
+            context.tt.labelLarge?.copyWith(fontWeight: FontWeight.w800, color: highlight ? cs.primary : cs.onSurface),
           ),
-          const SizedBox(height: 2),
-          line(
-            fmtMin(slot.end),
-            context.tt.labelMedium?.copyWith(color: cs.onSurfaceVariant, fontFeatures: figures),
-            lunch ? Icons.restaurant_rounded : null,
-          ),
+          if (inner != null) pill(inner, active: breakNow),
+          plain(fmtMin(slot.end), context.tt.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+          if (lunch != null) pill(lunch),
         ]),
       ),
     );

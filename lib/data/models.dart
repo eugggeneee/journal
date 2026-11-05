@@ -472,7 +472,7 @@ class Settings {
       return Settings(
         group: group,
         extraSubjects: ((j['extra'] as List?) ?? const []).map(_str).toList(),
-        // копии и данные из прошлых версий: если группа уже выбрана — приветствие не показываем
+        // если группа уже выбрана — приветствие не показываем
         onboarded: j['onb'] is bool ? j['onb'] as bool : group.isNotEmpty,
         themeMode: theme >= 0 && theme <= 2 ? theme : 0,
         themeColor: color.isEmpty ? 'auto' : color,

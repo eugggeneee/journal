@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
-import '../kit/feedback.dart';
+import '../kit/components/feedback.dart';
 import 'absence_sheet.dart';
 
 /// Значок пропуска у пары: если пропуска нет — сразу выезжает маленькая шторка с выбором

@@ -64,6 +64,9 @@ String halvesText(BellSlot s) => s.hasBreak ? '${s.firstHalf} + ${s.secondHalf} 
 /// «08:30 – 10:00».
 String slotRange(BellSlot s) => '${fmtMin(s.start)} – ${fmtMin(s.end)}';
 
+/// «09:05–09:15» — короткая запись промежутка времени (минуты от полуночи).
+String shortRange(int from, int to) => '${fmtMin(from)}–${fmtMin(to)}';
+
 
 /// Готовое расписание звонков колледжа. [key] — для какого вида дней оно подходит (будни или суббота).
 class BellPreset {

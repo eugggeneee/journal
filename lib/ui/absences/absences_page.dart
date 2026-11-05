@@ -6,14 +6,15 @@ import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../logic/limits.dart';
 import '../../logic/stats.dart';
-import '../kit/ctx.dart';
-import '../kit/feedback.dart';
-import '../kit/pickers.dart';
-import '../kit/reveal.dart';
-import '../kit/select_sheet.dart';
-import '../kit/sheet.dart';
-import '../kit/widgets.dart';
-import '../scope.dart';
+import '../app/scope.dart';
+import '../kit/animation/motion.dart';
+import '../kit/animation/reveal.dart';
+import '../kit/components/feedback.dart';
+import '../kit/components/overview.dart';
+import '../kit/components/widgets.dart';
+import '../kit/foundation/ctx.dart';
+import '../kit/sheets/select_sheet.dart';
+import '../kit/sheets/sheet.dart';
 import '../settings/settings_pages.dart';
 import 'absence_limit.dart';
 import 'absence_sheet.dart';
@@ -25,7 +26,7 @@ class AbsencesPage extends StatefulWidget {
 }
 
 class _AbsencesPageState extends State<AbsencesPage> with WidgetsBindingObserver {
-  int _mode = 0;
+  int _mode = 0; // 0 — предметы, 1 — журнал
   int _filter = 0; // 0 все, 1 без уважительной, 2 по уважительной
   final FreshTracker _fresh = FreshTracker();
   final FreshTracker _freshSubjects = FreshTracker();
@@ -94,32 +95,21 @@ class _AbsencesPageState extends State<AbsencesPage> with WidgetsBindingObserver
           : [
               Inset(children: [
                 LimitBanners(monthHours: monthHours, semesterHours: semesterHours, semester: semester),
+                AbsencesHero(stats: stats),
+                const SizedBox(height: 12),
                 LimitCounters(
                   monthHours: monthHours,
                   semesterHours: semesterHours,
                   semester: semester,
                   onSemesterTap: () => _openSemester(context, semester, semesterHours),
                 ),
-                const SizedBox(height: 12),
-                AbsencesHero(stats: stats),
                 const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: SegmentedButton<int>(
-                    showSelectedIcon: false,
-                    segments: const [
-                      ButtonSegment(value: 0, icon: Icon(Icons.history_rounded), label: Text('Журнал')),
-                      ButtonSegment(value: 1, icon: Icon(Icons.menu_book_rounded), label: Text('Предметы')),
-                    ],
-                    selected: {_mode},
-                    onSelectionChanged: (s) {
-                      Haptics.selection();
-                      setState(() => _mode = s.first);
-                    },
-                  ),
-                ),
+                ModeSwitch(value: _mode, onChanged: (m) => setState(() => _mode = m)),
               ]),
-              if (_mode == 0) ..._journal(context, store) else ..._subjects(context, store, stats),
+              FadeInSlivers(
+                key: ValueKey('absences-mode-$_mode'),
+                slivers: _mode == 0 ? _subjects(context, store, stats) : _journal(context, store),
+              ),
             ],
     );
   }
@@ -135,35 +125,23 @@ class _AbsencesPageState extends State<AbsencesPage> with WidgetsBindingObserver
       byDay.putIfAbsent(ymd(a.date), () => []).add(a);
     }
     return [
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: FilterButton(
-              icon: Icons.filter_list_rounded,
-              label: const ['Все пропуски', 'Без уважительной', 'По уважительной'][_filter],
-              active: _filter != 0,
-              onClear: () => setState(() => _filter = 0),
-              onTap: () => showSelectSheet<int>(
-                context,
-                title: 'Показать пропуски',
-                value: _filter,
-                options: const [
-                  MenuOption(0, 'Все пропуски', icon: Icons.apps_rounded),
-                  MenuOption(1, 'Без уважительной', icon: Icons.event_busy_rounded),
-                  MenuOption(2, 'По уважительной', icon: Icons.verified_rounded),
-                ],
-                onSelected: (v) => setState(() => _filter = v),
-              ),
-            ),
-          ),
+      SliverFilterRow(
+        label: const ['Все пропуски', 'Без уважительной', 'По уважительной'][_filter],
+        active: _filter != 0,
+        onClear: () => setState(() => _filter = 0),
+        onTap: () => showSelectSheet<int>(
+          context,
+          title: 'Показать пропуски',
+          value: _filter,
+          options: const [
+            MenuOption(0, 'Все пропуски', icon: Icons.apps_rounded),
+            MenuOption(1, 'Без уважительной', icon: Icons.event_busy_rounded),
+            MenuOption(2, 'По уважительной', icon: Icons.verified_rounded),
+          ],
+          onSelected: (v) => setState(() => _filter = v),
         ),
       ),
-      if (byDay.isEmpty)
-        const SliverToBoxAdapter(
-          child: Padding(padding: EdgeInsets.all(32), child: Center(child: Text('Нет пропусков с таким фильтром'))),
-        ),
+      if (byDay.isEmpty) const SliverNote('Нет пропусков с таким фильтром'),
       for (final e in byDay.entries)
         Inset(key: ValueKey('day-${e.key}'), children: [
           SectionHeader(
@@ -182,7 +160,11 @@ class _AbsencesPageState extends State<AbsencesPage> with WidgetsBindingObserver
   }
 
   List<Widget> _subjects(BuildContext context, AppStore store, AbsenceStats stats) {
-    final entries = stats.bySubjectHours.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final entries = stats.bySubjectHours.entries.toList()
+      ..sort((a, b) {
+        final c = b.value.compareTo(a.value);
+        return c != 0 ? c : store.subjectName(a.key).compareTo(store.subjectName(b.key));
+      });
     final maxV = entries.isEmpty ? 1 : entries.first.value;
     return [
       Inset(top: 8, children: [
@@ -191,32 +173,54 @@ class _AbsencesPageState extends State<AbsencesPage> with WidgetsBindingObserver
           Reveal(
             key: ValueKey('subj-${entries[i].key}'),
             animate: _freshSubjects.isFresh(entries[i].key),
-            child: SegmentCard(
-            index: i,
-            count: entries.length,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Row(children: [
-                  Expanded(
-                    child: Text(
-                      entries[i].key.isEmpty ? 'Без предмета' : store.subjectName(entries[i].key),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(hoursText(entries[i].value), style: context.tt.labelLarge?.copyWith(color: context.cs.onSurfaceVariant)),
-                ]),
-                const SizedBox(height: 12),
-                _AnimatedBar(value: entries[i].value / maxV, color: absenceAccent(context, excused: false)),
-              ]),
+            child: _SubjectCard(
+              name: entries[i].key.isEmpty ? 'Без предмета' : store.subjectName(entries[i].key),
+              hours: entries[i].value,
+              records: stats.bySubjectCount[entries[i].key] ?? 0,
+              last: stats.lastBySubject[entries[i].key],
+              share: entries[i].value / maxV,
+              index: i,
+              count: entries.length,
             ),
-          ),
           ),
       ]),
     ];
+  }
+}
+
+/// Карточка предмета в обзоре пропусков: устроена так же, как карточка предмета в оценках.
+class _SubjectCard extends StatelessWidget {
+  const _SubjectCard({
+    required this.name,
+    required this.hours,
+    required this.records,
+    required this.last,
+    required this.share,
+    required this.index,
+    required this.count,
+  });
+  final String name;
+  final int hours;
+  final int records;
+  final DateTime? last;
+  final double share;
+  final int index;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = last;
+    return OverviewCard(
+      index: index,
+      count: count,
+      title: name,
+      subtitle: date == null ? absencesText(records) : '${absencesText(records)} · последний ${shortDate(date)}',
+      bottom: _AnimatedBar(value: share, color: absenceAccent(context, excused: false)),
+      trailing: ValuePill(
+        tone: absenceTone(context, excused: false),
+        child: AnimatedNumber(value: hours.toDouble(), format: (v) => '${v.round()} ч'),
+      ),
+    );
   }
 }
 
@@ -237,26 +241,20 @@ class AbsencesHero extends StatelessWidget {
         : '≈ ${pairsValue.toStringAsFixed(1).replaceAll('.', ',')} пары';
     final unexColor = absenceAccent(context, excused: false);
     final exColor = absenceAccent(context, excused: true);
-    return Appear(
-      child: AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOutCubic,
-      decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(32)),
-      child: ArtCircles(
-      color: fg,
-      radius: 32,
-      child: Padding(
-      padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
+    return HeroCard(
+      tone: tone,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Всего за всё время', style: context.tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 2),
-        Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-          AnimatedNumber(value: stats.totalHours.toDouble(), format: (v) => '${v.round()}', style: context.tt.displayMedium?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1.05)),
-          const SizedBox(width: 8),
-          Text(plural(stats.totalHours, 'час', 'часа', 'часов'), style: context.tt.titleMedium?.copyWith(color: fg)),
-          const Spacer(),
-          Text(pairs, style: context.tt.titleSmall?.copyWith(color: fg)),
-        ]),
+        HeroHeader(
+          caption: 'Всего за всё время',
+          fg: fg,
+          value: AnimatedNumber(
+            value: stats.totalHours.toDouble(),
+            format: (v) => '${v.round()}',
+            style: context.tt.displayMedium?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1.05),
+          ),
+          unit: plural(stats.totalHours, 'час', 'часа', 'часов'),
+          aside: [pairs],
+        ),
         const SizedBox(height: 18),
         _SplitBar(unexcused: unex, excused: ex, unexColor: unexColor, exColor: exColor, gapColor: tone.bg, emptyColor: fg.withValues(alpha: 0.2)),
         const SizedBox(height: 14),
@@ -266,9 +264,6 @@ class AbsencesHero extends StatelessWidget {
           Expanded(child: _Legend(color: exColor, label: 'По уважительной', hours: ex, fg: fg)),
         ]),
       ]),
-      ),
-      ),
-      ),
     );
   }
 }
@@ -301,8 +296,8 @@ class _SplitBar extends StatelessWidget {
         child: LayoutBuilder(builder: (context, box) {
           return TweenAnimationBuilder<double>(
             tween: Tween<double>(end: share),
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeOutCubic,
+            duration: Motion.long,
+            curve: Motion.standard,
             builder: (context, v, _) {
               final inner = v > 0.001 && v < 0.999;
               return Stack(children: [
@@ -337,8 +332,8 @@ class _AnimatedBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TweenAnimationBuilder<double>(
         tween: Tween<double>(end: value.clamp(0.0, 1.0).toDouble()),
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOutCubic,
+        duration: Motion.long,
+        curve: Motion.standard,
         builder: (context, v, _) => Bar(value: v, color: color),
       );
 }
@@ -376,11 +371,10 @@ class _AbsenceTile extends StatelessWidget {
     final tone = absenceTone(context, excused: a.excused);
     final sub = [
       if (a.lesson > 0) '${a.lesson} пара',
-      hoursText(a.hours),
       if (a.excused) 'уважительная',
       if (a.note.isNotEmpty) a.note,
     ].join(' · ');
-    return SegmentCard(
+    return EntryTile(
       index: index,
       count: count,
       dismissKey: ValueKey('a-${a.id}'),
@@ -400,24 +394,10 @@ class _AbsenceTile extends StatelessWidget {
         showUndo(m, 'Пропуск удалён', () => store.restoreDay(a.date, before));
       },
       onTap: () => showAbsenceSheet(context, edit: a),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: Row(children: [
-          NumberBadge(a.lesson > 0 ? '${a.lesson}' : '–', tone: tone, size: 46, round: false),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(
-                a.subject.isEmpty ? 'Без предмета' : store.subjectName(a.subject),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              Text(sub, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant)),
-            ]),
-          ),
-        ]),
-      ),
+      badge: NumberBadge(a.lesson > 0 ? '${a.lesson}' : '–', tone: tone, size: 46, round: false),
+      title: a.subject.isEmpty ? 'Без предмета' : store.subjectName(a.subject),
+      subtitle: sub,
+      trailing: '${a.hours} ч',
     );
   }
 }

@@ -1,9 +1,9 @@
 name: Release
 
-# Релиз запускается тегом вида v1.0.0:
-#   git tag v1.0.0 && git push origin v1.0.0
-# Либо вручную: Actions → Release → Run workflow (указать тег).
-# Итог: Journal-<тег>-android.apk и Journal-<тег>-ios.ipa появляются во вкладке Releases
+# Релиз запускается тегом vMAJOR.MINOR.PATCH (пред-релиз: v1.1.0-beta.1, v1.1.0-rc.1).
+# Тег обязан совпадать с версией в pubspec.yaml и подчиняться docs/VERSIONING.md.
+# Либо вручную: Actions, Release, Run workflow (указать тег).
+# Итог: Journal-<тег>-android.apk и Journal-<тег>-ios.ipa во вкладке Releases
 # вместе с SHA256SUMS.txt и подписью-аттестацией GitHub.
 on:
   push:
@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Тег релиза, например v1.0.0'
+        description: 'Тег релиза, например v1.0.0 или v1.1.0-beta.1'
         required: true
         type: string
 
@@ -24,7 +24,7 @@ concurrency:
 
 env:
   APP_NAME: Journal
-  APP_ORG: by.mgtek
+  APP_ORG: eugggeneee
   APP_PROJECT: journal
 
 jobs:
@@ -34,19 +34,22 @@ jobs:
     outputs:
       tag: ${{ steps.v.outputs.tag }}
       version: ${{ steps.v.outputs.version }}
+      ios_version: ${{ steps.v.outputs.ios_version }}
     steps:
+      - uses: actions/checkout@v5
       - id: v
         env:
           INPUT_TAG: ${{ github.event.inputs.tag }}
           REF_NAME: ${{ github.ref_name }}
         run: |
           TAG="${INPUT_TAG:-$REF_NAME}"
-          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]]; then
-            echo "::error::Тег должен выглядеть как v1.0.0 (получено: $TAG)"
-            exit 1
-          fi
+          python3 scripts/project/version.py tag "$TAG"
+          python3 scripts/project/check.py
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          # CFBundleShortVersionString в iOS допускает только цифры и точки: пред-релизный суффикс отбрасывается
+          V="${TAG#v}"
+          echo "ios_version=${V%%-*}" >> "$GITHUB_OUTPUT"
 
   test:
     name: Анализ и тесты
@@ -98,7 +101,7 @@ jobs:
       - run: dart run flutter_launcher_icons
 
       - name: Значки под каждую тему (смена значка)
-        run: python3 scripts/setup_icons_android.py
+        run: python3 scripts/icons/setup_android.py
 
       - name: Сборка APK
         run: |
@@ -138,7 +141,7 @@ jobs:
             rm -f "$RUNNER_TEMP/release.jks"
             echo "release-key" > dist/android-signing.txt
           else
-            echo "::warning::Секреты ANDROID_KEYSTORE_* не заданы — APK подписан отладочным ключом. См. docs/RELEASING.md"
+            echo "::warning::Секреты ANDROID_KEYSTORE_* не заданы, APK подписан отладочным ключом. См. docs/RELEASING.md"
             cp "$SRC" "$OUT"
             echo "debug-key" > dist/android-signing.txt
           fi
@@ -175,12 +178,12 @@ jobs:
       - run: dart run flutter_launcher_icons
 
       - name: Значки под каждую тему (смена значка)
-        run: python3 scripts/setup_icons_ios.py
+        run: python3 scripts/icons/setup_ios.py
 
       - name: Сборка (без подписи)
         run: |
           flutter build ios --release --no-codesign --config-only \
-            --build-name "${{ needs.meta.outputs.version }}" \
+            --build-name "${{ needs.meta.outputs.ios_version }}" \
             --build-number "${{ github.run_number }}"
           xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
             -configuration Release -sdk iphoneos \
@@ -242,7 +245,7 @@ jobs:
         run: |
           PREV="$(git tag --sort=-v:refname | grep -vx "$TAG" | head -1 || true)"
           if [ -f ".github/releases/$TAG.md" ]; then
-            # заранее написанный список изменений для этой версии (см. docs/RELEASING.md)
+            # заранее написанный список изменений (docs/RELEASING.md)
             cp ".github/releases/$TAG.md" changes.txt
           elif [ -n "$PREV" ]; then
             git log --no-merges --pretty='- %s' "$PREV..HEAD" > changes.txt
@@ -254,9 +257,9 @@ jobs:
           import os
           tpl = open('.github/release-notes.md', encoding='utf-8').read()
           signing = open('dist/android-signing.txt').read().strip()
-          sign_text = ('подписана **релизным ключом** — обновляется поверх предыдущей версии'
+          sign_text = ('подписана релизным ключом и обновляется поверх предыдущей версии'
                        if signing == 'release-key' else
-                       'подписана **тестовым ключом** (релизный ключ не настроен)')
+                       'подписана тестовым ключом (релизный ключ не настроен)')
           out = (tpl.replace('{{TAG}}', os.environ['TAG'])
                     .replace('{{ANDROID_SIGNING}}', sign_text)
                     .replace('{{CHANGES}}', open('changes.txt', encoding='utf-8').read().strip())

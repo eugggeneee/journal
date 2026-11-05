@@ -6,11 +6,11 @@ import '../../core/dates.dart';
 import '../../core/haptics.dart';
 import '../../data/store.dart';
 import '../../logic/limits.dart';
-import '../kit/ctx.dart';
-import '../kit/feedback.dart';
-import '../kit/reveal.dart';
-import '../kit/widgets.dart';
-import '../scope.dart';
+import '../app/scope.dart';
+import '../kit/animation/reveal.dart';
+import '../kit/components/feedback.dart';
+import '../kit/components/widgets.dart';
+import '../kit/foundation/ctx.dart';
 
 /// Предупреждения о лимитах над счётчиками.
 ///

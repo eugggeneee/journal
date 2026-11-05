@@ -1,10 +1,11 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
-import '../kit/ctx.dart';
-import '../kit/reveal.dart';
-import '../kit/widgets.dart';
-import '../scope.dart';
+import '../app/scope.dart';
+import '../kit/animation/reveal.dart';
+import '../kit/components/overview.dart';
+import '../kit/components/widgets.dart';
+import '../kit/foundation/ctx.dart';
 import 'grade_sheet.dart';
 import 'grades_page.dart';
 
@@ -34,6 +35,8 @@ class _SubjectPageState extends State<SubjectPage> {
     final avg = grades.isEmpty ? null : grades.fold<int>(0, (a, g) => a + g.value) / grades.length;
     final tone = gradeTone(context, avg ?? 0);
     final chrono = grades.reversed.toList();
+    final minValue = grades.isEmpty ? 0 : grades.map((g) => g.value).reduce((a, b) => a < b ? a : b);
+    final maxValue = grades.isEmpty ? 0 : grades.map((g) => g.value).reduce((a, b) => a > b ? a : b);
     String? trend;
     if (grades.length >= 2) {
       final before = chrono.sublist(0, chrono.length - 1);
@@ -70,20 +73,19 @@ class _SubjectPageState extends State<SubjectPage> {
               )
             else
               Inset(children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeOutCubic,
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
-                  decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(32)),
+                HeroCard(
+                  tone: tone,
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      AnimatedNumber(value: avg!, format: fmtAvg, style: context.tt.displayMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800, height: 1)),
-                      const SizedBox(width: 12),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Text('средний балл', style: context.tt.titleSmall?.copyWith(color: tone.fg)),
+                    HeroHeader(
+                      caption: 'Средний балл',
+                      fg: tone.fg,
+                      value: AnimatedNumber(
+                        value: avg!,
+                        format: fmtAvg,
+                        style: context.tt.displayMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800, height: 1.05),
                       ),
-                    ]),
+                      aside: [gradesText(grades.length), 'от $minValue до $maxValue'],
+                    ),
                     if (trend != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
@@ -91,9 +93,6 @@ class _SubjectPageState extends State<SubjectPage> {
                       ),
                     const SizedBox(height: 16),
                     Spark(grades: chrono.length > 24 ? chrono.sublist(chrono.length - 24) : chrono, height: 44, barWidth: 9),
-                    const SizedBox(height: 8),
-                    Text('${gradesText(grades.length)} · от ${grades.reduce((a, b) => a.value < b.value ? a : b).value} до ${grades.reduce((a, b) => a.value > b.value ? a : b).value}',
-                        style: context.tt.bodySmall?.copyWith(color: tone.fg.withValues(alpha: 0.9))),
                   ]),
                 ),
                 const SectionHeader('Все оценки'),

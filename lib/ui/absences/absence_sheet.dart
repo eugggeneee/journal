@@ -4,14 +4,14 @@ import '../../core/dates.dart';
 import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
-import '../kit/ctx.dart';
-import '../kit/feedback.dart';
-import '../kit/pickers.dart';
-import '../kit/reveal.dart';
-import '../kit/select_sheet.dart';
-import '../kit/sheet.dart';
-import '../kit/widgets.dart';
-import '../scope.dart';
+import '../app/scope.dart';
+import '../kit/animation/reveal.dart';
+import '../kit/components/feedback.dart';
+import '../kit/components/widgets.dart';
+import '../kit/foundation/ctx.dart';
+import '../kit/inputs/pickers.dart';
+import '../kit/sheets/select_sheet.dart';
+import '../kit/sheets/sheet.dart';
 
 /// Кнопка «Пропуск»: правка существующего — полная форма, новый — быстрая шторка.
 Future<void> showAbsenceSheet(BuildContext context, {Absence? edit, DateTime? date, int? lesson}) {

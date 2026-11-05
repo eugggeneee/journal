@@ -4,13 +4,14 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/app_icons.dart';
 import '../../core/haptics.dart';
-import '../kit/ctx.dart';
-import '../kit/feedback.dart';
-import '../kit/pickers.dart';
-import '../kit/sheet.dart';
-import '../kit/widgets.dart';
-import '../scope.dart';
-import '../theme.dart';
+import '../../core/palette.dart';
+import '../app/scope.dart';
+import '../kit/components/feedback.dart';
+import '../kit/components/widgets.dart';
+import '../kit/foundation/ctx.dart';
+import '../kit/inputs/pickers.dart';
+import '../kit/sheets/sheet.dart';
+import '../theme/app_theme.dart';
 
 /// Круглый «образец» темы: три основных цвета схемы, как в выборе цветов Android.
 class _SchemePainter extends CustomPainter {

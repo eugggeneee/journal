@@ -85,6 +85,7 @@ String fmtAvg(double v) => v.toStringAsFixed(2).replaceAll('.', ',');
 String gradesText(int n) => '$n ${plural(n, 'оценка', 'оценки', 'оценок')}';
 String subjectsText(int n) => '$n ${plural(n, 'предмет', 'предмета', 'предметов')}';
 String daysText(int n) => '$n ${plural(n, 'день', 'дня', 'дней')}';
+String absencesText(int n) => '$n ${plural(n, 'пропуск', 'пропуска', 'пропусков')}';
 
 /// «Сегодня» / «Завтра» / «Вчера» / день недели.
 String relativeDay(DateTime d) {

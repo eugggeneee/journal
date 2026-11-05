@@ -3,10 +3,10 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/dates.dart';
 import '../../data/models.dart';
 import '../../logic/bells.dart';
-import '../kit/ctx.dart';
-import '../kit/sheet.dart';
-import '../kit/widgets.dart';
-import '../scope.dart';
+import '../app/scope.dart';
+import '../kit/components/widgets.dart';
+import '../kit/foundation/ctx.dart';
+import '../kit/sheets/sheet.dart';
 import 'bells_page.dart';
 
 /// Звонки на выбранный день: время каждой пары, перерыв внутри пары, перерывы между парами и обед.

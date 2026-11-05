@@ -1,111 +1,97 @@
-# Сборка и выпуск версий
+# Выпуск релиза
 
-## Локальная сборка
+Релиз автоматический: тег запускает `.github/workflows/release.yml`. Workflow проверяет тег и репозиторий, прогоняет анализ и тесты, собирает Android и iOS, подписывает APK, считает контрольные суммы, создаёт аттестацию и публикует релиз.
 
-Папки `android/` и `ios/` в репозитории не хранятся — их создаёт команда `flutter create` (так же делает CI):
+Тестовые версии: [PRERELEASES.md](PRERELEASES.md). Нумерация: [VERSIONING.md](VERSIONING.md).
 
-```bash
-flutter create --platforms=android,ios --org by.mgtek --project-name journal .
-flutter pub get
-flutter test
-flutter run
-```
+## Однократная настройка
 
-## Как выпустить версию
+### Идентификатор приложения
 
-Релиз полностью автоматический: вы ставите тег — GitHub Actions проверяет код, собирает **Journal** для Android и iPhone,
-подписывает сборки и публикует их во вкладке **Releases** вместе с описанием и контрольными суммами.
+`eugggeneee.journal`: переменная `APP_ORG: eugggeneee` в `ci.yml` и `release.yml`, имя проекта `journal`. После первого публичного релиза не менять: Android воспримет это как другое приложение.
 
-## 1. Один раз: ключ подписи Android
+### Ключ подписи Android
 
-### Вариант А — автоматически (без терминала)
+APK всегда подписывается одним ключом, иначе обновление поверх установленной версии невозможно. Настроить ключ нужно до первого тега.
 
-GitHub не позволяет workflow самому писать секреты встроенным токеном, поэтому нужен временный токен:
+Вариант 1, через GitHub:
+1. Создать fine-grained token: доступ только к репозиторию, право Secrets: Read and write, срок 7 дней.
+2. Добавить его секретом `SETUP_PAT`.
+3. Запустить Actions, «Создать ключ подписи Android», Run workflow. Появятся секреты `ANDROID_KEYSTORE_*`.
+4. Удалить секрет `SETUP_PAT` и токен.
 
-1. На github.com: аватар → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
-   - **Repository access:** *Only select repositories* → ваш репозиторий `journal`
-   - **Permissions → Repository permissions → Secrets:** *Read and write* (Metadata подставится сам)
-   - **Expiration:** 7 дней достаточно → **Generate token** → скопируйте токен.
-2. В репозитории: **Settings → Secrets and variables → Actions → New repository secret** → имя `SETUP_PAT`, значение — токен.
-3. **Actions → «Создать ключ подписи Android» → Run workflow.** Через минуту в Secrets появятся четыре `ANDROID_KEYSTORE_*`.
-4. Удалите секрет `SETUP_PAT` и сам токен в настройках аккаунта — он больше не нужен.
-
-Ключ лежит только в секретах GitHub, достать его оттуда нельзя. Если репозиторий удалят, ключ пропадёт — это обычная цена за удобство.
-Повторный запуск workflow без галочки «Перезаписать» ничего не сломает — он остановится.
-
-### Вариант Б — вручную (скрипт)
-
-APK должен быть подписан одним и тем же ключом всегда — иначе Android не даст обновить приложение поверх старого.
+Вариант 2, локально:
 
 ```bash
-bash scripts/make-keystore.sh --gh
+bash scripts/release/make-keystore.sh --gh
 ```
 
-Скрипт создаст ключ в `~/journal-signing/` и (с флагом `--gh`, нужен [GitHub CLI](https://cli.github.com)) сам запишет четыре секрета в репозиторий.
-Без `gh` он напечатает значения — добавьте их вручную: **Settings → Secrets and variables → Actions → New repository secret**.
+Без флага `--gh` скрипт печатает значения для ручного добавления.
 
-| Секрет | Что это |
+| Секрет | Содержимое |
 |---|---|
-| `ANDROID_KEYSTORE_BASE64` | файл ключа в base64 (`~/journal-signing/keystore.base64`) |
+| `ANDROID_KEYSTORE_BASE64` | файл ключа в base64 |
 | `ANDROID_KEYSTORE_PASSWORD` | пароль хранилища |
-| `ANDROID_KEY_ALIAS` | псевдоним ключа (`journal`) |
+| `ANDROID_KEY_ALIAS` | псевдоним (`journal`) |
 | `ANDROID_KEY_PASSWORD` | пароль ключа |
 
-> ⚠️ Сохраните `journal-release.jks` и пароль в менеджере паролей и сделайте копию. Потеряете — обновления станут невозможны.
-> Файл ключа нельзя коммитить (он уже в `.gitignore`).
+Файл ключа и пароль хранить в менеджере паролей с резервной копией. Потеря ключа означает невозможность обновлений. Ключ в репозиторий не коммитится (`.gitignore`).
 
-Если секреты не заданы, релиз всё равно соберётся, но APK будет подписан **тестовым** ключом — позже его не получится обновить релизным.
-Поэтому настройте секреты **до первого тега**.
+Без секретов релиз соберётся, но APK получит отладочный ключ и не обновится релизным.
 
-## 2. Выпуск версии
+## Порядок выпуска стабильной версии
 
-```bash
-git checkout main && git pull
-git tag v1.0.0
-git push origin v1.0.0
-```
+1. Убедиться, что `main` зелёный: CI проходит.
+2. Определить номер по [VERSIONING.md](VERSIONING.md) и поднять версию:
+   ```bash
+   python3 scripts/project/version.py bump patch    # или minor / major
+   ```
+3. В `CHANGELOG.md` переименовать раздел `[Не выпущено]` в `[X.Y.Z] - ГГГГ-ММ-ДД` и добавить новый пустой `[Не выпущено]`.
+4. Создать `.github/releases/vX.Y.Z.md`: строки вида `- что изменилось`, без заголовков и эмодзи, только факты для пользователя.
+5. Выполнить проверки:
+   ```bash
+   python3 scripts/project/graph.py
+   python3 scripts/project/check.py
+   flutter analyze
+   flutter test
+   ```
+6. Закоммитить: `chore(release): X.Y.Z`.
+7. Поставить тег и отправить:
+   ```bash
+   git tag vX.Y.Z
+   git push origin main vX.Y.Z
+   ```
+8. Дождаться workflow Release (10-15 минут), открыть релиз и проверить файлы: `Journal-vX.Y.Z-android.apk`, `Journal-vX.Y.Z-ios.ipa`, `SHA256SUMS.txt`.
+9. Установить APK на устройство и проверить запуск, расписание, добавление оценки и пропуска.
 
-Через ~10–15 минут во вкладке **Releases** появится релиз `Journal v1.0.0` с файлами:
-
-- `Journal-v1.0.0-android.apk` — подписан релизным ключом;
-- `Journal-v1.0.0-ios.ipa` — без подписи Apple (для AltStore / Sideloadly);
-- `SHA256SUMS.txt` — контрольные суммы.
-
-Описание релиза собирается из сообщений коммитов с прошлого тега, шаблон — `.github/release-notes.md`.
-Теги вида `v1.1.0-beta.1` публикуются как *pre-release*.
-
-Можно запустить и вручную: **Actions → Release → Run workflow** и указать тег.
-
-## 3. Номера версий
-
-- Имя версии берётся из тега (`v1.2.3` → `1.2.3`).
-- Номер сборки (`versionCode`) — номер запуска workflow, он всегда растёт.
-- Строку `version:` в `pubspec.yaml` для релиза менять не нужно.
-
-## 4. Проверка скачанного файла
-
-```bash
-sha256sum -c SHA256SUMS.txt                                   # контрольные суммы
-gh attestation verify Journal-v1.0.0-android.apk --repo <владелец>/<репозиторий>   # подпись GitHub
-```
-
-## 5. Про iPhone
-
-Сборка iOS идёт **без подписи Apple** — платный аккаунт разработчика для этого не нужен.
-Подпись ставит AltStore / Sideloadly при установке. App Store и TestFlight таким способом недоступны.
-
-## 6. Настройки
-
-- Идентификатор приложения: `APP_ORG` в `.github/workflows/*.yml` (сейчас `by.mgtek` → `by.mgtek.journal`).
-  Если меняете после первого релиза, Android воспримет это как другое приложение.
-- Название на экране телефона — **Journal** (задаётся в workflow для Android и iOS).
-- Иконки: исходник `docs/images/branding/icon.svg`, готовые файлы — `assets/icon/`.
+Workflow можно запустить вручную: Actions, Release, Run workflow, указать тег.
 
 ## Описание релиза
 
-Раздел «Что нового» в релизе берётся так:
+Берётся по порядку:
+1. `.github/releases/<тег>.md`, если файл есть;
+2. иначе заголовки коммитов между предыдущим тегом и новым.
 
-1. если есть файл `.github/releases/<тег>.md` (например, `.github/releases/v1.4.0.md`) — из него (список строк вида `- что изменилось`);
-2. иначе — из заголовков коммитов между прошлым тегом и новым.
+Для стабильных версий файл обязателен (проверяется `check.py`). Шаблон оформления: `.github/release-notes.md`.
 
-Поэтому перед тегом достаточно положить такой файл в репозиторий вместе с коммитом. Название релиза — `Journal <тег>`.
+## Проверка файлов
+
+```bash
+sha256sum -c SHA256SUMS.txt
+gh attestation verify Journal-vX.Y.Z-android.apk --repo eugggeneee/journal
+```
+
+## iOS
+
+Сборка без подписи Apple, платный аккаунт разработчика не нужен. Подпись ставят AltStore или Sideloadly при установке. App Store и TestFlight таким способом недоступны.
+
+## Если релиз содержит ошибку
+
+- Опубликованный тег не удалять и не перемещать.
+- Выпустить следующую версию (PATCH, при `X.Y.20` MINOR) с исправлением.
+- Ошибочный релиз пометить в GitHub как pre-release или удалить файлы из релиза, оставив тег.
+
+## Название и значки
+
+- Название приложения на устройстве: Journal (задаётся в workflow).
+- Исходники значка: `assets/icon/`, готовые значки тем: `assets/icons/` (генерируются `scripts/icons/make_icons.py`).

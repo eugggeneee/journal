@@ -4,11 +4,12 @@ import '../../core/dates.dart';
 import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
-import '../kit/ctx.dart';
-import '../kit/feedback.dart';
-import '../kit/pickers.dart';
-import '../kit/sheet.dart';
-import '../scope.dart';
+import '../app/scope.dart';
+import '../kit/components/feedback.dart';
+import '../kit/components/widgets.dart';
+import '../kit/foundation/ctx.dart';
+import '../kit/inputs/pickers.dart';
+import '../kit/sheets/sheet.dart';
 
 const _kinds = ['Ответ', 'Контрольная', 'Лабораторная', 'Практическая', 'Самостоятельная', 'Тест', 'Зачёт', 'Экзамен'];
 
@@ -147,9 +148,12 @@ class _GradeFormState extends State<_GradeForm> {
     final suggested = <String>[if (sched != null) for (final s in sched.slots) ...s.subjects];
     final editing = widget.edit != null;
 
+    final headTone = value == null ? Tone(context.cs.primaryContainer, context.cs.onPrimaryContainer) : gradeTone(context, value!);
+
     return SheetScaffold(
       title: editing ? 'Изменить оценку' : 'Новая оценка',
-      subtitle: _added > 0 ? 'Добавлено подряд: $_added' : null,
+      subtitle: _added > 0 ? 'Добавлено подряд: $_added' : (editing ? 'Редактирование' : 'Запись в журнал'),
+      leading: CookieIcon(icon: Icons.star_rounded, size: 52, bg: headTone.bg, fg: headTone.fg),
       trailing: editing
           ? IconButton(
               tooltip: 'Удалить оценку',

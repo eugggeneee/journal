@@ -1,6 +1,6 @@
 name: CI
 
-# Быстрая проверка кода: анализ + тесты. Сборка приложений — в release.yml.
+# Проверка репозитория, анализ и тесты. Сборка приложений — в release.yml.
 on:
   push:
     branches: [main]
@@ -15,10 +15,17 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  APP_ORG: by.mgtek
+  APP_ORG: eugggeneee
   APP_PROJECT: journal
 
 jobs:
+  repo:
+    name: Проверка репозитория
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 scripts/project/check.py
+
   test:
     name: Анализ и тесты
     runs-on: ubuntu-latest

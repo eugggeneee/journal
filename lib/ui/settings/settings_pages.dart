@@ -5,16 +5,16 @@ import '../../core/dates.dart';
 import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../logic/limits.dart';
-import '../group_picker.dart';
-import '../kit/ctx.dart';
-import '../kit/feedback.dart';
-import '../kit/reveal.dart';
-import '../kit/selectors.dart';
-import '../kit/settings_tiles.dart';
-import '../kit/sheet.dart';
-import '../kit/widgets.dart';
-import '../scope.dart';
+import '../app/scope.dart';
+import '../kit/animation/reveal.dart';
+import '../kit/components/feedback.dart';
+import '../kit/components/widgets.dart';
+import '../kit/foundation/ctx.dart';
+import '../kit/inputs/selectors.dart';
+import '../kit/inputs/settings_tiles.dart';
+import '../kit/sheets/sheet.dart';
 import 'bells_page.dart';
+import 'group_picker.dart';
 
 /// Каркас вложенной страницы настроек: крупный заголовок и содержимое.
 class SettingsScaffold extends StatelessWidget {

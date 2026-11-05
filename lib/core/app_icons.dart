@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-import '../ui/theme.dart';
+import 'palette.dart';
 
 /// Смена значка приложения на Android и iPhone.
 ///
@@ -11,7 +11,7 @@ import '../ui/theme.dart';
 class AppIcons {
   AppIcons._();
 
-  static const MethodChannel _channel = MethodChannel('by.mgtek.journal/app_icon');
+  static const MethodChannel _channel = MethodChannel('eugggeneee.journal/app_icon');
 
   /// Значок есть под каждую тему; id совпадают с id тем.
   static List<String> get ids => [for (final c in AppPalette.choices) c.id];

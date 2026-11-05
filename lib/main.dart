@@ -4,11 +4,11 @@ import 'package:material_ui/material_ui.dart';
 
 import 'core/haptics.dart';
 import 'data/store.dart';
-import 'logic/schedule_service.dart';
+import 'logic/schedule/schedule_service.dart';
+import 'ui/app/scope.dart';
+import 'ui/app/shell.dart';
 import 'ui/onboarding/onboarding.dart';
-import 'ui/scope.dart';
-import 'ui/shell.dart';
-import 'ui/theme.dart';
+import 'ui/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

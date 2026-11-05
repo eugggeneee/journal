@@ -1,4 +1,4 @@
-# Flutter / Dart
+# Flutter и Dart
 .dart_tool/
 .packages
 build/
@@ -7,18 +7,22 @@ build/
 pubspec.lock
 .metadata
 
-# IDE / ОС
+# Платформенные папки создаёт flutter create (локально и в CI)
+/android/
+/ios/
+
+# IDE и ОС
 *.iml
 .idea/
 .vscode/
 .DS_Store
+Thumbs.db
 
-# Платформенные папки генерируются в CI (flutter create), см. .github/workflows.
-# Если хотите хранить их в репозитории — удалите эти две строки.
-/android/
-/ios/
+# Python
+__pycache__/
+*.pyc
 
-# Ключи и секреты — НИКОГДА не коммитить
+# Ключи и секреты: не коммитить
 *.jks
 *.keystore
 *.p12

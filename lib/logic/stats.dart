@@ -47,20 +47,31 @@ class GradeStats {
 }
 
 class AbsenceStats {
-  AbsenceStats._(this.totalHours, this.excusedHours, this.bySubjectHours);
+  AbsenceStats._(this.totalHours, this.excusedHours, this.bySubjectHours, this.bySubjectCount, this.lastBySubject);
   final int totalHours;
   final int excusedHours;
   int get unexcusedHours => totalHours - excusedHours;
   final Map<String, int> bySubjectHours;
 
+  /// Сколько записей о пропусках по каждому предмету.
+  final Map<String, int> bySubjectCount;
+
+  /// Дата последнего пропуска по каждому предмету.
+  final Map<String, DateTime> lastBySubject;
+
   static AbsenceStats of(List<Absence> list) {
     var total = 0, excused = 0;
     final subject = <String, int>{};
+    final count = <String, int>{};
+    final last = <String, DateTime>{};
     for (final a in list) {
       total += a.hours;
       if (a.excused) excused += a.hours;
       subject[a.subject] = (subject[a.subject] ?? 0) + a.hours;
+      count[a.subject] = (count[a.subject] ?? 0) + 1;
+      final prev = last[a.subject];
+      if (prev == null || a.date.isAfter(prev)) last[a.subject] = a.date;
     }
-    return AbsenceStats._(total, excused, subject);
+    return AbsenceStats._(total, excused, subject, count, last);
   }
 }

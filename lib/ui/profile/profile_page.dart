@@ -2,15 +2,15 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/haptics.dart';
 import '../../logic/limits.dart';
-import '../group_picker.dart';
-import '../kit/ctx.dart';
-import '../kit/reveal.dart';
-import '../kit/settings_tiles.dart';
-import '../kit/widgets.dart';
-import '../scope.dart';
+import '../app/scope.dart';
+import '../kit/animation/reveal.dart';
+import '../kit/components/widgets.dart';
+import '../kit/foundation/ctx.dart';
+import '../kit/inputs/settings_tiles.dart';
 import '../settings/bells_page.dart';
+import '../settings/group_picker.dart';
 import '../settings/settings_pages.dart';
-import '../theme.dart';
+import '../theme/app_theme.dart';
 import 'theme_page.dart';
 
 /// Профиль: сверху группа, ниже — настройки по разделам в том же стиле, что и пары в расписании.

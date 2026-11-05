@@ -1,9 +1,10 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../kit/selectors.dart';
-import '../kit/widgets.dart';
-import '../scope.dart';
-import '../theme.dart';
+import '../../core/palette.dart';
+import '../app/scope.dart';
+import '../kit/components/widgets.dart';
+import '../kit/inputs/selectors.dart';
+import '../theme/app_theme.dart';
 import 'theme_widgets.dart';
 
 /// Экран «Тема и значок»: режим (светлая/тёмная), цвет и значок приложения.

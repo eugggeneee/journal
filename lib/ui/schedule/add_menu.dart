@@ -2,8 +2,8 @@ import 'package:material_ui/material_ui.dart';
 
 import '../absences/absence_sheet.dart';
 import '../grades/grade_sheet.dart';
-import '../kit/ctx.dart';
-import '../kit/sheet.dart';
+import '../kit/foundation/ctx.dart';
+import '../kit/sheets/sheet.dart';
 import 'marks.dart';
 
 /// Выбор: что добавить на выбранную дату.

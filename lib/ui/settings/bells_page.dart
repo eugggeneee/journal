@@ -5,15 +5,15 @@ import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../logic/bells.dart';
-import '../kit/ctx.dart';
-import '../kit/feedback.dart';
-import '../kit/pickers.dart';
-import '../kit/reveal.dart';
-import '../kit/select_sheet.dart';
-import '../kit/settings_tiles.dart';
-import '../kit/sheet.dart';
-import '../kit/widgets.dart';
-import '../scope.dart';
+import '../app/scope.dart';
+import '../kit/animation/reveal.dart';
+import '../kit/components/feedback.dart';
+import '../kit/components/widgets.dart';
+import '../kit/foundation/ctx.dart';
+import '../kit/inputs/pickers.dart';
+import '../kit/inputs/settings_tiles.dart';
+import '../kit/sheets/select_sheet.dart';
+import '../kit/sheets/sheet.dart';
 import 'bells_sheet.dart';
 
 /// Выбор времени «чч:мм» (24-часовой формат). Возвращает минуты от полуночи.
@@ -308,7 +308,7 @@ class _BellsPageState extends State<BellsPage> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                 child: Text(
-                  'Время показывается справа в карточке каждой пары. Значки: ☕ — перерыв внутри пары, 🍴 — после пары обед. '
+                  'Время показывается справа в карточке каждой пары: начало, перерыв внутри пары и конец; обед после пары — отдельной строкой. '
                   'Перерывы между парами считаются сами — по времени конца и начала. Внутри пары можно задать перерыв — например, две половины по 45 минут.',
                   style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.4),
                 ),

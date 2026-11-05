@@ -17,8 +17,6 @@ class AppStore extends ChangeNotifier {
   static const _kData = 'data_v1';
   static const _kSched = 'sched_v1';
   static const _kBackupId = 'journal';
-  // Резервные копии, сделанные до переименования приложения, по-прежнему читаются.
-  static const _kLegacyBackupId = 'mgtek_college';
   static const maxCached = 400;
 
   Settings settings = Settings();
@@ -388,7 +386,7 @@ class AppStore extends ChangeNotifier {
   String? importJson(String text) {
     try {
       final decoded = jsonDecode(text.trim());
-      if (decoded is! Map || (decoded['app'] != _kBackupId && decoded['app'] != _kLegacyBackupId)) {
+      if (decoded is! Map || (decoded['app'] != _kBackupId)) {
         return 'Это не резервная копия приложения';
       }
       _applyBackup(decoded);
