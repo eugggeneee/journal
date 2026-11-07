@@ -18,7 +18,7 @@ journal/
     icon/               исходники значка
     icons/              значки по темам (генерируются scripts/icons/make_icons.py)
   docs/
-    images/branding/    изображения для README
+    logo.svg            логотип для README
     ARCHITECTURE.md, COMMITS.md, PRERELEASES.md, RELEASING.md,
     STYLE.md, TESTING.md, VERSIONING.md, GRAPH.md
   lib/
