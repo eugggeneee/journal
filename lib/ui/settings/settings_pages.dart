@@ -6,6 +6,7 @@ import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../logic/limits.dart';
 import '../app/scope.dart';
+import '../kit/components/edge_fade.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
@@ -26,13 +27,13 @@ class SettingsScaffold extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: context.cs.surface,
         body: ContentFrame(
-          child: CustomScrollView(
+          child: EdgeFade(top: 0, child: CustomScrollView(
             slivers: [
               SliverAppBar.large(title: Text(title)),
               Inset(children: children),
               const SliverToBoxAdapter(child: SizedBox(height: 40)),
             ],
-          ),
+          )),
         ),
       );
 }

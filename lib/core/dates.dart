@@ -60,6 +60,14 @@ String fmtMin(int m) => '${two(m ~/ 60)}:${two(m % 60)}';
 /// «10 мин».
 String minText(int m) => '$m мин';
 
+/// Промежуток времени: «45 мин», «2 ч», «1 ч 40 мин».
+String spanText(int m) {
+  if (m < 60) return '$m мин';
+  final h = m ~/ 60;
+  final r = m % 60;
+  return r == 0 ? '$h ч' : '$h ч $r мин';
+}
+
 /// Ключ месяца: «2026-11».
 String monthKey(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${two(d.month)}';
 

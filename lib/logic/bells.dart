@@ -139,3 +139,84 @@ final List<BellPreset> kBellPresets = [
     ),
   ),
 ];
+
+/// Что происходит в расписании дня в данную минуту.
+enum DayPhase {
+  /// Звонков для пар дня нет или время не определено.
+  none,
+
+  /// Занятия ещё не начались.
+  before,
+
+  /// Идёт пара.
+  lesson,
+
+  /// Идёт перерыв внутри пары.
+  innerBreak,
+
+  /// Перерыв (обед или окно) между парами.
+  gap,
+
+  /// Занятия закончились.
+  after,
+}
+
+/// Состояние дня: фаза, нужная пара, сколько минут осталось и какая доля уже прошла (0…1).
+class DayClock {
+  const DayClock(this.phase, {this.pair, this.next, this.left = 0, this.progress = 0});
+  final DayPhase phase;
+
+  /// Текущая пара (для перерыва между парами — пара, после которой он идёт).
+  final int? pair;
+
+  /// Следующая пара (для «до начала» и перерыва между парами).
+  final int? next;
+
+  /// Минут до конца текущей фазы.
+  final int left;
+  final double progress;
+}
+
+/// Состояние дня в минуту [minute]; [lessons] — номера пар, которые есть в расписании этого дня.
+DayClock dayClock(BellProfile profile, List<int> lessons, int minute) {
+  final nums = [for (final n in lessons) if (profile[n] != null) n]..sort();
+  if (nums.isEmpty) return const DayClock(DayPhase.none);
+  final first = profile[nums.first]!;
+  final last = profile[nums.last]!;
+  if (minute < first.start) return DayClock(DayPhase.before, next: nums.first, left: first.start - minute);
+  if (minute >= last.end) return DayClock(DayPhase.after, pair: nums.last);
+  for (var i = 0; i < nums.length; i++) {
+    final n = nums[i];
+    final s = profile[n]!;
+    if (minute >= s.start && minute < s.end) {
+      if (s.hasBreak && minute >= s.breakStart! && minute < s.breakEnd!) {
+        return DayClock(DayPhase.innerBreak, pair: n, left: s.breakEnd! - minute, progress: (minute - s.breakStart!) / s.breakMinutes);
+      }
+      return DayClock(DayPhase.lesson, pair: n, left: s.end - minute, progress: (minute - s.start) / s.minutes);
+    }
+    if (i + 1 < nums.length) {
+      final next = profile[nums[i + 1]]!;
+      if (minute >= s.end && minute < next.start) {
+        return DayClock(DayPhase.gap, pair: n, next: nums[i + 1], left: next.start - minute, progress: (minute - s.end) / (next.start - s.end));
+      }
+    }
+  }
+  return const DayClock(DayPhase.none);
+}
+
+/// Подпись промежутка между двумя соседними парами дня: «Перерыв 10 мин», «Обед 40 мин»
+/// или «Окно 1 ч 40 мин», если между парами в расписании дня нет одной или нескольких пар.
+/// Возвращает null, если промежутка нет. [from] и [to] — номера пар в расписании дня.
+String? gapBetween(BellProfile p, int from, int to) {
+  final a = p[from];
+  final b = p[to];
+  final skipped = to - from > 1;
+  final minutes = (a != null && b != null) ? b.start - a.end : null;
+  if (minutes != null && minutes <= 0) return null;
+  if (skipped) {
+    final span = minutes == null ? '' : ' ${spanText(minutes)}';
+    return 'Окно$span';
+  }
+  if (minutes == null) return null;
+  return '${p.isLunchAfter(from) ? 'Обед' : 'Перерыв'} ${spanText(minutes)}';
+}

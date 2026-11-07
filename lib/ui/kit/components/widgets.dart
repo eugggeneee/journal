@@ -5,6 +5,7 @@ import '../../../core/haptics.dart';
 import '../animation/motion.dart';
 import '../animation/reveal.dart';
 import '../foundation/ctx.dart';
+import 'edge_fade.dart';
 
 /// Запас снизу под плавающую кнопку, чтобы она не закрывала последние элементы списка.
 const double kFabClearance = 104;
@@ -83,7 +84,9 @@ class LargePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
-    final view = CustomScrollView(
+    final view = EdgeFade(
+      top: 0,
+      child: CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverAppBar(
@@ -100,6 +103,7 @@ class LargePage extends StatelessWidget {
         ...slivers,
         SliverToBoxAdapter(child: SizedBox(height: bottomGap)),
       ],
+      ),
     );
     return ContentFrame(child: onRefresh == null ? view : RefreshIndicator(onRefresh: onRefresh!, child: view));
   }
@@ -347,6 +351,7 @@ class SegmentCard extends StatefulWidget {
     this.onDelete,
     this.onSwipeRight,
     this.swipeRightIcon = Icons.check_rounded,
+    this.appear = true,
   });
   final int index;
   final int count;
@@ -358,6 +363,9 @@ class SegmentCard extends StatefulWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onSwipeRight;
   final IconData swipeRightIcon;
+
+  /// Плавное появление при первом показе (выключается, когда карточку анимирует родитель).
+  final bool appear;
 
   @override
   State<SegmentCard> createState() => _SegmentCardState();
@@ -430,24 +438,22 @@ class _SegmentCardState extends State<SegmentCard> {
       );
     }
     // Когда рядом появляется или исчезает карточка, скругления и зазоры меняются плавно.
-    return Appear(
-      index: widget.index,
-      child: AnimatedPadding(
-        duration: d,
-        curve: Motion.standard,
-        padding: EdgeInsets.only(bottom: widget.index == widget.count - 1 ? 0 : 2),
-        child: PressScale(
-          enabled: widget.onTap != null || widget.onLongPress != null,
-          child: TweenAnimationBuilder<BorderRadius?>(
-            tween: BorderRadiusTween(end: r),
-            duration: d,
-            curve: Motion.standard,
-            builder: (context, radius, child) => ClipRRect(borderRadius: radius ?? r, child: child),
-            child: body,
-          ),
+    final card = AnimatedPadding(
+      duration: d,
+      curve: Motion.standard,
+      padding: EdgeInsets.only(bottom: widget.index == widget.count - 1 ? 0 : 2),
+      child: PressScale(
+        enabled: widget.onTap != null || widget.onLongPress != null,
+        child: TweenAnimationBuilder<BorderRadius?>(
+          tween: BorderRadiusTween(end: r),
+          duration: d,
+          curve: Motion.standard,
+          builder: (context, radius, child) => ClipRRect(borderRadius: radius ?? r, child: child),
+          child: body,
         ),
       ),
     );
+    return widget.appear ? Appear(index: widget.index, child: card) : card;
   }
 }
 

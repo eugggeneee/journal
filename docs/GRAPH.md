@@ -7,7 +7,7 @@
 python3 scripts/project/graph.py
 ```
 
-Файлов Dart: 49 в `lib/`, 6 в `test/`.
+Файлов Dart: 55 в `lib/`, 6 в `test/`.
 
 ## Папки
 
@@ -33,13 +33,13 @@ flowchart LR
     lib_ui_app["ui/app (2)"]
     lib_ui_grades["ui/grades (3)"]
     lib_ui_kit_animation["ui/kit/animation (3)"]
-    lib_ui_kit_components["ui/kit/components (3)"]
+    lib_ui_kit_components["ui/kit/components (4)"]
     lib_ui_kit_foundation["ui/kit/foundation (1)"]
     lib_ui_kit_inputs["ui/kit/inputs (3)"]
     lib_ui_kit_sheets["ui/kit/sheets (2)"]
     lib_ui_onboarding["ui/onboarding (1)"]
     lib_ui_profile["ui/profile (3)"]
-    lib_ui_schedule["ui/schedule (4)"]
+    lib_ui_schedule["ui/schedule (9)"]
     lib_ui_settings["ui/settings (4)"]
     lib_ui_theme["ui/theme (2)"]
   end
@@ -71,6 +71,7 @@ flowchart LR
   lib_ui_app --> lib_ui_absences
   lib_ui_app --> lib_ui_grades
   lib_ui_app --> lib_ui_kit_animation
+  lib_ui_app --> lib_ui_kit_foundation
   lib_ui_app --> lib_ui_profile
   lib_ui_app --> lib_ui_schedule
   lib_ui_grades --> lib_core
@@ -93,6 +94,7 @@ flowchart LR
   lib_ui_kit_inputs --> lib_ui_kit_sheets
   lib_ui_kit_sheets --> lib_core
   lib_ui_kit_sheets --> lib_ui_kit_animation
+  lib_ui_kit_sheets --> lib_ui_kit_components
   lib_ui_kit_sheets --> lib_ui_kit_foundation
   lib_ui_onboarding --> lib_core
   lib_ui_onboarding --> lib_data
@@ -151,12 +153,12 @@ flowchart LR
 | Файл | Строк | Импортирует | Используют |
 |---|---:|---:|---:|
 | `core/app_icons.dart` | 41 | 1 | 1 |
-| `core/dates.dart` | 97 | 0 | 21 |
-| `core/haptics.dart` | 18 | 0 | 25 |
+| `core/dates.dart` | 105 | 0 | 26 |
+| `core/haptics.dart` | 18 | 0 | 26 |
 | `core/palette.dart` | 68 | 0 | 5 |
-| `data/models.dart` | 501 | 1 | 21 |
-| `data/store.dart` | 399 | 5 | 15 |
-| `logic/bells.dart` | 141 | 2 | 6 |
+| `data/models.dart` | 501 | 1 | 25 |
+| `data/store.dart` | 399 | 5 | 19 |
+| `logic/bells.dart` | 222 | 2 | 10 |
 | `logic/limits.dart` | 105 | 2 | 6 |
 | `logic/schedule/cp1251.dart` | 52 | 0 | 2 |
 | `logic/schedule/schedule_parser.dart` | 124 | 1 | 2 |
@@ -164,39 +166,45 @@ flowchart LR
 | `logic/stats.dart` | 77 | 1 | 3 |
 | `logic/subject_names.dart` | 26 | 0 | 1 |
 | `main.dart` | 67 | 7 | 0 |
-| `ui/absences/absence_actions.dart` | 37 | 5 | 1 |
+| `ui/absences/absence_actions.dart` | 37 | 5 | 2 |
 | `ui/absences/absence_limit.dart` | 322 | 9 | 1 |
-| `ui/absences/absence_sheet.dart` | 500 | 12 | 5 |
+| `ui/absences/absence_sheet.dart` | 500 | 12 | 4 |
 | `ui/absences/absences_page.dart` | 477 | 18 | 1 |
-| `ui/app/scope.dart` | 23 | 2 | 21 |
-| `ui/app/shell.dart` | 152 | 11 | 1 |
-| `ui/grades/grade_sheet.dart` | 224 | 10 | 5 |
+| `ui/app/scope.dart` | 23 | 2 | 22 |
+| `ui/app/shell.dart` | 260 | 12 | 1 |
+| `ui/grades/grade_sheet.dart` | 224 | 10 | 4 |
 | `ui/grades/grades_page.dart` | 283 | 15 | 2 |
-| `ui/grades/subject_page.dart` | 113 | 8 | 1 |
-| `ui/kit/animation/motion.dart` | 45 | 0 | 14 |
-| `ui/kit/animation/reveal.dart` | 278 | 1 | 17 |
+| `ui/grades/subject_page.dart` | 114 | 9 | 1 |
+| `ui/kit/animation/motion.dart` | 45 | 0 | 18 |
+| `ui/kit/animation/reveal.dart` | 278 | 1 | 21 |
 | `ui/kit/animation/tab_switcher.dart` | 90 | 1 | 1 |
+| `ui/kit/components/edge_fade.dart` | 74 | 0 | 8 |
 | `ui/kit/components/feedback.dart` | 25 | 1 | 12 |
-| `ui/kit/components/overview.dart` | 309 | 6 | 3 |
-| `ui/kit/components/widgets.dart` | 481 | 5 | 17 |
-| `ui/kit/foundation/ctx.dart` | 98 | 0 | 23 |
+| `ui/kit/components/overview.dart` | 309 | 6 | 4 |
+| `ui/kit/components/widgets.dart` | 487 | 6 | 22 |
+| `ui/kit/foundation/ctx.dart` | 84 | 0 | 29 |
 | `ui/kit/inputs/pickers.dart` | 537 | 8 | 8 |
 | `ui/kit/inputs/selectors.dart` | 56 | 4 | 3 |
-| `ui/kit/inputs/settings_tiles.dart` | 91 | 2 | 4 |
+| `ui/kit/inputs/settings_tiles.dart` | 91 | 2 | 5 |
 | `ui/kit/sheets/select_sheet.dart` | 256 | 4 | 7 |
-| `ui/kit/sheets/sheet.dart` | 261 | 3 | 14 |
-| `ui/onboarding/onboarding.dart` | 463 | 13 | 1 |
+| `ui/kit/sheets/sheet.dart` | 266 | 4 | 13 |
+| `ui/onboarding/onboarding.dart` | 456 | 14 | 1 |
 | `ui/profile/profile_page.dart` | 140 | 12 | 1 |
-| `ui/profile/theme_page.dart` | 52 | 6 | 1 |
+| `ui/profile/theme_page.dart` | 53 | 7 | 1 |
 | `ui/profile/theme_widgets.dart` | 470 | 10 | 2 |
-| `ui/schedule/add_menu.dart` | 107 | 7 | 1 |
+| `ui/schedule/day_summary.dart` | 169 | 6 | 1 |
+| `ui/schedule/day_timeline.dart` | 363 | 8 | 1 |
+| `ui/schedule/day_view.dart` | 233 | 18 | 1 |
+| `ui/schedule/lesson_card.dart` | 165 | 10 | 2 |
 | `ui/schedule/lesson_sheet.dart` | 246 | 15 | 1 |
-| `ui/schedule/marks.dart` | 305 | 11 | 3 |
-| `ui/schedule/schedule_page.dart` | 746 | 18 | 1 |
-| `ui/settings/bells_page.dart` | 726 | 16 | 4 |
+| `ui/schedule/marks.dart` | 305 | 11 | 4 |
+| `ui/schedule/now_card.dart` | 167 | 10 | 1 |
+| `ui/schedule/rest_day.dart` | 122 | 7 | 1 |
+| `ui/schedule/schedule_page.dart` | 364 | 11 | 1 |
+| `ui/settings/bells_page.dart` | 727 | 17 | 4 |
 | `ui/settings/bells_sheet.dart` | 112 | 8 | 2 |
 | `ui/settings/group_picker.dart` | 261 | 6 | 4 |
-| `ui/settings/settings_pages.dart` | 370 | 14 | 3 |
+| `ui/settings/settings_pages.dart` | 371 | 15 | 3 |
 | `ui/theme/app_theme.dart` | 193 | 2 | 4 |
 | `ui/theme/page_transitions.dart` | 36 | 0 | 1 |
 
@@ -208,13 +216,13 @@ flowchart LR
 - `logic` -> `core`, `data`
 - `logic/schedule` -> `core`, `data`
 - `ui/absences` -> `core`, `data`, `logic`, `ui/app`, `ui/kit/animation`, `ui/kit/components`, `ui/kit/foundation`, `ui/kit/inputs`, `ui/kit/sheets`, `ui/settings`
-- `ui/app` -> `core`, `data`, `logic/schedule`, `ui/absences`, `ui/grades`, `ui/kit/animation`, `ui/profile`, `ui/schedule`
+- `ui/app` -> `core`, `data`, `logic/schedule`, `ui/absences`, `ui/grades`, `ui/kit/animation`, `ui/kit/foundation`, `ui/profile`, `ui/schedule`
 - `ui/grades` -> `core`, `data`, `logic`, `ui/app`, `ui/kit/animation`, `ui/kit/components`, `ui/kit/foundation`, `ui/kit/inputs`, `ui/kit/sheets`
 - `ui/kit/animation` -> нет
 - `ui/kit/components` -> `core`, `ui/kit/animation`, `ui/kit/foundation`, `ui/kit/inputs`
 - `ui/kit/foundation` -> нет
 - `ui/kit/inputs` -> `core`, `ui/app`, `ui/kit/animation`, `ui/kit/foundation`, `ui/kit/sheets`
-- `ui/kit/sheets` -> `core`, `ui/kit/animation`, `ui/kit/foundation`
+- `ui/kit/sheets` -> `core`, `ui/kit/animation`, `ui/kit/components`, `ui/kit/foundation`
 - `ui/onboarding` -> `core`, `data`, `ui/app`, `ui/kit/animation`, `ui/kit/components`, `ui/kit/foundation`, `ui/kit/inputs`, `ui/profile`, `ui/settings`
 - `ui/profile` -> `core`, `logic`, `ui/app`, `ui/kit/animation`, `ui/kit/components`, `ui/kit/foundation`, `ui/kit/inputs`, `ui/kit/sheets`, `ui/settings`, `ui/theme`
 - `ui/schedule` -> `core`, `data`, `logic`, `logic/schedule`, `ui/absences`, `ui/app`, `ui/grades`, `ui/kit/animation`, `ui/kit/components`, `ui/kit/foundation`, `ui/kit/inputs`, `ui/kit/sheets`, `ui/settings`

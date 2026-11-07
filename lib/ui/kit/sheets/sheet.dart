@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/dates.dart';
 import '../animation/motion.dart';
+import '../components/edge_fade.dart';
 import '../foundation/ctx.dart';
 
 const double _wideBreakpoint = 700;
@@ -103,10 +104,14 @@ class SheetScaffold extends StatelessWidget {
           if (pinned != null) Padding(padding: const EdgeInsets.fromLTRB(24, 4, 24, 4), child: pinned),
           Flexible(
             fit: fill ? FlexFit.tight : FlexFit.loose,
-            child: SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+            child: EdgeFade(
+              top: 12,
+              bottom: 22,
+              child: SingleChildScrollView(
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+              ),
             ),
           ),
           if (footer != null)

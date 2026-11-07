@@ -5,6 +5,7 @@ import '../../data/store.dart';
 import '../app/scope.dart';
 import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
+import '../kit/components/edge_fade.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
 import '../kit/inputs/selectors.dart';
@@ -133,17 +134,9 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   // ───────────── страницы ─────────────
 
   /// Прокручиваемая страница: нижний край плавно растворяется, а не обрезается резкой линией.
-  Widget _scrolling(List<Widget> children, {double top = 24}) => ShaderMask(
-        blendMode: BlendMode.dstIn,
-        shaderCallback: (r) {
-          final fade = (22 / r.height).clamp(0.0, 0.5).toDouble();
-          return LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: const [Colors.white, Colors.white, Colors.transparent],
-            stops: [0, 1 - fade, 1],
-          ).createShader(r);
-        },
+  Widget _scrolling(List<Widget> children, {double top = 24}) => EdgeFade(
+        top: 16,
+        bottom: 28,
         child: ListView(padding: EdgeInsets.fromLTRB(24, top, 24, 28), children: children),
       );
 

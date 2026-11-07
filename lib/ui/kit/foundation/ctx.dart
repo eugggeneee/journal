@@ -53,42 +53,28 @@ Color gradeAccent(BuildContext context, num v) => _accent(context, _gradeHue(v))
 
 // ───────────────────────── статусы: пропуски и лимиты ─────────────────────────
 //
-// Красный и зелёный строятся как настоящие тональные схемы Material 3 от базовых цветов палитры
-// Material Design (Red 500, Green 500, Amber 500) в яркой («vibrant») вариации: контейнеры и акценты
-// одного семейства, чистые и без серых и коричневых примесей, в светлой и тёмной теме.
+// Пропуски и лимиты рисуются теми же пастельными тонами, что и оценки: нежный фон и тёмный текст
+// одного оттенка. Красный — без уважительной причины, зелёный — по уважительной, янтарный — «лимит близко».
+// Акцент (плашки, столбики, шкалы) тоже приглушён, чтобы не «кричать» на фоне пастельных карточек.
 
-const Color _seedRed = Color(0xFFF44336);
-const Color _seedGreen = Color(0xFF4CAF50);
-const Color _seedAmber = Color(0xFFFFC107);
+const double _hueRed = 4;
+const double _hueGreen = 140;
+const double _hueAmber = 42;
 
-final Map<String, ColorScheme> _statusSchemes = {};
-
-ColorScheme _statusScheme(BuildContext context, Color seed) {
-  final b = context.isDark ? Brightness.dark : Brightness.light;
-  return _statusSchemes.putIfAbsent(
-    '${seed.hashCode}|${b.name}',
-    () => ColorScheme.fromSeed(seedColor: seed, brightness: b, dynamicSchemeVariant: DynamicSchemeVariant.vibrant),
-  );
-}
+Color _softAccent(BuildContext context, double hue) =>
+    context.isDark ? _hsl(hue, 0.60, 0.72) : _hsl(hue, 0.62, 0.60);
 
 /// Тоны для пропусков: без уважительной причины (красный) / по уважительной (зелёный).
-Tone absenceTone(BuildContext context, {required bool excused}) {
-  final s = _statusScheme(context, excused ? _seedGreen : _seedRed);
-  return Tone(s.primaryContainer, s.onPrimaryContainer);
-}
+Tone absenceTone(BuildContext context, {required bool excused}) => _pastel(context, excused ? _hueGreen : _hueRed);
 
-/// Насыщенный цвет пропуска (плашки, столбики, шкалы).
-Color absenceAccent(BuildContext context, {required bool excused}) =>
-    _statusScheme(context, excused ? _seedGreen : _seedRed).primary;
+/// Мягкий цвет пропуска (плашки, столбики, шкалы).
+Color absenceAccent(BuildContext context, {required bool excused}) => _softAccent(context, excused ? _hueGreen : _hueRed);
 
 /// Предупреждающий тон (янтарный): «лимит близко».
-Tone warnTone(BuildContext context) {
-  final s = _statusScheme(context, _seedAmber);
-  return Tone(s.primaryContainer, s.onPrimaryContainer);
-}
+Tone warnTone(BuildContext context) => _pastel(context, _hueAmber);
 
-/// Насыщенный янтарный: Amber 700 в светлой теме, Amber 300 в тёмной.
-Color warnAccent(BuildContext context) => context.isDark ? Colors.amber.shade300 : Colors.amber.shade700;
+/// Мягкий янтарный акцент.
+Color warnAccent(BuildContext context) => _softAccent(context, _hueAmber);
 
 /// Нейтральный тон (пока ничего не выбрано).
 Tone neutralTone(BuildContext context) => Tone(context.cs.surfaceContainerHighest, context.cs.onSurfaceVariant);

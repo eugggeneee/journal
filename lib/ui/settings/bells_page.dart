@@ -6,6 +6,7 @@ import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../logic/bells.dart';
 import '../app/scope.dart';
+import '../kit/components/edge_fade.dart';
 import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
@@ -221,7 +222,7 @@ class _BellsPageState extends State<BellsPage> {
     return Scaffold(
       backgroundColor: cs.surface,
       body: ContentFrame(
-        child: CustomScrollView(
+        child: EdgeFade(top: 0, child: CustomScrollView(
           slivers: [
             SliverAppBar.large(title: const Text('Звонки')),
             Inset(children: [
@@ -324,7 +325,7 @@ class _BellsPageState extends State<BellsPage> {
             ]),
             const SliverToBoxAdapter(child: SizedBox(height: 40)),
           ],
-        ),
+        )),
       ),
     );
   }

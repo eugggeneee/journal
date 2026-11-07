@@ -105,10 +105,10 @@ class _Banner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reached = kind == _BannerKind.reached;
-    final accent = absenceAccent(context, excused: false);
-    final tone = warnTone(context);
-    final bg = reached ? accent : tone.bg;
-    final fg = reached ? onColorFor(accent) : tone.fg;
+    final tone = reached ? absenceTone(context, excused: false) : warnTone(context);
+    final accent = reached ? absenceAccent(context, excused: false) : warnAccent(context);
+    final bg = tone.bg;
+    final fg = tone.fg;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Semantics(
@@ -127,11 +127,11 @@ class _Banner extends StatelessWidget {
               child: Container(
                 width: 48,
                 height: 48,
-                decoration: BoxDecoration(color: reached ? fg : warnAccent(context), shape: BoxShape.circle),
+                decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
                 child: Icon(
                   reached ? Icons.priority_high_rounded : Icons.hourglass_bottom_rounded,
                   size: 28,
-                  color: reached ? accent : onColorFor(warnAccent(context)),
+                  color: onColorFor(accent),
                 ),
               ),
             ),

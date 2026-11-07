@@ -425,7 +425,7 @@ class ChoiceSquare extends StatelessWidget {
                         width: 12,
                         height: 12,
                         decoration: BoxDecoration(
-                          color: context.cs.error,
+                          color: absenceAccent(context, excused: false),
                           shape: BoxShape.circle,
                           border: Border.all(color: context.cs.surfaceContainerLow, width: 2),
                         ),

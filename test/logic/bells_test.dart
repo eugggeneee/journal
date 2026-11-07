@@ -5,6 +5,7 @@ import 'package:journal/logic/bells.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  dayClockTests();
   test('профиль звонков: будни и суббота выбираются отдельно', () {
     expect(bellKeyFor(DateTime(2026, 11, 4)), kBellWeek);
     expect(bellKeyFor(DateTime(2026, 11, 6)), kBellWeek);
@@ -224,5 +225,49 @@ void main() {
       store.undoDismissLimit('s:2026-1', 0);
       expect(store.dismissedLevel('s:2026-1'), 0);
     });
+  });
+}
+
+void dayClockTests() {
+  const profile = BellProfile(slots: {
+    1: BellSlot(start: 8 * 60 + 20, end: 9 * 60 + 55, breakStart: 9 * 60 + 5, breakEnd: 9 * 60 + 10),
+    2: BellSlot(start: 10 * 60 + 5, end: 11 * 60 + 40),
+    4: BellSlot(start: 13 * 60 + 35, end: 15 * 60 + 10),
+  }, lunchAfter: 2);
+  const lessons = [1, 2, 4];
+
+  test('часы дня: до начала, пара, перерыв внутри пары, между парами и после', () {
+    expect(dayClock(profile, lessons, 8 * 60).phase, DayPhase.before);
+    expect(dayClock(profile, lessons, 8 * 60).left, 20);
+    final lesson = dayClock(profile, lessons, 8 * 60 + 50);
+    expect(lesson.phase, DayPhase.lesson);
+    expect(lesson.pair, 1);
+    expect(lesson.left, 65);
+    expect(dayClock(profile, lessons, 9 * 60 + 7).phase, DayPhase.innerBreak);
+    final gap = dayClock(profile, lessons, 10);
+    expect(gap.phase, DayPhase.gap);
+    expect(gap.next, 2);
+    expect(gap.left, 5);
+    expect(dayClock(profile, lessons, 12 * 60).phase, DayPhase.gap);
+    expect(dayClock(profile, lessons, 15 * 60 + 10).phase, DayPhase.after);
+    expect(dayClock(profile, const [], 600).phase, DayPhase.none);
+  });
+
+  test('промежуток времени читается по-человечески', () {
+    expect(spanText(45), '45 мин');
+    expect(spanText(120), '2 ч');
+    expect(spanText(100), '1 ч 40 мин');
+  });
+
+  test('подпись промежутка: перерыв, обед и окно', () {
+    expect(gapBetween(profile, 1, 2), 'Перерыв 10 мин');
+    expect(gapBetween(profile, 2, 4), 'Окно 1 ч 55 мин');
+    const lunch = BellProfile(slots: {
+      1: BellSlot(start: 480, end: 570),
+      2: BellSlot(start: 610, end: 700),
+    }, lunchAfter: 1);
+    expect(gapBetween(lunch, 1, 2), 'Обед 40 мин');
+    expect(gapBetween(const BellProfile(), 1, 3), 'Окно');
+    expect(gapBetween(const BellProfile(), 1, 2), isNull);
   });
 }
