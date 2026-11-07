@@ -2,6 +2,11 @@ import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
 
+import 'motion.dart';
+
+/// Отключены ли анимации в системе (для виджетов, которые решают это один раз при создании).
+bool _systemReduceMotion() => WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations;
+
 /// Запоминает, какие записи (оценки, пропуски) появились уже после первого показа списка —
 /// именно они должны плавно «въезжать», а не все сразу при открытии страницы.
 class FreshTracker {
@@ -45,16 +50,16 @@ class Reveal extends StatefulWidget {
 class _RevealState extends State<Reveal> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 420),
-    value: widget.animate ? 0.0 : 1.0,
+    duration: Motion.long,
+    value: widget.animate && !_systemReduceMotion() ? 0.0 : 1.0,
   );
-  late final Animation<double> _size = _c.drive(CurveTween(curve: Curves.easeOutCubic));
+  late final Animation<double> _size = _c.drive(CurveTween(curve: Motion.standard));
   late final Animation<double> _fade = _c.drive(CurveTween(curve: const Interval(0.2, 1.0, curve: Curves.easeOut)));
 
   @override
   void initState() {
     super.initState();
-    if (widget.animate) _c.forward();
+    if (_c.value < 1) _c.forward();
   }
 
   @override
@@ -74,27 +79,57 @@ class _RevealState extends State<Reveal> with SingleTickerProviderStateMixin {
 /// Плавно меняет размер блока, когда внутри появляется или исчезает содержимое.
 /// Внутренним элементам нужны разные [Key], чтобы смена была заметна.
 class Smooth extends StatelessWidget {
-  const Smooth({super.key, required this.child, this.duration = const Duration(milliseconds: 260)});
+  const Smooth({super.key, required this.child, this.duration = Motion.short});
   final Widget child;
   final Duration duration;
 
   @override
-  Widget build(BuildContext context) => AnimatedSize(
-        duration: duration,
-        curve: Curves.easeOutCubic,
-        alignment: Alignment.topCenter,
-        child: AnimatedSwitcher(
-          duration: duration,
-          switchInCurve: Curves.easeOut,
-          switchOutCurve: Curves.easeIn,
-          transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: child),
-          layoutBuilder: (current, previous) => Stack(
-            alignment: Alignment.topCenter,
-            fit: StackFit.passthrough,
-            children: [...previous, if (current != null) current],
-          ),
-          child: child,
+  Widget build(BuildContext context) {
+    final d = context.motion(duration);
+    return AnimatedSize(
+      duration: d,
+      curve: Motion.standard,
+      alignment: Alignment.topCenter,
+      child: AnimatedSwitcher(
+        duration: d,
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: child),
+        layoutBuilder: (current, previous) => Stack(
+          alignment: Alignment.topCenter,
+          fit: StackFit.passthrough,
+          children: [...previous, if (current != null) current],
         ),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Смена содержимого на месте (заголовок, подпись, текст кнопки): старое растворяется, новое проявляется
+/// и чуть всплывает. Размер блока не анимируется. Новому содержимому нужен другой [Key].
+class Swap extends StatelessWidget {
+  const Swap({super.key, required this.child, this.alignment = Alignment.centerLeft, this.duration = Motion.short});
+  final Widget child;
+  final AlignmentGeometry alignment;
+  final Duration duration;
+
+  static final Tween<Offset> _rise = Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero);
+
+  @override
+  Widget build(BuildContext context) => AnimatedSwitcher(
+        duration: context.motion(duration),
+        switchInCurve: Motion.standard,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, anim) => FadeTransition(
+          opacity: anim,
+          child: SlideTransition(position: anim.drive(_rise), child: child),
+        ),
+        layoutBuilder: (current, previous) => Stack(
+          alignment: alignment,
+          children: [...previous, if (current != null) current],
+        ),
+        child: child,
       );
 }
 
@@ -109,9 +144,9 @@ class PopIn extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = child;
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 340),
-      reverseDuration: const Duration(milliseconds: 200),
-      switchInCurve: Curves.easeOutBack,
+      duration: context.motion(const Duration(milliseconds: 340)),
+      reverseDuration: context.motion(Motion.short),
+      switchInCurve: Motion.spring,
       switchOutCurve: Curves.easeInCubic,
       transitionBuilder: (child, anim) => ScaleTransition(
         scale: anim,
@@ -140,8 +175,8 @@ class AnimatedNumber extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TweenAnimationBuilder<double>(
         tween: Tween<double>(end: value),
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOutCubic,
+        duration: context.motion(Motion.long),
+        curve: Motion.standard,
         builder: (context, v, _) => Text(format(v), style: style),
       );
 }
@@ -162,17 +197,16 @@ class Appear extends StatefulWidget {
 }
 
 class _AppearState extends State<Appear> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 480));
+  late final AnimationController _c = AnimationController(vsync: this, duration: Motion.long);
   late final Animation<double> _fade = _c.drive(CurveTween(curve: Curves.easeOut));
   late final Animation<Offset> _slide =
-      _c.drive(CurveTween(curve: Curves.easeOutCubic)).drive(Tween<Offset>(begin: Offset(0, widget.offset), end: Offset.zero));
+      _c.drive(CurveTween(curve: Motion.standard)).drive(Tween<Offset>(begin: Offset(0, widget.offset), end: Offset.zero));
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    final reduce = WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations;
-    if (reduce) {
+    if (_systemReduceMotion()) {
       _c.value = 1;
       return;
     }
@@ -220,7 +254,7 @@ class _PressScaleState extends State<PressScale> {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.enabled) return widget.child;
+    if (!widget.enabled || context.reduceMotion) return widget.child;
     return Listener(
       behavior: HitTestBehavior.translucent,
       onPointerDown: (e) {
@@ -235,8 +269,8 @@ class _PressScaleState extends State<PressScale> {
       onPointerCancel: (_) => _set(false),
       child: AnimatedScale(
         scale: _down ? widget.scale : 1,
-        duration: Duration(milliseconds: _down ? 90 : 220),
-        curve: _down ? Curves.easeOut : Curves.easeOutBack,
+        duration: _down ? Motion.press : Motion.short,
+        curve: _down ? Curves.easeOut : Motion.release,
         child: widget.child,
       ),
     );

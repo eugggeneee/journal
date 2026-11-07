@@ -487,6 +487,7 @@ class _AbsenceFormState extends State<_AbsenceForm> {
           minLines: 1,
           maxLines: 3,
           textCapitalization: TextCapitalization.sentences,
+          textInputAction: TextInputAction.done,
           decoration: const InputDecoration(
             labelText: 'Заметка',
             hintText: 'Необязательно',

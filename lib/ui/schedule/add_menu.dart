@@ -1,7 +1,9 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/haptics.dart';
 import '../absences/absence_sheet.dart';
 import '../grades/grade_sheet.dart';
+import '../kit/animation/reveal.dart';
 import '../kit/foundation/ctx.dart';
 import '../kit/sheets/sheet.dart';
 import 'marks.dart';
@@ -27,6 +29,7 @@ class _AddMenu extends StatelessWidget {
       subtitle: dayCaption(date),
       children: [
         _BigTile(
+          index: 0,
           icon: Icons.star_rounded,
           bg: gradeTone(context, 9).bg,
           fg: gradeTone(context, 9).fg,
@@ -36,6 +39,7 @@ class _AddMenu extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         _BigTile(
+          index: 1,
           icon: Icons.event_busy_rounded,
           bg: absenceTone(context, excused: false).bg,
           fg: absenceTone(context, excused: false).fg,
@@ -45,6 +49,7 @@ class _AddMenu extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         _BigTile(
+          index: 2,
           icon: Icons.bookmark_rounded,
           bg: markTone(context).bg,
           fg: markTone(context).fg,
@@ -59,7 +64,8 @@ class _AddMenu extends StatelessWidget {
 }
 
 class _BigTile extends StatelessWidget {
-  const _BigTile({required this.icon, required this.bg, required this.fg, required this.title, required this.text, required this.onTap});
+  const _BigTile({required this.index, required this.icon, required this.bg, required this.fg, required this.title, required this.text, required this.onTap});
+  final int index;
   final IconData icon;
   final Color bg;
   final Color fg;
@@ -68,25 +74,33 @@ class _BigTile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Material(
-        color: bg,
-        borderRadius: BorderRadius.circular(24),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(children: [
-              Icon(icon, size: 30, color: fg),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(title, style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w800)),
-                  Text(text, style: context.tt.bodyMedium?.copyWith(color: fg.withValues(alpha: 0.85))),
+  Widget build(BuildContext context) => Appear(
+        index: index,
+        child: PressScale(
+          child: Material(
+            color: bg,
+            borderRadius: BorderRadius.circular(24),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () {
+                Haptics.selection();
+                onTap();
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(children: [
+                  Icon(icon, size: 30, color: fg),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(title, style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w800)),
+                      Text(text, style: context.tt.bodyMedium?.copyWith(color: fg.withValues(alpha: 0.85))),
+                    ]),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: fg),
                 ]),
               ),
-              Icon(Icons.chevron_right_rounded, color: fg),
-            ]),
+            ),
           ),
         ),
       );

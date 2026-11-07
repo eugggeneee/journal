@@ -68,47 +68,50 @@ class _ScheduleSettingsPageState extends State<ScheduleSettingsPage> {
       SegmentCard(
         index: 0,
         count: 1,
+        onTap: () => openGroupPicker(context),
         child: SettingsTile(
           icon: Icons.groups_rounded,
           title: 'Группа ${s.group}',
           subtitle: 'Нажмите, чтобы сменить',
           trailing: Icon(Icons.chevron_right_rounded, color: context.cs.onSurfaceVariant),
-          onTap: () => openGroupPicker(context),
         ),
       ),
       const SectionHeader('Загрузка'),
       SegmentCard(
         index: 0,
         count: 2,
+        onTap: _refreshing ? null : _refresh,
         child: SettingsTile(
           icon: Icons.refresh_rounded,
           title: _refreshing ? 'Обновляю…' : 'Обновить расписание',
           subtitle: 'Сохранено: ${daysText(cached)} на устройстве',
           trailing: _refreshing ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 3)) : null,
-          onTap: _refreshing ? null : _refresh,
         ),
       ),
       SegmentCard(
         index: 1,
         count: 2,
+        onTap: () {
+          Haptics.selection();
+          store.setAutoRefresh(!s.autoRefresh);
+        },
         child: SettingsTile(
           icon: Icons.sync_rounded,
           title: 'Автообновление',
           subtitle: 'Подгружать расписание при запуске',
           trailing: SettingsSwitch(value: s.autoRefresh, onChanged: store.setAutoRefresh),
-          onTap: () => store.setAutoRefresh(!s.autoRefresh),
         ),
       ),
       const SectionHeader('Время пар'),
       SegmentCard(
         index: 0,
         count: 1,
+        onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const BellsPage())),
         child: SettingsTile(
           icon: Icons.notifications_active_rounded,
           title: 'Звонки',
           subtitle: bellsSummary(store.settings),
           trailing: Icon(Icons.chevron_right_rounded, color: context.cs.onSurfaceVariant),
-          onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const BellsPage())),
         ),
       ),
     ]);
@@ -193,52 +196,59 @@ class AbsenceSettingsPage extends StatelessWidget {
       const SectionHeader('Быстрый пропуск', top: 0),
       const HoursSelector(),
       const SectionHeader('Семестр'),
-      Container(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-        decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(28)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Row(children: [
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(sem.title, style: context.tt.titleLarge?.copyWith(color: tone.fg, fontWeight: FontWeight.w800)),
-                Text('Учебный год ${sem.years}', style: context.tt.bodyMedium?.copyWith(color: tone.fg.withValues(alpha: 0.85))),
-              ]),
+      Appear(
+        index: 1,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+          decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(28)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(sem.title, style: context.tt.titleLarge?.copyWith(color: tone.fg, fontWeight: FontWeight.w800)),
+                  Text('Учебный год ${sem.years}', style: context.tt.bodyMedium?.copyWith(color: tone.fg.withValues(alpha: 0.85))),
+                ]),
+              ),
+              Text('$hours / $kSemesterLimit ч', style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800)),
+            ]),
+            const SizedBox(height: 14),
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(end: hours / kSemesterLimit),
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeOutCubic,
+              builder: (context, v, _) => Bar(
+                value: v,
+                color: hours >= kSemesterLimit ? absenceAccent(context, excused: false) : cs.primary,
+                track: tone.fg.withValues(alpha: 0.14),
+              ),
             ),
-            Text('$hours / $kSemesterLimit ч', style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 12),
+            Text(period, style: context.tt.bodyMedium?.copyWith(color: tone.fg, height: 1.35)),
+            Smooth(
+              child: canEnd
+                  ? Padding(
+                      key: const ValueKey('end'),
+                      padding: const EdgeInsets.only(top: 16),
+                      child: FilledButton.icon(
+                        icon: const Icon(Icons.flag_rounded),
+                        label: const Text('Завершить 1-й семестр'),
+                        onPressed: () => _end(context),
+                      ),
+                    )
+                  : second
+                      ? Padding(
+                          key: const ValueKey('reopen'),
+                          padding: const EdgeInsets.only(top: 16),
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.undo_rounded),
+                            label: const Text('Вернуть 1-й семестр'),
+                            onPressed: () => _reopen(context),
+                          ),
+                        )
+                      : const SizedBox.shrink(key: ValueKey('none')),
+            ),
           ]),
-          const SizedBox(height: 14),
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(end: hours / kSemesterLimit),
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeOutCubic,
-            builder: (context, v, _) => Bar(value: v, color: hours >= kSemesterLimit ? absenceAccent(context, excused: false) : cs.primary),
-          ),
-          const SizedBox(height: 12),
-          Text(period, style: context.tt.bodyMedium?.copyWith(color: tone.fg, height: 1.35)),
-          Smooth(
-            child: canEnd
-                ? Padding(
-                    key: const ValueKey('end'),
-                    padding: const EdgeInsets.only(top: 16),
-                    child: FilledButton.icon(
-                      icon: const Icon(Icons.flag_rounded),
-                      label: const Text('Завершить 1-й семестр'),
-                      onPressed: () => _end(context),
-                    ),
-                  )
-                : second
-                    ? Padding(
-                        key: const ValueKey('reopen'),
-                        padding: const EdgeInsets.only(top: 16),
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.undo_rounded),
-                          label: const Text('Вернуть 1-й семестр'),
-                          onPressed: () => _reopen(context),
-                        ),
-                      )
-                    : const SizedBox.shrink(key: ValueKey('none')),
-          ),
-        ]),
+        ),
       ),
       const SectionHeader('Лимиты'),
       SegmentCard(
@@ -276,12 +286,12 @@ class BehaviorSettingsPage extends StatelessWidget {
       SegmentCard(
         index: 0,
         count: 1,
+        onTap: () => store.setHaptics(!s.haptics),
         child: SettingsTile(
           icon: Icons.vibration_rounded,
           title: 'Виброотклик',
           subtitle: 'Лёгкая вибрация при нажатиях и отметках',
           trailing: SettingsSwitch(value: s.haptics, onChanged: store.setHaptics),
-          onTap: () => store.setHaptics(!s.haptics),
         ),
       ),
     ]);
@@ -332,21 +342,21 @@ class DataSettingsPage extends StatelessWidget {
         SegmentCard(
           index: 0,
           count: 2,
-          child: SettingsTile(
+          onTap: () => _export(context),
+          child: const SettingsTile(
             icon: Icons.content_copy_rounded,
             title: 'Сохранить копию',
             subtitle: 'Оценки, пропуски, пометки и звонки — в буфер обмена',
-            onTap: () => _export(context),
           ),
         ),
         SegmentCard(
           index: 1,
           count: 2,
-          child: SettingsTile(
+          onTap: () => _import(context),
+          child: const SettingsTile(
             icon: Icons.restore_rounded,
             title: 'Восстановить из копии',
             subtitle: 'Вставить данные из буфера обмена',
-            onTap: () => _import(context),
           ),
         ),
         Padding(

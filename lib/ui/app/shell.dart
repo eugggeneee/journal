@@ -64,7 +64,15 @@ class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
     if (i == _tab) return;
     Haptics.selection();
     setState(() => _tab = i);
-    _swap.forward(from: 0);
+    _playSwap();
+  }
+
+  void _playSwap() {
+    if (context.reduceMotion) {
+      _swap.value = 1;
+    } else {
+      _swap.forward(from: 0);
+    }
   }
 
   Widget _fab(BuildContext context) {
@@ -73,7 +81,10 @@ class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
         return FloatingActionButton.extended(
           key: const ValueKey('fab-add'),
           heroTag: null,
-          onPressed: () => showAddMenu(context, _sched.selected),
+          onPressed: () {
+            Haptics.selection();
+            showAddMenu(context, _sched.selected);
+          },
           icon: const Icon(Icons.add_rounded),
           label: const Text('Добавить'),
         );
@@ -81,7 +92,10 @@ class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
         return FloatingActionButton.extended(
           key: const ValueKey('fab-grade'),
           heroTag: null,
-          onPressed: () => showGradeSheet(context),
+          onPressed: () {
+            Haptics.selection();
+            showGradeSheet(context);
+          },
           icon: const Icon(Icons.add_rounded),
           label: const Text('Оценка'),
         );
@@ -89,7 +103,10 @@ class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
         return FloatingActionButton.extended(
           key: const ValueKey('fab-absence'),
           heroTag: null,
-          onPressed: () => showAbsenceSheet(context),
+          onPressed: () {
+            Haptics.selection();
+            showAbsenceSheet(context);
+          },
           icon: const Icon(Icons.add_rounded),
           label: const Text('Пропуск'),
         );
@@ -111,7 +128,7 @@ class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
           setState(() => _tab = 0);
-          _swap.forward(from: 0);
+          _playSwap();
         }
       },
       child: Scaffold(
@@ -141,8 +158,9 @@ class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
                 ],
               ),
         floatingActionButton: AnimatedSwitcher(
-          duration: Motion.short,
+          duration: context.motion(Motion.short),
           switchInCurve: Motion.spring,
+          switchOutCurve: Curves.easeIn,
           transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
           child: _fab(context),
         ),

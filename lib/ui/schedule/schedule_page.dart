@@ -103,10 +103,10 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     final idx = _indexOf(d);
     final cur = (_pc.page ?? idx.toDouble()).round();
     if (idx == cur) return;
-    if ((idx - cur).abs() > 3) {
+    if ((idx - cur).abs() > 3 || context.reduceMotion) {
       _pc.jumpToPage(idx);
     } else {
-      _pc.animateToPage(idx, duration: const Duration(milliseconds: 320), curve: Curves.easeOutCubic);
+      _pc.animateToPage(idx, duration: Motion.medium, curve: Motion.standard);
     }
   }
 
@@ -114,8 +114,8 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     if (!_strip.hasClients) return;
     final pos = _strip.position;
     final target = (index * _chipW + _chipW / 2 - pos.viewportDimension / 2).clamp(0.0, pos.maxScrollExtent).toDouble();
-    if (animate) {
-      _strip.animateTo(target, duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+    if (animate && !context.reduceMotion) {
+      _strip.animateTo(target, duration: const Duration(milliseconds: 280), curve: Motion.standard);
     } else {
       _strip.jumpTo(target);
     }
@@ -137,21 +137,33 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     final header = AppBar(
       toolbarHeight: kHeaderHeight,
       titleSpacing: 20,
-      title: PageTitle(
-        relativeDay(_selected),
-        subtitle: '${fullDate(_selected)}${_selected.weekday == DateTime.sunday ? '' : ' · ${weekdayName(_selected)}'}',
+      title: Swap(
+        child: PageTitle(
+          relativeDay(_selected),
+          key: ValueKey(ymd(_selected)),
+          subtitle: '${fullDate(_selected)}${_selected.weekday == DateTime.sunday ? '' : ' · ${weekdayName(_selected)}'}',
+        ),
       ),
       actions: [
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: isToday
-              ? const SizedBox.shrink(key: ValueKey('no-today'))
-              : IconButton(
-                  key: const ValueKey('today'),
-                  tooltip: 'Сегодня',
-                  icon: const Icon(Icons.today_rounded),
-                  onPressed: () => _jumpTo(today()),
-                ),
+        // Кнопка «Сегодня» выезжает с пружинкой и плавно раздвигает соседние кнопки.
+        AnimatedSize(
+          duration: context.motion(Motion.short),
+          curve: Motion.standard,
+          alignment: Alignment.centerRight,
+          child: AnimatedSwitcher(
+            duration: context.motion(Motion.short),
+            switchInCurve: Motion.spring,
+            switchOutCurve: Curves.easeIn,
+            transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
+            child: isToday
+                ? const SizedBox.shrink(key: ValueKey('no-today'))
+                : IconButton(
+                    key: const ValueKey('today'),
+                    tooltip: 'Сегодня',
+                    icon: const Icon(Icons.today_rounded),
+                    onPressed: () => _jumpTo(today()),
+                  ),
+          ),
         ),
         IconButton(tooltip: 'Выбрать дату', icon: const Icon(Icons.edit_calendar_rounded), onPressed: _pickDate),
         PopupMenuButton<String>(
@@ -215,7 +227,13 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
           child: Row(children: [
-            Text(monthYear(_selected), style: context.tt.titleSmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w700)),
+            Swap(
+              child: Text(
+                monthYear(_selected),
+                key: ValueKey(monthYear(_selected)),
+                style: context.tt.titleSmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w700),
+              ),
+            ),
             const Spacer(),
             Pill('Группа ${store.settings.group}', tone: Tone(cs.secondaryContainer, cs.onSecondaryContainer), icon: Icons.groups_rounded),
           ]),
@@ -354,8 +372,8 @@ class _DayViewState extends State<DayView> {
     final st = _st;
     final slots = st?.schedule?.slots ?? const <LessonSlot>[];
     final Widget content = st == null
-        ? const Padding(padding: EdgeInsets.only(top: 120), child: Center(child: CircularProgressIndicator()))
-        : _content(context, store, st);
+        ? const Padding(key: ValueKey('day-loading'), padding: EdgeInsets.only(top: 120), child: Center(child: CircularProgressIndicator()))
+        : KeyedSubtree(key: ValueKey('day-${st.status.name}'), child: _content(context, store, st));
     return RefreshIndicator(
       onRefresh: () => _load(force: true),
       child: ListView(
@@ -364,7 +382,7 @@ class _DayViewState extends State<DayView> {
         children: [
           if (st != null && st.status != DayStatus.ok) _chips(context),
           MarksSection(date: widget.date, store: store, slots: slots),
-          content,
+          Smooth(child: content),
         ],
       ),
     );

@@ -131,7 +131,10 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        side: BorderSide(color: s.outlineVariant),
+        // Выбранный чип залит цветом, обводка у него прозрачная: размер при выборе не меняется.
+        side: WidgetStateBorderSide.resolveWith(
+          (states) => BorderSide(color: states.contains(WidgetState.selected) ? Colors.transparent : s.outlineVariant),
+        ),
         labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: s.onSurface),
         showCheckmark: false,
       ),
@@ -142,9 +145,14 @@ class AppTheme {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: s.primary, width: 2)),
+        // Значок в поле окрашивается вместе с рамкой, когда в поле ввода курсор.
+        prefixIconColor: WidgetStateColor.resolveWith(
+          (states) => states.contains(WidgetState.focused) ? s.primary : s.onSurfaceVariant,
+        ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         showDragHandle: true,
+        clipBehavior: Clip.antiAlias,
         backgroundColor: s.surfaceContainerLow,
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
@@ -156,7 +164,18 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
+        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: s.surfaceContainerHigh,
+        surfaceTintColor: Colors.transparent,
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: s.primary,
+        refreshBackgroundColor: s.surfaceContainerHigh,
       ),
       listTileTheme: ListTileThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

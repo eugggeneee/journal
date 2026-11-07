@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/haptics.dart';
+import '../animation/motion.dart';
 import '../foundation/ctx.dart';
 import 'sheet.dart';
 
@@ -50,6 +51,7 @@ class OptionTile extends StatelessWidget {
         button: true,
         selected: selected,
         child: Material(
+          animationDuration: context.motion(Motion.short),
           color: selected ? cs.secondaryContainer : (card ? cs.surfaceContainerHighest.withValues(alpha: 0.6) : Colors.transparent),
           borderRadius: BorderRadius.circular(18),
           clipBehavior: Clip.antiAlias,
@@ -75,12 +77,17 @@ class OptionTile extends StatelessWidget {
                       style: context.tt.bodyLarge?.copyWith(fontWeight: selected ? FontWeight.w700 : FontWeight.w500, color: fg),
                     ),
                   ),
-                  AnimatedOpacity(
-                    opacity: selected ? 1 : 0,
-                    duration: const Duration(milliseconds: 180),
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: Icon(Icons.check_rounded, size: 22, color: cs.onSecondaryContainer),
+                  AnimatedScale(
+                    scale: selected ? 1 : 0.6,
+                    duration: context.motion(Motion.short),
+                    curve: Motion.spring,
+                    child: AnimatedOpacity(
+                      opacity: selected ? 1 : 0,
+                      duration: context.motion(Motion.short),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: Icon(Icons.check_rounded, size: 22, color: cs.onSecondaryContainer),
+                      ),
                     ),
                   ),
                 ]),

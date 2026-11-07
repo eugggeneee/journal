@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/dates.dart';
+import '../animation/motion.dart';
 import '../foundation/ctx.dart';
 
 const double _wideBreakpoint = 700;
@@ -14,6 +15,7 @@ Future<T?> showAdaptiveSheet<T>(BuildContext context, WidgetBuilder builder) {
     return showDialog<T>(
       context: context,
       builder: (ctx) => Dialog(
+        backgroundColor: ctx.cs.surfaceContainerLow,
         clipBehavior: Clip.antiAlias,
         insetPadding: const EdgeInsets.all(24),
         child: ConstrainedBox(
@@ -28,6 +30,13 @@ Future<T?> showAdaptiveSheet<T>(BuildContext context, WidgetBuilder builder) {
     isScrollControlled: true,
     useSafeArea: true,
     constraints: const BoxConstraints(maxWidth: 640),
+    // Шторка выезжает быстро и мягко останавливается, а уходит плавным разгоном.
+    sheetAnimationStyle: const AnimationStyle(
+      duration: Duration(milliseconds: 380),
+      curve: Motion.decelerate,
+      reverseDuration: Motion.short,
+      reverseCurve: Motion.accelerate,
+    ),
     builder: builder,
   );
 }
@@ -230,6 +239,7 @@ class _PromptDialogState extends State<_PromptDialog> {
           autofocus: true,
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(hintText: widget.hint),
+          textInputAction: TextInputAction.done,
           onChanged: (_) => setState(() {}),
           onSubmitted: (_) => _submit(),
         ),

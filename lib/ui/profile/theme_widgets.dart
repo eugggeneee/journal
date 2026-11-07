@@ -253,73 +253,75 @@ class ThemePreview extends StatelessWidget {
           child: Icon(icon, size: 18, color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant),
         );
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(32)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [
-          Expanded(child: Text('Расписание', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800))),
-          Pill('Группа 6312', tone: Tone(cs.secondaryContainer, cs.onSecondaryContainer), icon: Icons.groups_rounded),
-        ]),
-        const SizedBox(height: 14),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: cs.surfaceContainer, borderRadius: BorderRadius.circular(24)),
-          child: Row(children: [
-            SizedBox(
-              width: 46,
-              height: 46,
-              child: Stack(clipBehavior: Clip.none, children: [
-                NumberBadge('2', tone: Tone(cs.primaryContainer, cs.onPrimaryContainer), size: 46, round: false),
-                Positioned(
-                  top: -7,
-                  right: -7,
-                  child: AbsenceBadge(hours: 2, excused: false, ringColor: cs.surfaceContainer),
-                ),
-              ]),
+    return ExcludeSemantics(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(32)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Expanded(child: Text('Расписание', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800))),
+            Pill('Группа 6312', tone: Tone(cs.secondaryContainer, cs.onSecondaryContainer), icon: Icons.groups_rounded),
+          ]),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: cs.surfaceContainer, borderRadius: BorderRadius.circular(24)),
+            child: Row(children: [
+              SizedBox(
+                width: 46,
+                height: 46,
+                child: Stack(clipBehavior: Clip.none, children: [
+                  NumberBadge('2', tone: Tone(cs.primaryContainer, cs.onPrimaryContainer), size: 46, round: false),
+                  Positioned(
+                    top: -7,
+                    right: -7,
+                    child: AbsenceBadge(hours: 2, excused: false, ringColor: cs.surfaceContainer),
+                  ),
+                ]),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Математика', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  Text('ауд. 214 · Иванова И. И.', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                ]),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 14),
+          Row(children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(color: cs.primary, borderRadius: BorderRadius.circular(100)),
+              child: Text('Добавить', style: tt.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w700)),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Математика', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                Text('ауд. 214 · Иванова И. И.', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-              ]),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(color: cs.secondaryContainer, borderRadius: BorderRadius.circular(100)),
+              child: Text('Весь день', style: tt.labelLarge?.copyWith(color: cs.onSecondaryContainer, fontWeight: FontWeight.w700)),
+            ),
+            const Spacer(),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(16)),
+              child: Icon(Icons.add_rounded, color: cs.onPrimaryContainer),
             ),
           ]),
-        ),
-        const SizedBox(height: 14),
-        Row(children: [
+          const SizedBox(height: 14),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(color: cs.primary, borderRadius: BorderRadius.circular(100)),
-            child: Text('Добавить', style: tt.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w700)),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(color: cs.secondaryContainer, borderRadius: BorderRadius.circular(100)),
-            child: Text('Весь день', style: tt.labelLarge?.copyWith(color: cs.onSecondaryContainer, fontWeight: FontWeight.w700)),
-          ),
-          const Spacer(),
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(16)),
-            child: Icon(Icons.add_rounded, color: cs.onPrimaryContainer),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(color: cs.surfaceContainer, borderRadius: BorderRadius.circular(24)),
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+              navIcon(Icons.calendar_month_rounded, selected: true),
+              navIcon(Icons.star_outline_rounded),
+              navIcon(Icons.event_busy_outlined),
+              navIcon(Icons.person_outline_rounded),
+            ]),
           ),
         ]),
-        const SizedBox(height: 14),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(color: cs.surfaceContainer, borderRadius: BorderRadius.circular(24)),
-          child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-            navIcon(Icons.calendar_month_rounded, selected: true),
-            navIcon(Icons.star_outline_rounded),
-            navIcon(Icons.event_busy_outlined),
-            navIcon(Icons.person_outline_rounded),
-          ]),
-        ),
-      ]),
+      ),
     );
   }
 }

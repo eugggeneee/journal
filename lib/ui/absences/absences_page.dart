@@ -402,7 +402,6 @@ class _AbsenceTile extends StatelessWidget {
   }
 }
 
-
 /// Подробности семестра: период, часы и переход к настройкам (там же кнопка «Завершить 1-й семестр»).
 class _SemesterSheet extends StatelessWidget {
   const _SemesterSheet({required this.semester, required this.hours});

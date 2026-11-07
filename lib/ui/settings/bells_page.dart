@@ -6,6 +6,7 @@ import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../logic/bells.dart';
 import '../app/scope.dart';
+import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
@@ -475,8 +476,8 @@ class _HalvesBar extends StatelessWidget {
       child: TweenAnimationBuilder<double>(
         key: ValueKey('${slot.firstHalf}-${slot.breakMinutes}-${slot.secondHalf}'),
         tween: Tween<double>(begin: 0.85, end: 1),
-        duration: const Duration(milliseconds: 380),
-        curve: Curves.easeOutBack,
+        duration: context.motion(const Duration(milliseconds: 380)),
+        curve: Motion.spring,
         builder: (context, v, child) => Transform.scale(scale: v, child: child),
         child: Row(children: [
           half(a, '${slot.firstHalf}'),
@@ -507,19 +508,22 @@ class _TimeField extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.cs;
     final has = minutes != null;
+    void tap() {
+      Haptics.selection();
+      onTap();
+    }
+
     return Semantics(
       button: true,
       label: '$label: ${has ? fmtMin(minutes!) : 'не задано'}',
+      onTap: tap,
       excludeSemantics: true,
       child: Material(
         color: cs.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () {
-            Haptics.selection();
-            onTap();
-          },
+          onTap: tap,
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: dense ? 6 : 8),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [

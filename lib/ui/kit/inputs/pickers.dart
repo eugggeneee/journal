@@ -3,6 +3,8 @@ import 'package:material_ui/material_ui.dart';
 import '../../../core/dates.dart';
 import '../../../core/haptics.dart';
 import '../../app/scope.dart';
+import '../animation/motion.dart';
+import '../animation/reveal.dart';
 import '../foundation/ctx.dart';
 import '../sheets/select_sheet.dart';
 import '../sheets/sheet.dart';
@@ -86,23 +88,25 @@ class FieldTile extends StatelessWidget {
     final cs = context.cs;
     final has = valueLabel != null && valueLabel!.isNotEmpty;
     final enabled = onTap != null;
+    final VoidCallback? tap = enabled
+        ? () {
+            Haptics.selection();
+            FocusManager.instance.primaryFocus?.unfocus();
+            onTap!();
+          }
+        : null;
     return Semantics(
       button: true,
       enabled: enabled,
       label: '$label: ${has ? valueLabel : placeholder}',
+      onTap: tap,
       excludeSemantics: true,
       child: Material(
         color: cs.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(24),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: enabled
-              ? () {
-                  Haptics.selection();
-                  FocusManager.instance.primaryFocus?.unfocus();
-                  onTap!();
-                }
-              : null,
+          onTap: tap,
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 72),
             child: Padding(
@@ -212,6 +216,7 @@ class FilterButton extends StatelessWidget {
     final fg = active ? cs.onSecondaryContainer : cs.onSurfaceVariant;
     final clearable = active && onClear != null;
     return Material(
+      animationDuration: context.motion(Motion.short),
       color: active ? cs.secondaryContainer : Colors.transparent,
       shape: StadiumBorder(side: BorderSide(color: active ? Colors.transparent : cs.outlineVariant)),
       clipBehavior: Clip.antiAlias,
@@ -220,33 +225,48 @@ class FilterButton extends StatelessWidget {
           Haptics.selection();
           onTap();
         },
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 40),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(12, 0, clearable ? 4 : 8, 0),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(icon, size: 18, color: fg),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.tt.labelLarge?.copyWith(color: active ? cs.onSecondaryContainer : cs.onSurface, fontWeight: FontWeight.w600),
+        // Длинное название предмета плавно растягивает кнопку, а не переставляет её рывком.
+        child: AnimatedSize(
+          duration: context.motion(Motion.short),
+          curve: Motion.standard,
+          alignment: Alignment.centerLeft,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 40),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(12, 0, clearable ? 0 : 8, 0),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(icon, size: 18, color: fg),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.tt.labelLarge?.copyWith(color: active ? cs.onSecondaryContainer : cs.onSurface, fontWeight: FontWeight.w600),
+                  ),
                 ),
-              ),
-              if (clearable)
-                InkResponse(
-                  radius: 18,
-                  onTap: () {
-                    Haptics.selection();
-                    onClear!();
-                  },
-                  child: Padding(padding: const EdgeInsets.all(8), child: Icon(Icons.close_rounded, size: 18, color: fg)),
-                )
-              else
-                Icon(Icons.arrow_drop_down_rounded, size: 24, color: fg),
-            ]),
+                if (clearable)
+                  Semantics(
+                    button: true,
+                    label: 'Сбросить фильтр',
+                    excludeSemantics: true,
+                    onTap: () {
+                      Haptics.selection();
+                      onClear!();
+                    },
+                    child: InkResponse(
+                      radius: 20,
+                      onTap: () {
+                        Haptics.selection();
+                        onClear!();
+                      },
+                      child: Padding(padding: const EdgeInsets.all(11), child: Icon(Icons.close_rounded, size: 18, color: fg)),
+                    ),
+                  )
+                else
+                  Icon(Icons.arrow_drop_down_rounded, size: 24, color: fg),
+              ]),
+            ),
           ),
         ),
       ),
@@ -376,12 +396,12 @@ class ChoiceSquare extends StatelessWidget {
         },
         child: AnimatedScale(
           scale: selected ? 1.06 : 1,
-          duration: const Duration(milliseconds: 240),
-          curve: Curves.easeOutBack,
+          duration: context.motion(Motion.short),
+          curve: Motion.spring,
           child: Stack(clipBehavior: Clip.none, children: [
             AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
+              duration: context.motion(Motion.short),
+              curve: Motion.standard,
               width: size,
               height: size,
               alignment: Alignment.center,
@@ -390,25 +410,29 @@ class ChoiceSquare extends StatelessWidget {
                 borderRadius: BorderRadius.circular(selected ? size / 2 : size * 0.3),
               ),
               child: AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 220),
+                duration: context.motion(Motion.short),
+                curve: Motion.standard,
                 style: TextStyle(fontSize: size * 0.42, fontWeight: FontWeight.w800, color: selected ? onAccent : tone.fg),
                 child: Text(label),
               ),
             ),
-            if (marked)
-              Positioned(
-                top: -2,
-                right: -2,
-                child: Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: context.cs.error,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: context.cs.surfaceContainerLow, width: 2),
-                  ),
-                ),
+            Positioned(
+              top: -2,
+              right: -2,
+              child: PopIn(
+                child: marked
+                    ? Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: context.cs.error,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: context.cs.surfaceContainerLow, width: 2),
+                        ),
+                      )
+                    : null,
               ),
+            ),
           ]),
         ),
       ),
@@ -463,42 +487,48 @@ class ExcuseTile extends StatelessWidget {
     final tone = absenceTone(context, excused: excused);
     final title = excused ? 'По уважительной' : 'Без уважительной';
     final sub = excused ? 'Справка, болезнь' : 'Обычный пропуск';
-    return AnimatedOpacity(
-      opacity: enabled ? 1 : 0.4,
-      duration: const Duration(milliseconds: 200),
-      child: Material(
-        color: tone.bg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: selected ? tone.fg : Colors.transparent, width: 2.5),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: enabled
-              ? () {
-                  Haptics.selection();
-                  onTap();
-                }
-              : null,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Row(children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(color: tone.fg.withValues(alpha: 0.14), shape: BoxShape.circle),
-                  child: Icon(excused ? Icons.verified_rounded : Icons.event_busy_rounded, size: 22, color: tone.fg),
-                ),
-                const Spacer(),
-                if (selected) Icon(Icons.check_circle_rounded, color: tone.fg),
+    return Semantics(
+      button: true,
+      selected: selected,
+      enabled: enabled,
+      child: AnimatedOpacity(
+        opacity: enabled ? 1 : 0.4,
+        duration: context.motion(Motion.short),
+        child: Material(
+          animationDuration: context.motion(Motion.short),
+          color: tone.bg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(color: selected ? tone.fg : Colors.transparent, width: 2.5),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: enabled
+                ? () {
+                    Haptics.selection();
+                    onTap();
+                  }
+                : null,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                Row(children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(color: tone.fg.withValues(alpha: 0.14), shape: BoxShape.circle),
+                    child: Icon(excused ? Icons.verified_rounded : Icons.event_busy_rounded, size: 22, color: tone.fg),
+                  ),
+                  const Spacer(),
+                  PopIn(child: selected ? Icon(Icons.check_circle_rounded, color: tone.fg) : null),
+                ]),
+                const SizedBox(height: 12),
+                Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 2),
+                Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall?.copyWith(color: tone.fg.withValues(alpha: 0.8))),
               ]),
-              const SizedBox(height: 12),
-              Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 2),
-              Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall?.copyWith(color: tone.fg.withValues(alpha: 0.8))),
-            ]),
+            ),
           ),
         ),
       ),

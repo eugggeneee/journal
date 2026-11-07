@@ -2,6 +2,8 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/haptics.dart';
 import '../app/scope.dart';
+import '../kit/animation/motion.dart';
+import '../kit/animation/reveal.dart';
 import '../kit/foundation/ctx.dart';
 import '../kit/sheets/sheet.dart';
 
@@ -85,22 +87,27 @@ class _GroupSheetState extends State<GroupSheet> {
     final filtered = _groups.where((g) => g.contains(query)).toList();
     final manualOk = RegExp(r'^\d{3,5}$').hasMatch(query) && !_groups.contains(query);
 
-    Widget body;
+    final Widget body;
+    final String stateKey;
     if (_loading) {
+      stateKey = 'loading';
       body = const Padding(padding: EdgeInsets.symmetric(vertical: 56), child: Center(child: CircularProgressIndicator()));
     } else if (_offline) {
+      stateKey = 'offline';
       body = _Notice(
         icon: Icons.wifi_off_rounded,
         text: 'Нет подключения. Подключитесь к интернету, чтобы увидеть список групп, или введите номер вручную.',
         onRetry: _load,
       );
     } else if (_groups.isEmpty) {
+      stateKey = 'empty';
       body = _Notice(
         icon: Icons.error_outline_rounded,
         text: 'Список групп сейчас недоступен — расписание на сайте не опубликовано. Введите номер вручную.',
         onRetry: _load,
       );
     } else if (filtered.isEmpty) {
+      stateKey = 'nomatch';
       body = Padding(
         padding: const EdgeInsets.symmetric(vertical: 28),
         child: Center(
@@ -112,6 +119,7 @@ class _GroupSheetState extends State<GroupSheet> {
         ),
       );
     } else {
+      stateKey = 'grid';
       body = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(8, 4, 8, 10),
@@ -132,6 +140,7 @@ class _GroupSheetState extends State<GroupSheet> {
         pinned: TextField(
           controller: _q,
           keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.done,
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             hintText: 'Номер группы',
@@ -154,7 +163,7 @@ class _GroupSheetState extends State<GroupSheet> {
                 child: Text('Использовать группу $query'),
               )
             : null,
-        children: [body],
+        children: [Smooth(child: KeyedSubtree(key: ValueKey(stateKey), child: body))],
       ),
     );
   }
@@ -191,35 +200,36 @@ class _GroupTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
+    void tap() {
+      Haptics.selection();
+      onTap();
+    }
+
     return Semantics(
       button: true,
       selected: selected,
       label: 'Группа $label',
+      onTap: tap,
       excludeSemantics: true,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        height: 52,
-        decoration: BoxDecoration(
-          color: selected ? cs.primary : cs.surfaceContainerHighest.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(selected ? 26 : 16),
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-            onTap: () {
-              Haptics.selection();
-              onTap();
-            },
+      child: Material(
+        animationDuration: context.motion(Motion.short),
+        color: selected ? cs.primary : cs.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(selected ? 26 : 16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: tap,
+          child: SizedBox(
+            height: 52,
             child: Center(
-              child: Text(
-                label,
+              child: AnimatedDefaultTextStyle(
+                duration: context.motion(Motion.short),
+                curve: Motion.standard,
                 maxLines: 1,
-                style: context.tt.titleMedium?.copyWith(
+                style: (context.tt.titleMedium ?? const TextStyle()).copyWith(
                   fontWeight: FontWeight.w800,
                   color: selected ? cs.onPrimary : cs.onSurface,
                 ),
+                child: Text(label),
               ),
             ),
           ),

@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/dates.dart';
+import '../../../core/haptics.dart';
 import '../animation/motion.dart';
 import '../animation/reveal.dart';
 import '../foundation/ctx.dart';
@@ -35,24 +36,27 @@ class PageTitle extends StatelessWidget {
   final String? subtitle;
 
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.tt.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          if (subtitle != null)
+  Widget build(BuildContext context) => Semantics(
+        header: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
             Text(
-              subtitle!,
+              title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: context.tt.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant),
+              style: context.tt.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
-        ],
+            if (subtitle != null)
+              Text(
+                subtitle!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.tt.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant),
+              ),
+          ],
+        ),
       );
 }
 
@@ -121,15 +125,18 @@ class SectionHeader extends StatelessWidget {
   final double top;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.fromLTRB(8, top, 8, 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(text, style: context.tt.titleSmall?.copyWith(color: context.cs.primary, fontWeight: FontWeight.w700)),
-            ),
-            if (trailing != null) Text(trailing!, style: context.tt.labelLarge?.copyWith(color: context.cs.onSurfaceVariant)),
-          ],
+  Widget build(BuildContext context) => Semantics(
+        header: true,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(8, top, 8, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(text, style: context.tt.titleSmall?.copyWith(color: context.cs.primary, fontWeight: FontWeight.w700)),
+              ),
+              if (trailing != null) Text(trailing!, style: context.tt.labelLarge?.copyWith(color: context.cs.onSurfaceVariant)),
+            ],
+          ),
         ),
       );
 }
@@ -184,7 +191,7 @@ class EmptyState extends StatelessWidget {
                 // Значок «вырастает» с лёгкой пружинкой.
                 TweenAnimationBuilder<double>(
                   tween: Tween<double>(begin: 0.7, end: 1),
-                  duration: const Duration(milliseconds: 600),
+                  duration: context.motion(const Duration(milliseconds: 600)),
                   curve: Motion.spring,
                   builder: (context, v, child) => Transform.scale(scale: v, child: child),
                   child: CookieIcon(icon: icon),
@@ -215,8 +222,8 @@ class NumberBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedContainer(
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
+        duration: Motion.short,
+        curve: Motion.standard,
         width: size,
         height: size,
         alignment: Alignment.center,
@@ -225,8 +232,8 @@ class NumberBadge extends StatelessWidget {
           borderRadius: BorderRadius.circular(round ? size / 2 : size * 0.34),
         ),
         child: AnimatedDefaultTextStyle(
-          duration: const Duration(milliseconds: 280),
-          curve: Curves.easeOutCubic,
+          duration: Motion.short,
+          curve: Motion.standard,
           style: TextStyle(fontSize: size * 0.4, fontWeight: FontWeight.w800, color: tone.fg, height: 1),
           child: Text(text),
         ),
@@ -288,24 +295,35 @@ class Pill extends StatelessWidget {
       );
 }
 
-/// Полоса прогресса с закруглениями.
+/// Полоса прогресса с закруглениями. Рисуется сама, поэтому выглядит одинаково на любой версии Flutter:
+/// без «точки» на конце и без зазора между заливкой и дорожкой. [track] — цвет дорожки.
 class Bar extends StatelessWidget {
-  const Bar({super.key, required this.value, required this.color, this.height = 10});
+  const Bar({super.key, required this.value, required this.color, this.height = 10, this.track});
   final double value;
   final Color color;
   final double height;
+  final Color? track;
 
   @override
-  Widget build(BuildContext context) => ClipRRect(
-        borderRadius: BorderRadius.circular(height),
-        child: LinearProgressIndicator(
-          value: value.clamp(0.0, 1.0).toDouble(),
-          minHeight: height,
-          color: color,
-          backgroundColor: context.cs.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(height),
-        ),
-      );
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(height / 2);
+    return ClipRRect(
+      borderRadius: radius,
+      child: SizedBox(
+        height: height,
+        child: Stack(children: [
+          Positioned.fill(child: ColoredBox(color: track ?? context.cs.surfaceContainerHighest)),
+          Positioned.fill(
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: value.clamp(0.0, 1.0).toDouble(),
+              child: DecoratedBox(decoration: BoxDecoration(color: color, borderRadius: radius)),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
 }
 
 BorderRadius segmentRadius(int i, int n, {double outer = 28, double inner = 6}) => BorderRadius.vertical(
@@ -315,7 +333,8 @@ BorderRadius segmentRadius(int i, int n, {double outer = 28, double inner = 6}) 
 
 /// Элемент «сегментированного списка» Material 3 Expressive: крайние карточки скруглены сильнее,
 /// между карточками — тонкий зазор. Умеет смахиваться: влево — удалить, вправо — своё действие.
-class SegmentCard extends StatelessWidget {
+/// Значок под карточкой растёт вместе со смахиванием, а когда порог пройден, откликается вибрацией.
+class SegmentCard extends StatefulWidget {
   const SegmentCard({
     super.key,
     required this.index,
@@ -341,53 +360,88 @@ class SegmentCard extends StatelessWidget {
   final IconData swipeRightIcon;
 
   @override
+  State<SegmentCard> createState() => _SegmentCardState();
+}
+
+class _SegmentCardState extends State<SegmentCard> {
+  /// Доля смахивания 0…1 (порог срабатывания у Dismissible — 0,4 ширины).
+  final ValueNotifier<double> _swipe = ValueNotifier<double>(0);
+
+  @override
+  void dispose() {
+    _swipe.dispose();
+    super.dispose();
+  }
+
+  void _onUpdate(DismissUpdateDetails d) {
+    if (d.reached && !d.previousReached) Haptics.selection();
+    _swipe.value = d.progress;
+  }
+
+  Widget _swipeBackground({required Color bg, required Color fg, required IconData icon, required Alignment alignment}) => Container(
+        color: bg,
+        alignment: alignment,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: ValueListenableBuilder<double>(
+          valueListenable: _swipe,
+          builder: (context, progress, child) {
+            final t = (progress / 0.4).clamp(0.0, 1.0).toDouble();
+            return Opacity(opacity: t, child: Transform.scale(scale: 0.6 + 0.4 * Motion.spring.transform(t), child: child));
+          },
+          child: Icon(icon, color: fg),
+        ),
+      );
+
+  @override
   Widget build(BuildContext context) {
     final cs = context.cs;
-    final r = segmentRadius(index, count);
+    final r = segmentRadius(widget.index, widget.count);
+    final d = context.motion(Motion.short);
     Widget body = Material(
-      color: color ?? cs.surfaceContainerLow,
-      child: InkWell(onTap: onTap, onLongPress: onLongPress, child: child),
+      color: widget.color ?? cs.surfaceContainerLow,
+      child: InkWell(onTap: widget.onTap, onLongPress: widget.onLongPress, child: widget.child),
     );
-    if (dismissKey != null) {
+    if (widget.dismissKey != null) {
       body = Dismissible(
-        key: dismissKey!,
-        direction: onSwipeRight != null ? DismissDirection.horizontal : DismissDirection.endToStart,
-        background: Container(
-          color: cs.primaryContainer,
+        key: widget.dismissKey!,
+        direction: widget.onSwipeRight != null ? DismissDirection.horizontal : DismissDirection.endToStart,
+        onUpdate: _onUpdate,
+        background: _swipeBackground(
+          bg: cs.primaryContainer,
+          fg: cs.onPrimaryContainer,
+          icon: widget.swipeRightIcon,
           alignment: Alignment.centerLeft,
-          padding: const EdgeInsets.only(left: 24),
-          child: Icon(swipeRightIcon, color: cs.onPrimaryContainer),
         ),
-        secondaryBackground: Container(
-          color: cs.errorContainer,
+        secondaryBackground: _swipeBackground(
+          bg: cs.errorContainer,
+          fg: cs.onErrorContainer,
+          icon: Icons.delete_outline_rounded,
           alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 24),
-          child: Icon(Icons.delete_outline_rounded, color: cs.onErrorContainer),
         ),
         confirmDismiss: (dir) async {
           if (dir == DismissDirection.startToEnd) {
-            onSwipeRight?.call();
+            widget.onSwipeRight?.call();
             return false;
           }
           return true;
         },
-        onDismissed: (_) => onDelete?.call(),
+        onDismissed: (_) => widget.onDelete?.call(),
         child: body,
       );
     }
     // Когда рядом появляется или исчезает карточка, скругления и зазоры меняются плавно.
     return Appear(
-      index: index,
+      index: widget.index,
       child: AnimatedPadding(
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeOutCubic,
-        padding: EdgeInsets.only(bottom: index == count - 1 ? 0 : 2),
+        duration: d,
+        curve: Motion.standard,
+        padding: EdgeInsets.only(bottom: widget.index == widget.count - 1 ? 0 : 2),
         child: PressScale(
-          enabled: onTap != null || onLongPress != null,
+          enabled: widget.onTap != null || widget.onLongPress != null,
           child: TweenAnimationBuilder<BorderRadius?>(
             tween: BorderRadiusTween(end: r),
-            duration: const Duration(milliseconds: 260),
-            curve: Curves.easeOutCubic,
+            duration: d,
+            curve: Motion.standard,
             builder: (context, radius, child) => ClipRRect(borderRadius: radius ?? r, child: child),
             child: body,
           ),

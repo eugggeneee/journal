@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/haptics.dart';
 import '../../data/store.dart';
 import '../app/scope.dart';
+import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
@@ -49,7 +50,11 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   void _go(int p) {
     FocusManager.instance.primaryFocus?.unfocus();
-    _pc.animateToPage(p, duration: const Duration(milliseconds: 380), curve: Curves.easeOutCubic);
+    if (context.reduceMotion) {
+      _pc.jumpToPage(p);
+    } else {
+      _pc.animateToPage(p, duration: const Duration(milliseconds: 380), curve: Motion.standard);
+    }
   }
 
   void _next() {
@@ -101,7 +106,13 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                         width: double.infinity,
                         child: FilledButton(
                           onPressed: canNext ? _next : null,
-                          child: Text(_page == _count - 1 ? 'Начать' : 'Продолжить'),
+                          child: Swap(
+                            alignment: Alignment.center,
+                            child: Text(
+                              _page == _count - 1 ? 'Начать' : 'Продолжить',
+                              key: ValueKey(_page == _count - 1),
+                            ),
+                          ),
                         ),
                       ),
                       SizedBox(
@@ -150,7 +161,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           TweenAnimationBuilder<double>(
             tween: Tween<double>(begin: 0.55, end: 1),
-            duration: const Duration(milliseconds: 1000),
+            duration: context.motion(const Duration(milliseconds: 1000)),
             curve: Curves.elasticOut,
             builder: (context, v, child) => Opacity(opacity: v.clamp(0.0, 1.0).toDouble(), child: Transform.scale(scale: v, child: child)),
             child: CookieIcon(icon: Icons.school_rounded, size: 156, bg: cs.primary, fg: cs.onPrimary),
@@ -313,7 +324,6 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   Widget _settings(BuildContext context) {
     final store = StoreScope.of(context);
     final s = store.settings;
-    final cs = context.cs;
     return _scrolling(top: 12, [
       _title(context, 'Настройте под себя', 'Всё это можно изменить позже в профиле.'),
       const SectionHeader('Оформление', top: 18),
@@ -326,24 +336,26 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       SegmentCard(
         index: 0,
         count: 2,
-        child: SwitchListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-          secondary: Icon(Icons.vibration_rounded, color: cs.primary),
-          title: const Text('Виброотклик'),
-          value: s.haptics,
-          onChanged: store.setHaptics,
+        onTap: () => store.setHaptics(!s.haptics),
+        child: SettingsTile(
+          icon: Icons.vibration_rounded,
+          title: 'Виброотклик',
+          subtitle: 'Лёгкая вибрация при нажатиях и отметках',
+          trailing: SettingsSwitch(value: s.haptics, onChanged: store.setHaptics),
         ),
       ),
       SegmentCard(
         index: 1,
         count: 2,
-        child: SwitchListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-          secondary: Icon(Icons.sync_rounded, color: cs.primary),
-          title: const Text('Автообновление'),
-          subtitle: const Text('Подгружать расписание при запуске'),
-          value: s.autoRefresh,
-          onChanged: store.setAutoRefresh,
+        onTap: () {
+          Haptics.selection();
+          store.setAutoRefresh(!s.autoRefresh);
+        },
+        child: SettingsTile(
+          icon: Icons.sync_rounded,
+          title: 'Автообновление',
+          subtitle: 'Подгружать расписание при запуске',
+          trailing: SettingsSwitch(value: s.autoRefresh, onChanged: store.setAutoRefresh),
         ),
       ),
     ]);
@@ -395,29 +407,29 @@ class _FeatureCard extends StatelessWidget {
   Widget build(BuildContext context) => Appear(
         index: index + 1,
         child: Card(
-        color: context.cs.surfaceContainerLow,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(
-              width: 52,
-              height: 52,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(18)),
-              child: Icon(icon, size: 26, color: fg),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(title, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(text, style: context.tt.bodyMedium?.copyWith(height: 1.35, color: context.cs.onSurfaceVariant)),
-              ]),
-            ),
-          ]),
+          color: context.cs.surfaceContainerLow,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(
+                width: 52,
+                height: 52,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(18)),
+                child: Icon(icon, size: 26, color: fg),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(title, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Text(text, style: context.tt.bodyMedium?.copyWith(height: 1.35, color: context.cs.onSurfaceVariant)),
+                ]),
+              ),
+            ]),
+          ),
         ),
-      ),
       );
 }
 
@@ -429,19 +441,23 @@ class _Dots extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
-    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-      for (var i = 0; i < count; i++)
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOutCubic,
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: i == index ? 26 : 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: i == index ? cs.primary : cs.outlineVariant,
-            borderRadius: BorderRadius.circular(100),
+    return Semantics(
+      label: 'Шаг ${index + 1} из $count',
+      excludeSemantics: true,
+      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        for (var i = 0; i < count; i++)
+          AnimatedContainer(
+            duration: context.motion(Motion.short),
+            curve: Motion.standard,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            width: i == index ? 26 : 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: i == index ? cs.primary : cs.outlineVariant,
+              borderRadius: BorderRadius.circular(100),
+            ),
           ),
-        ),
-    ]);
+      ]),
+    );
   }
 }

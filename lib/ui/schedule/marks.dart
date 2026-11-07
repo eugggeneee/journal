@@ -142,6 +142,7 @@ class _MarkSheetState extends State<_MarkSheet> {
                     controller: _c,
                     autofocus: widget.edit == null || !kMarkPresets.contains(widget.edit!.label),
                     textCapitalization: TextCapitalization.sentences,
+                    textInputAction: TextInputAction.done,
                     inputFormatters: [LengthLimitingTextInputFormatter(24)],
                     onChanged: (_) => setState(() {}),
                     decoration: const InputDecoration(
