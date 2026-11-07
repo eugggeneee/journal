@@ -7,7 +7,7 @@
 python3 scripts/project/graph.py
 ```
 
-Файлов Dart: 47 в `lib/`, 6 в `test/`.
+Файлов Dart: 49 в `lib/`, 6 в `test/`.
 
 ## Папки
 
@@ -32,7 +32,7 @@ flowchart LR
     lib_ui_absences["ui/absences (4)"]
     lib_ui_app["ui/app (2)"]
     lib_ui_grades["ui/grades (3)"]
-    lib_ui_kit_animation["ui/kit/animation (2)"]
+    lib_ui_kit_animation["ui/kit/animation (3)"]
     lib_ui_kit_components["ui/kit/components (3)"]
     lib_ui_kit_foundation["ui/kit/foundation (1)"]
     lib_ui_kit_inputs["ui/kit/inputs (3)"]
@@ -41,7 +41,7 @@ flowchart LR
     lib_ui_profile["ui/profile (3)"]
     lib_ui_schedule["ui/schedule (4)"]
     lib_ui_settings["ui/settings (4)"]
-    lib_ui_theme["ui/theme (1)"]
+    lib_ui_theme["ui/theme (2)"]
   end
   lib --> lib_core
   lib --> lib_data
@@ -169,12 +169,13 @@ flowchart LR
 | `ui/absences/absence_sheet.dart` | 500 | 12 | 5 |
 | `ui/absences/absences_page.dart` | 477 | 18 | 1 |
 | `ui/app/scope.dart` | 23 | 2 | 21 |
-| `ui/app/shell.dart` | 170 | 10 | 1 |
+| `ui/app/shell.dart` | 152 | 11 | 1 |
 | `ui/grades/grade_sheet.dart` | 224 | 10 | 5 |
 | `ui/grades/grades_page.dart` | 283 | 15 | 2 |
 | `ui/grades/subject_page.dart` | 113 | 8 | 1 |
-| `ui/kit/animation/motion.dart` | 45 | 0 | 13 |
+| `ui/kit/animation/motion.dart` | 45 | 0 | 14 |
 | `ui/kit/animation/reveal.dart` | 278 | 1 | 17 |
+| `ui/kit/animation/tab_switcher.dart` | 90 | 1 | 1 |
 | `ui/kit/components/feedback.dart` | 25 | 1 | 12 |
 | `ui/kit/components/overview.dart` | 309 | 6 | 3 |
 | `ui/kit/components/widgets.dart` | 481 | 5 | 17 |
@@ -192,11 +193,12 @@ flowchart LR
 | `ui/schedule/lesson_sheet.dart` | 246 | 15 | 1 |
 | `ui/schedule/marks.dart` | 305 | 11 | 3 |
 | `ui/schedule/schedule_page.dart` | 746 | 18 | 1 |
-| `ui/settings/bells_page.dart` | 708 | 16 | 4 |
+| `ui/settings/bells_page.dart` | 726 | 16 | 4 |
 | `ui/settings/bells_sheet.dart` | 112 | 8 | 2 |
 | `ui/settings/group_picker.dart` | 261 | 6 | 4 |
 | `ui/settings/settings_pages.dart` | 370 | 14 | 3 |
-| `ui/theme/app_theme.dart` | 192 | 1 | 4 |
+| `ui/theme/app_theme.dart` | 193 | 2 | 4 |
+| `ui/theme/page_transitions.dart` | 36 | 0 | 1 |
 
 ## Зависимости папок
 

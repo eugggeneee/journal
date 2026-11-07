@@ -6,6 +6,7 @@ import '../absences/absences_page.dart';
 import '../grades/grade_sheet.dart';
 import '../grades/grades_page.dart';
 import '../kit/animation/motion.dart';
+import '../kit/animation/tab_switcher.dart';
 import '../profile/profile_page.dart';
 import '../schedule/add_menu.dart';
 import '../schedule/schedule_page.dart';
@@ -18,7 +19,7 @@ class Shell extends StatefulWidget {
   State<Shell> createState() => _ShellState();
 }
 
-class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
+class _ShellState extends State<Shell> {
   static const _wide = 640.0;
 
   static const _items = [
@@ -31,11 +32,6 @@ class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
   int _tab = 0;
   bool _prefetched = false;
 
-  // Смена вкладки: содержимое проявляется и чуть всплывает (состояние страниц сохраняется).
-  late final AnimationController _swap = AnimationController(vsync: this, duration: Motion.medium, value: 1);
-  late final Animation<double> _swapFade = _swap.drive(CurveTween(curve: Curves.easeOut));
-  late final Animation<Offset> _swapSlide =
-      _swap.drive(CurveTween(curve: Motion.standard)).drive(Tween<Offset>(begin: const Offset(0, 0.025), end: Offset.zero));
   final ScheduleController _sched = ScheduleController();
   late final List<Widget> _pages = [
     SchedulePage(controller: _sched),
@@ -55,7 +51,6 @@ class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
 
   @override
   void dispose() {
-    _swap.dispose();
     _sched.dispose();
     super.dispose();
   }
@@ -64,15 +59,6 @@ class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
     if (i == _tab) return;
     Haptics.selection();
     setState(() => _tab = i);
-    _playSwap();
-  }
-
-  void _playSwap() {
-    if (context.reduceMotion) {
-      _swap.value = 1;
-    } else {
-      _swap.forward(from: 0);
-    }
   }
 
   Widget _fab(BuildContext context) {
@@ -118,17 +104,13 @@ class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= _wide;
-    final body = FadeTransition(
-      opacity: _swapFade,
-      child: SlideTransition(position: _swapSlide, child: IndexedStack(index: _tab, children: _pages)),
-    );
+    final body = TabSwitcher(index: _tab, children: _pages);
 
     return PopScope(
       canPop: _tab == 0,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
           setState(() => _tab = 0);
-          _playSwap();
         }
       },
       child: Scaffold(

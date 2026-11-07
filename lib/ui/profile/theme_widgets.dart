@@ -142,8 +142,8 @@ class _ChoiceTile extends StatelessWidget {
               ]),
             ),
             const SizedBox(height: 4),
-            SizedBox(
-              height: 34,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 34),
               child: Text(
                 item.label,
                 maxLines: 2,

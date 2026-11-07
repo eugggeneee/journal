@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/palette.dart';
+import 'page_transitions.dart';
 
 /// Тема Material 3 (официальный пакет material_ui).
 /// По умолчанию цвета берутся из обоев системы (Material You, Android 12+), а если их нет —
@@ -64,14 +65,14 @@ class AppTheme {
     return ThemeData(
       colorScheme: s,
       scaffoldBackgroundColor: s.surface,
-      // Только Material: на Android — предиктивный «назад», на остальных платформах — Material 3 «fade forwards».
+      // Экраны скользят по горизонтали: вперёд справа налево, назад обратно.
       pageTransitionsTheme: const PageTransitionsTheme(builders: {
-        TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-        TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.macOS: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.fuchsia: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.android: SlidePageTransitionsBuilder(),
+        TargetPlatform.iOS: SlidePageTransitionsBuilder(),
+        TargetPlatform.macOS: SlidePageTransitionsBuilder(),
+        TargetPlatform.windows: SlidePageTransitionsBuilder(),
+        TargetPlatform.linux: SlidePageTransitionsBuilder(),
+        TargetPlatform.fuchsia: SlidePageTransitionsBuilder(),
       }),
       appBarTheme: AppBarTheme(
         backgroundColor: s.surface,

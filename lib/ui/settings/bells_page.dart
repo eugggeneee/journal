@@ -119,7 +119,6 @@ class _BellsPageState extends State<BellsPage> {
     final p = _profile(store);
     final slot = p[n];
     if (slot == null) return;
-    Haptics.selection();
     if (slot.hasBreak) {
       _save(store, p.withSlot(n, slot.withoutBreak()));
       return;
@@ -408,7 +407,10 @@ class _PairCard extends StatelessWidget {
                       child: Column(children: [
                         InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: onToggleBreak,
+                          onTap: () {
+                            Haptics.selection();
+                            onToggleBreak();
+                          },
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(4, 4, 0, 4),
                             child: Row(children: [
@@ -420,6 +422,8 @@ class _PairCard extends StatelessWidget {
                                   Text('Перерыв внутри пары', style: context.tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
                                   Text(
                                     s.hasBreak ? (s.lunchInside ? 'Обед внутри пары: ${halvesText(s)}' : 'Две половины: ${halvesText(s)}') : 'Например, две половины по 45 минут',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                     style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                                   ),
                                 ]),
@@ -451,10 +455,15 @@ class _PairCard extends StatelessWidget {
   }
 }
 
-/// Схема пары: первая половина, перерыв и вторая половина — длины пропорциональны минутам.
+/// Схема пары: первая половина, перерыв и вторая половина. Длины пропорциональны минутам,
+/// но перерыв никогда не уже [_minGap], иначе значок в нём обрезается (перерыв в 5 минут).
 class _HalvesBar extends StatelessWidget {
   const _HalvesBar({required this.slot});
   final BellSlot slot;
+
+  static const double _minGap = 40;
+  static const double _space = 3;
+  static const double _height = 34;
 
   @override
   Widget build(BuildContext context) {
@@ -462,37 +471,43 @@ class _HalvesBar extends StatelessWidget {
     final a = slot.firstHalf < 1 ? 1 : slot.firstHalf;
     final gap = slot.breakMinutes < 1 ? 1 : slot.breakMinutes;
     final b = slot.secondHalf < 1 ? 1 : slot.secondHalf;
-    Widget half(int flex, String text) => Expanded(
-          flex: flex,
-          child: Container(
-            height: 34,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(12)),
-            child: Text(text, maxLines: 1, overflow: TextOverflow.clip, style: context.tt.labelLarge?.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w800)),
-          ),
+
+    Widget block(double w, Color bg, Widget child) => Container(
+          width: w,
+          height: _height,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+          child: child,
         );
+    Widget half(double w, int minutes) => block(
+          w,
+          cs.primaryContainer,
+          Text('$minutes', maxLines: 1, overflow: TextOverflow.clip, style: context.tt.labelLarge?.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w800)),
+        );
+
     return Padding(
       padding: const EdgeInsets.only(left: 8),
-      child: TweenAnimationBuilder<double>(
-        key: ValueKey('${slot.firstHalf}-${slot.breakMinutes}-${slot.secondHalf}'),
-        tween: Tween<double>(begin: 0.85, end: 1),
-        duration: context.motion(const Duration(milliseconds: 380)),
-        curve: Motion.spring,
-        builder: (context, v, child) => Transform.scale(scale: v, child: child),
-        child: Row(children: [
-          half(a, '${slot.firstHalf}'),
-          Expanded(
-            flex: gap,
-            child: Container(
-              height: 34,
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              decoration: BoxDecoration(color: cs.tertiaryContainer, borderRadius: BorderRadius.circular(12)),
-              child: Icon(slot.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded, size: 16, color: cs.onTertiaryContainer),
-            ),
-          ),
-          half(b, '${slot.secondHalf}'),
-        ]),
-      ),
+      child: LayoutBuilder(builder: (context, box) {
+        final free = (box.maxWidth - _space * 2).clamp(0.0, double.infinity).toDouble();
+        final gapW = (free * gap / (a + gap + b)).clamp(_minGap, free * 0.5 < _minGap ? _minGap : free * 0.5).toDouble();
+        final rest = (free - gapW).clamp(0.0, double.infinity).toDouble();
+        final wa = rest * a / (a + b);
+        final wb = rest - wa;
+        return TweenAnimationBuilder<double>(
+          key: ValueKey('${slot.firstHalf}-${slot.breakMinutes}-${slot.secondHalf}'),
+          tween: Tween<double>(begin: 0.85, end: 1),
+          duration: context.motion(const Duration(milliseconds: 380)),
+          curve: Motion.spring,
+          builder: (context, v, child) => Transform.scale(scale: v, child: child),
+          child: Row(children: [
+            half(wa, slot.firstHalf),
+            const SizedBox(width: _space),
+            block(gapW, cs.tertiaryContainer, Icon(slot.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded, size: 16, color: cs.onTertiaryContainer)),
+            const SizedBox(width: _space),
+            half(wb, slot.secondHalf),
+          ]),
+        );
+      }),
     );
   }
 }
@@ -607,7 +622,7 @@ class _AutoFillSheetState extends State<_AutoFillSheet> {
         _Stepper(label: 'Пар в день', value: count, min: 1, max: kMaxPairs, step: 1, suffix: '', onChanged: (v) => setState(() => count = v)),
         _Stepper(label: 'Длительность пары', value: pair, min: 30, max: 180, step: 5, suffix: ' мин', onChanged: (v) => setState(() => pair = v)),
         _Stepper(label: 'Перерыв между парами', value: brk, min: 0, max: 60, step: 5, suffix: ' мин', onChanged: (v) => setState(() => brk = v)),
-        _Stepper(label: 'Перерыв внутри пары (0 — нет)', value: inner, min: 0, max: 20, step: 5, suffix: ' мин', onChanged: (v) => setState(() => inner = v)),
+        _Stepper(label: 'Перерыв внутри пары', zeroLabel: 'нет', value: inner, min: 0, max: 20, step: 5, suffix: ' мин', onChanged: (v) => setState(() => inner = v)),
         const SizedBox(height: 8),
         SelectField<int>(
           label: 'Обед',
@@ -651,7 +666,7 @@ class _AutoFillSheetState extends State<_AutoFillSheet> {
 
 /// Строка со значением и кнопками «минус / плюс».
 class _Stepper extends StatelessWidget {
-  const _Stepper({required this.label, required this.value, required this.min, required this.max, required this.step, required this.suffix, required this.onChanged});
+  const _Stepper({required this.label, required this.value, required this.min, required this.max, required this.step, required this.suffix, required this.onChanged, this.zeroLabel});
   final String label;
   final int value;
   final int min;
@@ -659,6 +674,9 @@ class _Stepper extends StatelessWidget {
   final int step;
   final String suffix;
   final ValueChanged<int> onChanged;
+
+  /// Что показывать вместо нуля (например, «нет»).
+  final String? zeroLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -682,10 +700,10 @@ class _Stepper extends StatelessWidget {
                       onChanged((value - step).clamp(min, max).toInt());
                     },
             ),
-            SizedBox(
-              width: 64,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 64),
               child: Text(
-                '$value$suffix',
+                value == 0 && zeroLabel != null ? zeroLabel! : '$value$suffix',
                 textAlign: TextAlign.center,
                 style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, fontFeatures: const [FontFeature.tabularFigures()]),
               ),
