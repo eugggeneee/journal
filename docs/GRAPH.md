@@ -153,7 +153,7 @@ flowchart LR
 | Файл | Строк | Импортирует | Используют |
 |---|---:|---:|---:|
 | `core/app_icons.dart` | 41 | 1 | 1 |
-| `core/dates.dart` | 105 | 0 | 26 |
+| `core/dates.dart` | 105 | 0 | 27 |
 | `core/haptics.dart` | 18 | 0 | 26 |
 | `core/palette.dart` | 68 | 0 | 5 |
 | `data/models.dart` | 501 | 1 | 25 |
@@ -235,7 +235,7 @@ flowchart LR
 |---|---|
 | `data/settings_test.dart` | `core/palette.dart`, `data/models.dart` |
 | `data/store_test.dart` | `data/models.dart`, `data/store.dart`, `logic/stats.dart` |
-| `logic/bells_test.dart` | `data/models.dart`, `data/store.dart`, `logic/bells.dart` |
+| `logic/bells_test.dart` | `core/dates.dart`, `data/models.dart`, `data/store.dart`, `logic/bells.dart` |
 | `logic/limits_test.dart` | `data/models.dart`, `logic/limits.dart` |
 | `logic/parser_test.dart` | `core/dates.dart`, `logic/schedule/cp1251.dart`, `logic/schedule/schedule_parser.dart`, `logic/schedule/schedule_service.dart` |
 | `project/version_test.dart` | файлы проекта |

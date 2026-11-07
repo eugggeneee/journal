@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:journal/core/dates.dart';
 import 'package:journal/data/models.dart';
 import 'package:journal/data/store.dart';
 import 'package:journal/logic/bells.dart';
@@ -244,7 +245,7 @@ void dayClockTests() {
     expect(lesson.pair, 1);
     expect(lesson.left, 65);
     expect(dayClock(profile, lessons, 9 * 60 + 7).phase, DayPhase.innerBreak);
-    final gap = dayClock(profile, lessons, 10);
+    final gap = dayClock(profile, lessons, 10 * 60);
     expect(gap.phase, DayPhase.gap);
     expect(gap.next, 2);
     expect(gap.left, 5);
