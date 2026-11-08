@@ -18,7 +18,7 @@ journal/
     icon/               значок темы по умолчанию для flutter_launcher_icons
     icons/              значки по темам: iOS (светлый, тёмный, тонированный), слои Android (генерируются scripts/icons/make_icons.py)
   docs/
-    images/readme/      графика README (генерируется scripts/readme/make_assets.py)
+    logo.png            логотип для README
     ARCHITECTURE.md, COMMITS.md, PRERELEASES.md, RELEASING.md,
     STYLE.md, TESTING.md, VERSIONING.md, GRAPH.md
   lib/

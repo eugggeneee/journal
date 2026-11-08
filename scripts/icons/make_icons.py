@@ -12,7 +12,7 @@
   assets/icons/<id>/fg.png, bg.png      432 x 432, слои адаптивного значка Android
   assets/icons/<id>/legacy.png          144 x 144, скруглённый значок для Android до 8.0
   assets/icons/layer_mono.png           одноцветный слой для «тематических значков» Android 13+
-  assets/icons/preview/<id>.png         превью для экрана «Оформление» и README
+  assets/icons/preview/<id>.png         превью для экрана «Оформление»
   assets/icons/icons.json               список id тем
 
 Адаптивный значок Android рисуется на холсте 108 dp, но лаунчер показывает центральные 72 dp
