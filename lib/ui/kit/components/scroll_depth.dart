@@ -79,7 +79,7 @@ class _ScrollDepthState extends State<ScrollDepth> {
 
 class _DepthPainter extends CustomPainter {
   _DepthPainter({required this.edge, required this.color, required this.strength}) : super(repaint: edge);
-  final ValueListenable<Offset> edge;
+  final ValueNotifier<Offset> edge;
   final Color color;
   final double strength;
 
