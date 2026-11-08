@@ -5,7 +5,7 @@ import '../../../core/haptics.dart';
 import '../animation/motion.dart';
 import '../animation/reveal.dart';
 import '../foundation/ctx.dart';
-import 'edge_fade.dart';
+import 'scroll_depth.dart';
 
 /// Запас снизу под плавающую кнопку, чтобы она не закрывала последние элементы списка.
 const double kFabClearance = 104;
@@ -84,8 +84,8 @@ class LargePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
-    final view = EdgeFade(
-      top: 0,
+    final view = ScrollDepth(
+      top: false,
       child: CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
@@ -93,7 +93,7 @@ class LargePage extends StatelessWidget {
           pinned: true,
           toolbarHeight: kHeaderHeight,
           titleSpacing: 20,
-          scrolledUnderElevation: 0,
+          shadowColor: cs.shadow,
           backgroundColor: WidgetStateColor.resolveWith(
             (states) => states.contains(WidgetState.scrolledUnder) ? cs.surfaceContainer : cs.surface,
           ),
@@ -195,7 +195,7 @@ class EmptyState extends StatelessWidget {
                 // Значок «вырастает» с лёгкой пружинкой.
                 TweenAnimationBuilder<double>(
                   tween: Tween<double>(begin: 0.7, end: 1),
-                  duration: context.motion(const Duration(milliseconds: 600)),
+                  duration: Motion.ms(600),
                   curve: Motion.spring,
                   builder: (context, v, child) => Transform.scale(scale: v, child: child),
                   child: CookieIcon(icon: icon),

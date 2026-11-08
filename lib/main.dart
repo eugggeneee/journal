@@ -7,6 +7,7 @@ import 'data/store.dart';
 import 'logic/schedule/schedule_service.dart';
 import 'ui/app/scope.dart';
 import 'ui/app/shell.dart';
+import 'ui/kit/animation/motion.dart';
 import 'ui/onboarding/onboarding.dart';
 import 'ui/theme/app_theme.dart';
 
@@ -43,6 +44,7 @@ class JournalApp extends StatelessWidget {
           listenable: store,
           builder: (context, _) {
             Haptics.enabled = store.settings.haptics;
+            Motion.level = store.settings.motion;
             final color = store.settings.themeColor;
             return MaterialApp(
               title: 'Journal',

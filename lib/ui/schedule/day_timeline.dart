@@ -18,8 +18,8 @@ class DayTimeline extends StatelessWidget {
   final List<LessonSlot> slots;
   final AppStore store;
 
-  static const double _timesW = 46;
-  static const double _railW = 24;
+  static const double _timesW = 50;
+  static const double _railW = 22;
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +153,7 @@ class _TimelineRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.cs;
     final railLeft = timesW;
-    final contentLeft = timesW + DayTimeline._railW + 6;
+    final contentLeft = timesW + DayTimeline._railW + 4;
     final fade = context.motion(Motion.medium);
     const figures = [FontFeature.tabularFigures()];
     return Appear(
@@ -191,23 +191,30 @@ class _TimelineRow extends StatelessWidget {
           Positioned(
             left: 0,
             top: nodeY - 8,
-            width: timesW - 8,
+            width: timesW - 4,
+            // Время никогда не обрезается: при крупном шрифте системы оно уменьшается, а не теряет цифры.
             child: AnimatedOpacity(
               opacity: dim ? 0.62 : 1,
               duration: fade,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
-                Text(
-                  fmtMin(start!),
-                  maxLines: 1,
-                  style: TextStyle(fontSize: 14, height: 1.15, fontWeight: FontWeight.w800, fontFeatures: figures, color: current ? cs.primary : cs.onSurface),
-                ),
-                if (end != null)
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
                   Text(
-                    fmtMin(end!),
+                    fmtMin(start!),
                     maxLines: 1,
-                    style: TextStyle(fontSize: 12, height: 1.3, fontWeight: FontWeight.w500, fontFeatures: figures, color: cs.onSurfaceVariant),
+                    softWrap: false,
+                    style: TextStyle(fontSize: 14, height: 1.15, fontWeight: FontWeight.w800, fontFeatures: figures, color: current ? cs.primary : cs.onSurface),
                   ),
-              ]),
+                  if (end != null)
+                    Text(
+                      fmtMin(end!),
+                      maxLines: 1,
+                      softWrap: false,
+                      style: TextStyle(fontSize: 12, height: 1.3, fontWeight: FontWeight.w500, fontFeatures: figures, color: cs.onSurfaceVariant),
+                    ),
+                ]),
+              ),
             ),
           ),
       ]),

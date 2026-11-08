@@ -6,6 +6,7 @@ import '../../core/app_icons.dart';
 import '../../core/haptics.dart';
 import '../../core/palette.dart';
 import '../app/scope.dart';
+import '../kit/animation/motion.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
@@ -104,7 +105,7 @@ class _ChoiceTile extends StatelessWidget {
               height: _size + 10,
               child: Stack(alignment: Alignment.center, clipBehavior: Clip.none, children: [
                 AnimatedContainer(
-                  duration: const Duration(milliseconds: 280),
+                  duration: Motion.ms(280),
                   curve: Curves.easeOutCubic,
                   width: _size + 10,
                   height: _size + 10,
@@ -116,7 +117,7 @@ class _ChoiceTile extends StatelessWidget {
                 ),
                 AnimatedScale(
                   scale: sel ? 0.88 : 1.0,
-                  duration: const Duration(milliseconds: 280),
+                  duration: Motion.ms(280),
                   curve: Curves.easeOutCubic,
                   child: SizedBox(width: _size, height: _size, child: item.visual),
                 ),
@@ -125,7 +126,7 @@ class _ChoiceTile extends StatelessWidget {
                   bottom: 0,
                   child: AnimatedScale(
                     scale: sel ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 280),
+                    duration: Motion.ms(280),
                     curve: Curves.easeOutBack,
                     child: Container(
                       width: 22,
@@ -243,7 +244,7 @@ class ThemePreview extends StatelessWidget {
     final cs = context.cs;
     final tt = context.tt;
     Widget navIcon(IconData icon, {bool selected = false}) => AnimatedContainer(
-          duration: const Duration(milliseconds: 280),
+          duration: Motion.ms(280),
           width: 44,
           height: 28,
           decoration: BoxDecoration(

@@ -6,7 +6,7 @@ import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../logic/bells.dart';
 import '../app/scope.dart';
-import '../kit/components/edge_fade.dart';
+import '../kit/components/scroll_depth.dart';
 import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
@@ -222,7 +222,7 @@ class _BellsPageState extends State<BellsPage> {
     return Scaffold(
       backgroundColor: cs.surface,
       body: ContentFrame(
-        child: EdgeFade(top: 0, child: CustomScrollView(
+        child: ScrollDepth(top: false, child: CustomScrollView(
           slivers: [
             SliverAppBar.large(title: const Text('Звонки')),
             Inset(children: [
@@ -392,7 +392,7 @@ class _PairCard extends StatelessWidget {
               SizedBox(
                 width: 48,
                 child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
+                  duration: Motion.ms(200),
                   transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
                   child: s != null
                       ? IconButton(key: const ValueKey('clear'), tooltip: 'Очистить пару', icon: const Icon(Icons.close_rounded), onPressed: onClear)
@@ -497,7 +497,7 @@ class _HalvesBar extends StatelessWidget {
         return TweenAnimationBuilder<double>(
           key: ValueKey('${slot.firstHalf}-${slot.breakMinutes}-${slot.secondHalf}'),
           tween: Tween<double>(begin: 0.85, end: 1),
-          duration: context.motion(const Duration(milliseconds: 380)),
+          duration: Motion.ms(380),
           curve: Motion.spring,
           builder: (context, v, child) => Transform.scale(scale: v, child: child),
           child: Row(children: [

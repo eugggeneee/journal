@@ -6,7 +6,8 @@ import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../logic/limits.dart';
 import '../app/scope.dart';
-import '../kit/components/edge_fade.dart';
+import '../kit/animation/motion.dart';
+import '../kit/components/scroll_depth.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
@@ -27,7 +28,7 @@ class SettingsScaffold extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: context.cs.surface,
         body: ContentFrame(
-          child: EdgeFade(top: 0, child: CustomScrollView(
+          child: ScrollDepth(top: false, child: CustomScrollView(
             slivers: [
               SliverAppBar.large(title: Text(title)),
               Inset(children: children),
@@ -215,7 +216,7 @@ class AbsenceSettingsPage extends StatelessWidget {
             const SizedBox(height: 14),
             TweenAnimationBuilder<double>(
               tween: Tween<double>(end: hours / kSemesterLimit),
-              duration: const Duration(milliseconds: 500),
+              duration: Motion.ms(500),
               curve: Curves.easeOutCubic,
               builder: (context, v, _) => Bar(
                 value: v,
@@ -293,6 +294,30 @@ class BehaviorSettingsPage extends StatelessWidget {
           title: 'Виброотклик',
           subtitle: 'Лёгкая вибрация при нажатиях и отметках',
           trailing: SettingsSwitch(value: s.haptics, onChanged: store.setHaptics),
+        ),
+      ),
+      const SectionHeader('Анимации'),
+      const MotionSelector(),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+        child: Text(
+          s.motion == 0
+              ? 'Все переходы и появления в полную силу.'
+              : s.motion == 1
+                  ? 'Движение короче и тише, без лишних эффектов.'
+                  : 'Всё меняется сразу. Системная настройка «Убрать анимации» тоже учитывается.',
+          style: context.tt.bodySmall?.copyWith(color: context.cs.onSurfaceVariant, height: 1.4),
+        ),
+      ),
+      SegmentCard(
+        index: 0,
+        count: 1,
+        onTap: () => store.setDepth(!s.depth),
+        child: SettingsTile(
+          icon: Icons.layers_rounded,
+          title: 'Глубина прокрутки',
+          subtitle: 'Список уходит под шапку и нижнюю панель с мягкой тенью',
+          trailing: SettingsSwitch(value: s.depth, onChanged: store.setDepth),
         ),
       ),
     ]);

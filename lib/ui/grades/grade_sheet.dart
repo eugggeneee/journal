@@ -5,6 +5,7 @@ import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../app/scope.dart';
+import '../kit/animation/motion.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
@@ -94,13 +95,13 @@ class _GradeFormState extends State<_GradeForm> {
     final onAccent = v == null ? cs.onSurfaceVariant : onColorFor(accent);
     final details = [dayCaption(date), if (kind.isNotEmpty) kind].join(' · ');
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 260),
+      duration: Motion.ms(260),
       curve: Curves.easeOutCubic,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(28)),
       child: Row(children: [
         AnimatedContainer(
-          duration: const Duration(milliseconds: 260),
+          duration: Motion.ms(260),
           curve: Curves.easeOutCubic,
           width: 72,
           height: 72,
@@ -110,7 +111,7 @@ class _GradeFormState extends State<_GradeForm> {
             shape: const StarBorder(points: 10, innerRadiusRatio: 0.86, pointRounding: 0.55, valleyRounding: 0.4),
           ),
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
+            duration: Motion.ms(200),
             transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
             child: Text(
               v == null ? '–' : '$v',
@@ -163,7 +164,7 @@ class _GradeFormState extends State<_GradeForm> {
           : null,
       footer: Column(mainAxisSize: MainAxisSize.min, children: [
         AnimatedSize(
-          duration: const Duration(milliseconds: 200),
+          duration: Motion.ms(200),
           child: _canSave
               ? const SizedBox(width: double.infinity)
               : Padding(

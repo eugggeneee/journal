@@ -11,7 +11,7 @@ import '../../logic/schedule/schedule_service.dart';
 import '../absences/absence_actions.dart';
 import '../app/scope.dart';
 import '../kit/animation/reveal.dart';
-import '../kit/components/edge_fade.dart';
+import '../kit/components/scroll_depth.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
@@ -85,9 +85,7 @@ class _DayViewState extends State<DayView> {
         : KeyedSubtree(key: ValueKey('day-${st.status.name}'), child: _content(context, store, st));
     return RefreshIndicator(
       onRefresh: () => _load(force: true),
-      child: EdgeFade(
-        top: 14,
-        bottom: 28,
+      child: ScrollDepth(
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, kFabClearance),

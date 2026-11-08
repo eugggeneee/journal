@@ -2,7 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/palette.dart';
 import '../app/scope.dart';
-import '../kit/components/edge_fade.dart';
+import '../kit/components/scroll_depth.dart';
 import '../kit/components/widgets.dart';
 import '../kit/inputs/selectors.dart';
 import '../theme/app_theme.dart';
@@ -20,7 +20,7 @@ class ThemePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: cs.surface,
       body: ContentFrame(
-        child: EdgeFade(top: 0, child: CustomScrollView(
+        child: ScrollDepth(top: false, child: CustomScrollView(
           slivers: [
             SliverAppBar.large(title: const Text('Тема и значок')),
             Inset(children: [

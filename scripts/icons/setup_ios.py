@@ -3,8 +3,10 @@
 
 Запускается в CI после `flutter create` и `dart run flutter_launcher_icons`:
   1) для каждой темы создаётся набор значков Icon_<id>.appiconset в Assets.xcassets;
-  2) в настройки сборки добавляется ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES;
-  3) в AppDelegate.swift регистрируется канал `eugggeneee.journal/app_icon`.
+     в каждом наборе три варианта iOS 18+: обычный, тёмный и тонированный (оттенки серого);
+  2) обычный AppIcon заменяется таким же набором из трёх вариантов;
+  3) в настройки сборки добавляется ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES;
+  4) в AppDelegate.swift регистрируется канал `eugggeneee.journal/app_icon`.
 Если какой-то шаг не удаётся, скрипт печатает предупреждение и не ломает сборку.
 """
 import json
@@ -22,6 +24,30 @@ CONTENTS = '''{
   "images" : [
     {
       "filename" : "icon.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "icon_dark.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "tinted"
+        }
+      ],
+      "filename" : "icon_tinted.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -71,6 +97,20 @@ def warn(msg):
     print(f'::warning::{msg}')
 
 
+def write_set(folder, icon_id):
+    """Набор значков из трёх вариантов: обычный, тёмный и тонированный."""
+    os.makedirs(folder, exist_ok=True)
+    for name in os.listdir(folder):
+        if name.endswith('.png'):
+            os.remove(os.path.join(folder, name))
+    src = os.path.join(ICONS, icon_id)
+    shutil.copy(os.path.join(src, 'ios.png'), os.path.join(folder, 'icon.png'))
+    shutil.copy(os.path.join(src, 'ios_dark.png'), os.path.join(folder, 'icon_dark.png'))
+    shutil.copy(os.path.join(src, 'ios_tinted.png'), os.path.join(folder, 'icon_tinted.png'))
+    with open(os.path.join(folder, 'Contents.json'), 'w', encoding='utf-8') as f:
+        f.write(CONTENTS)
+
+
 def make_sets(ids):
     names = []
     cat = os.path.join(RUNNER, 'Assets.xcassets')
@@ -78,13 +118,11 @@ def make_sets(ids):
         return None
     for icon_id in ids:
         if icon_id == 'default':
-            continue  # обычный значок — AppIcon из flutter_launcher_icons
+            # обычный значок: заменяем набор flutter_launcher_icons, чтобы появились тёмный и тонированный варианты
+            write_set(os.path.join(cat, 'AppIcon.appiconset'), 'default')
+            continue
         name = f'Icon_{icon_id}'
-        d = os.path.join(cat, f'{name}.appiconset')
-        os.makedirs(d, exist_ok=True)
-        shutil.copy(os.path.join(ICONS, icon_id, 'ios.png'), os.path.join(d, 'icon.png'))
-        with open(os.path.join(d, 'Contents.json'), 'w', encoding='utf-8') as f:
-            f.write(CONTENTS)
+        write_set(os.path.join(cat, f'{name}.appiconset'), icon_id)
         names.append(name)
     return names
 

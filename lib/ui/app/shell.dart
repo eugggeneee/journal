@@ -71,6 +71,8 @@ class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
   void _setDial(bool open) {
     if (_dialOpen == open) return;
     setState(() => _dialOpen = open);
+    _dial.duration = Motion.medium;
+    _dial.reverseDuration = Motion.short;
     if (context.reduceMotion) {
       _dial.value = open ? 1 : 0;
     } else if (open) {

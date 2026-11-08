@@ -6,7 +6,7 @@ import 'palette.dart';
 /// Смена значка приложения на Android и iPhone.
 ///
 /// Нативная часть (activity-alias на Android, альтернативные значки на iOS) добавляется при сборке
-/// скриптами scripts/setup_icons_*.py. Если её нет — методы возвращают null/false, и интерфейс
+/// скриптами scripts/icons/setup_*.py. Если её нет — методы возвращают null/false, и интерфейс
 /// просто сообщает, что смена значка недоступна.
 class AppIcons {
   AppIcons._();

@@ -16,9 +16,12 @@ class TabSwitcher extends StatefulWidget {
 
 class _TabSwitcherState extends State<TabSwitcher> with SingleTickerProviderStateMixin {
   /// Насколько страница смещается при въезде: доля ширины, остальное достраивает прозрачность.
-  static const double _travel = 0.16;
+  static const double _travel = 0.12;
 
-  late final AnimationController _c = AnimationController(vsync: this, duration: Motion.long, value: 1);
+  /// Насколько страница «отъезжает вглубь» при уходе и «подъезжает» при появлении.
+  static const double _depth = 0.02;
+
+  late final AnimationController _c = AnimationController(vsync: this, duration: Motion.page, value: 1);
   late final Animation<double> _slide = _c.drive(CurveTween(curve: Motion.emphasized));
   late final Animation<double> _fadeIn = _c.drive(CurveTween(curve: const Interval(0.25, 1.0, curve: Curves.easeOut)));
   late final Animation<double> _fadeOut = _c.drive(CurveTween(curve: const Interval(0.0, 0.45, curve: Curves.easeIn)));
@@ -32,9 +35,10 @@ class _TabSwitcherState extends State<TabSwitcher> with SingleTickerProviderStat
     if (old.index == widget.index) return;
     _from = old.index;
     _dir = widget.index > old.index ? 1 : -1;
-    if (WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations) {
+    if (Motion.off) {
       _c.value = 1;
     } else {
+      _c.duration = Motion.page;
       _c.forward(from: 0);
     }
   }
@@ -62,15 +66,19 @@ class _TabSwitcherState extends State<TabSwitcher> with SingleTickerProviderStat
     final visible = isTo || isFrom;
     final Offset shift;
     final double opacity;
+    final double scale;
     if (!running || (!isTo && !isFrom)) {
       shift = Offset.zero;
       opacity = 1;
+      scale = 1;
     } else if (isTo) {
       shift = Offset(_dir * _travel * (1 - _slide.value), 0);
       opacity = _fadeIn.value;
+      scale = 1 - _depth * (1 - _slide.value);
     } else {
       shift = Offset(-_dir * _travel * _slide.value, 0);
       opacity = 1 - _fadeOut.value;
+      scale = 1 - _depth * _slide.value;
     }
     return Offstage(
       key: ValueKey('tab-$i'),
@@ -81,7 +89,10 @@ class _TabSwitcherState extends State<TabSwitcher> with SingleTickerProviderStat
           ignoring: !isTo,
           child: FractionalTranslation(
             translation: shift,
-            child: Opacity(opacity: opacity.clamp(0.0, 1.0).toDouble(), child: widget.children[i]),
+            child: Transform.scale(
+              scale: scale,
+              child: Opacity(opacity: opacity.clamp(0.0, 1.0).toDouble(), child: RepaintBoundary(child: widget.children[i])),
+            ),
           ),
         ),
       ),

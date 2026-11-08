@@ -15,10 +15,10 @@ journal/
     release-notes.md    шаблон оформления релиза
     dependabot.yml, PULL_REQUEST_TEMPLATE.md
   assets/
-    icon/               исходники значка
-    icons/              значки по темам (генерируются scripts/icons/make_icons.py)
+    icon/               значок темы по умолчанию для flutter_launcher_icons
+    icons/              значки по темам: iOS (светлый, тёмный, тонированный), слои Android (генерируются scripts/icons/make_icons.py)
   docs/
-    logo.svg            логотип для README
+    images/readme/      графика README (генерируется scripts/readme/make_assets.py)
     ARCHITECTURE.md, COMMITS.md, PRERELEASES.md, RELEASING.md,
     STYLE.md, TESTING.md, VERSIONING.md, GRAPH.md
   lib/
@@ -31,8 +31,8 @@ journal/
       theme/            тема Material 3
       kit/              общие элементы интерфейса
         foundation/     расширения контекста, цвета оценок и статусов
-        animation/      единые длительности и кривые, появление элементов
-        components/     карточки, итоговые блоки, пустые состояния, уведомления
+        animation/      единые длительности и кривые (режим анимаций из настроек), появление элементов
+        components/     карточки, итоговые блоки, пустые состояния, уведомления, глубина прокрутки (scroll_depth.dart)
         inputs/         выбор даты, предмета, оценки, переключатели
         sheets/         нижние шторки и диалоги
       schedule/ grades/ absences/ profile/ settings/ onboarding/   экраны
@@ -77,7 +77,8 @@ journal/
 ## Интерфейс
 
 - Страницы «Оценки» и «Пропуски» построены на одних компонентах `ui/kit/components/overview.dart`: итоговая карточка, переключатель «Предметы / Журнал», фильтр, карточка предмета, строка журнала.
-- Анимации берут длительности и кривые из `ui/kit/animation/motion.dart`.
+- Анимации берут длительности и кривые из `ui/kit/animation/motion.dart`. Настройка «Анимации» (выразительные, спокойные, выключены) масштабирует все длительности, системное «Убрать анимации» действует всегда.
+- Края списков: содержимое уходит под шапку и нижнюю панель; панели отбрасывают тень (`ScrollDepth`, закреплённый `SliverAppBar` с `scrolledUnderElevation`). Включается настройкой «Глубина прокрутки».
 - Цвета оценок, пропусков и лимитов: `ui/kit/foundation/ctx.dart`.
 
 ## Платформенная часть

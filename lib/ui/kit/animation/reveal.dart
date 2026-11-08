@@ -4,9 +4,6 @@ import 'package:material_ui/material_ui.dart';
 
 import 'motion.dart';
 
-/// Отключены ли анимации в системе (для виджетов, которые решают это один раз при создании).
-bool _systemReduceMotion() => WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations;
-
 /// Запоминает, какие записи (оценки, пропуски) появились уже после первого показа списка —
 /// именно они должны плавно «въезжать», а не все сразу при открытии страницы.
 class FreshTracker {
@@ -51,10 +48,10 @@ class _RevealState extends State<Reveal> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
     duration: Motion.long,
-    value: widget.animate && !_systemReduceMotion() ? 0.0 : 1.0,
+    value: widget.animate && !Motion.off ? 0.0 : 1.0,
   );
-  late final Animation<double> _size = _c.drive(CurveTween(curve: Motion.standard));
-  late final Animation<double> _fade = _c.drive(CurveTween(curve: const Interval(0.2, 1.0, curve: Curves.easeOut)));
+  late final Animation<double> _size = _c.drive(CurveTween(curve: Motion.decelerate));
+  late final Animation<double> _fade = _c.drive(CurveTween(curve: const Interval(0.15, 0.9, curve: Curves.easeOut)));
 
   @override
   void initState() {
@@ -79,16 +76,18 @@ class _RevealState extends State<Reveal> with SingleTickerProviderStateMixin {
 /// Плавно меняет размер блока, когда внутри появляется или исчезает содержимое.
 /// Внутренним элементам нужны разные [Key], чтобы смена была заметна.
 class Smooth extends StatelessWidget {
-  const Smooth({super.key, required this.child, this.duration = Motion.short});
+  const Smooth({super.key, required this.child, this.duration});
   final Widget child;
-  final Duration duration;
+
+  /// По умолчанию [Motion.short].
+  final Duration? duration;
 
   @override
   Widget build(BuildContext context) {
-    final d = context.motion(duration);
+    final d = context.motion(duration ?? Motion.short);
     return AnimatedSize(
       duration: d,
-      curve: Motion.standard,
+      curve: Motion.decelerate,
       alignment: Alignment.topCenter,
       child: AnimatedSwitcher(
         duration: d,
@@ -109,17 +108,19 @@ class Smooth extends StatelessWidget {
 /// Смена содержимого на месте (заголовок, подпись, текст кнопки): старое растворяется, новое проявляется
 /// и чуть всплывает. Размер блока не анимируется. Новому содержимому нужен другой [Key].
 class Swap extends StatelessWidget {
-  const Swap({super.key, required this.child, this.alignment = Alignment.centerLeft, this.duration = Motion.short});
+  const Swap({super.key, required this.child, this.alignment = Alignment.centerLeft, this.duration});
   final Widget child;
   final AlignmentGeometry alignment;
-  final Duration duration;
+
+  /// По умолчанию [Motion.short].
+  final Duration? duration;
 
   static final Tween<Offset> _rise = Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero);
 
   @override
   Widget build(BuildContext context) => AnimatedSwitcher(
-        duration: context.motion(duration),
-        switchInCurve: Motion.standard,
+        duration: context.motion(duration ?? Motion.short),
+        switchInCurve: Motion.decelerate,
         switchOutCurve: Curves.easeIn,
         transitionBuilder: (child, anim) => FadeTransition(
           opacity: anim,
@@ -144,8 +145,8 @@ class PopIn extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = child;
     return AnimatedSwitcher(
-      duration: context.motion(const Duration(milliseconds: 340)),
-      reverseDuration: context.motion(Motion.short),
+      duration: Motion.ms(340),
+      reverseDuration: Motion.short,
       switchInCurve: Motion.spring,
       switchOutCurve: Curves.easeInCubic,
       transitionBuilder: (child, anim) => ScaleTransition(
@@ -176,7 +177,7 @@ class AnimatedNumber extends StatelessWidget {
   Widget build(BuildContext context) => TweenAnimationBuilder<double>(
         tween: Tween<double>(end: value),
         duration: context.motion(Motion.long),
-        curve: Motion.standard,
+        curve: Motion.decelerate,
         builder: (context, v, _) => Text(format(v), style: style),
       );
 }
@@ -198,15 +199,17 @@ class Appear extends StatefulWidget {
 
 class _AppearState extends State<Appear> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(vsync: this, duration: Motion.long);
-  late final Animation<double> _fade = _c.drive(CurveTween(curve: Curves.easeOut));
+  late final Animation<double> _fade = _c.drive(CurveTween(curve: const Interval(0, 0.7, curve: Curves.easeOut)));
   late final Animation<Offset> _slide =
-      _c.drive(CurveTween(curve: Motion.standard)).drive(Tween<Offset>(begin: Offset(0, widget.offset), end: Offset.zero));
+      _c.drive(CurveTween(curve: Motion.decelerate)).drive(Tween<Offset>(begin: Offset(0, widget.offset), end: Offset.zero));
+  // Элемент чуть «подрастает» к своему размеру: к лёгкому подъёму добавляется ощущение глубины.
+  late final Animation<double> _scale = _c.drive(CurveTween(curve: Motion.decelerate)).drive(Tween<double>(begin: 0.97, end: 1));
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    if (_systemReduceMotion()) {
+    if (Motion.off) {
       _c.value = 1;
       return;
     }
@@ -214,7 +217,7 @@ class _AppearState extends State<Appear> with SingleTickerProviderStateMixin {
     if (step == 0) {
       _c.forward();
     } else {
-      _timer = Timer(Duration(milliseconds: 45 * step), () {
+      _timer = Timer(Motion.stagger * step, () {
         if (mounted) _c.forward();
       });
     }
@@ -228,8 +231,13 @@ class _AppearState extends State<Appear> with SingleTickerProviderStateMixin {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      FadeTransition(opacity: _fade, child: SlideTransition(position: _slide, child: widget.child));
+  Widget build(BuildContext context) => FadeTransition(
+        opacity: _fade,
+        child: SlideTransition(
+          position: _slide,
+          child: ScaleTransition(scale: _scale, alignment: Alignment.topCenter, child: widget.child),
+        ),
+      );
 }
 
 /// Лёгкое «вдавливание» при нажатии: элемент чуть уменьшается и пружинит обратно.

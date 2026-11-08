@@ -60,6 +60,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
   void _setCollapsed(bool v) {
     if (_collapsed == v) return;
     _collapsed = v;
+    _collapse.duration = Motion.medium;
     if (context.reduceMotion) {
       _collapse.value = v ? 1 : 0;
     } else {
@@ -138,7 +139,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     if ((idx - cur).abs() > 3 || context.reduceMotion) {
       _pc.jumpToPage(idx);
     } else {
-      _pc.animateToPage(idx, duration: Motion.medium, curve: Motion.standard);
+      _pc.animateToPage(idx, duration: Motion.page, curve: Motion.emphasized);
     }
   }
 
@@ -147,7 +148,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     final pos = _strip.position;
     final target = (index * _chipW + _chipW / 2 - pos.viewportDimension / 2).clamp(0.0, pos.maxScrollExtent).toDouble();
     if (animate && !context.reduceMotion) {
-      _strip.animateTo(target, duration: const Duration(milliseconds: 280), curve: Motion.standard);
+      _strip.animateTo(target, duration: Motion.ms(300), curve: Motion.decelerate);
     } else {
       _strip.jumpTo(target);
     }
@@ -173,7 +174,8 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
         child: PageTitle(
           relativeDay(_selected),
           key: ValueKey(ymd(_selected)),
-          subtitle: '${fullDate(_selected)}${_selected.weekday == DateTime.sunday ? '' : ' · ${weekdayName(_selected)}'}',
+          // День недели уже в заголовке, если там не «Сегодня», «Завтра» или «Вчера».
+          subtitle: dayDiff(_selected, today()).abs() <= 1 ? '${fullDate(_selected)} · ${weekdayName(_selected)}' : fullDate(_selected),
         ),
       ),
       actions: [
@@ -317,8 +319,8 @@ class _DayChip extends StatelessWidget {
         },
         child: Center(
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
+            duration: Motion.short,
+            curve: Motion.standard,
             width: 52,
             height: 78,
             decoration: BoxDecoration(
@@ -343,8 +345,8 @@ class _DayChip extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 AnimatedContainer(
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeOutCubic,
+                  duration: Motion.short,
+                  curve: Motion.standard,
                   width: 6,
                   height: 6,
                   decoration: BoxDecoration(

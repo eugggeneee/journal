@@ -77,7 +77,9 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: s.surface,
         surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
+        // Когда список заезжает под шапку, она приподнимается и отбрасывает мягкую тень.
+        scrolledUnderElevation: 3,
+        shadowColor: s.shadow,
         centerTitle: false,
       ),
       cardTheme: CardThemeData(

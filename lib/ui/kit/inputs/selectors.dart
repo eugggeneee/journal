@@ -31,6 +31,32 @@ class ThemeSelector extends StatelessWidget {
   }
 }
 
+/// Скорость анимаций: выразительные / спокойные / выключены.
+class MotionSelector extends StatelessWidget {
+  const MotionSelector({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = StoreScope.of(context);
+    return SizedBox(
+      width: double.infinity,
+      child: SegmentedButton<int>(
+        showSelectedIcon: false,
+        segments: const [
+          ButtonSegment(value: 0, label: Text('Полные')),
+          ButtonSegment(value: 1, label: Text('Спокойные')),
+          ButtonSegment(value: 2, label: Text('Нет')),
+        ],
+        selected: {store.settings.motion},
+        onSelectionChanged: (s) {
+          Haptics.selection();
+          store.setMotion(s.first);
+        },
+      ),
+    );
+  }
+}
+
 /// Сколько часов отмечается при быстром нажатии «пропустил».
 class HoursSelector extends StatelessWidget {
   const HoursSelector({super.key});

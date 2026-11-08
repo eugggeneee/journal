@@ -253,8 +253,7 @@ class _FadeInSliversState extends State<FadeInSlivers> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    final reduce = WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations;
-    if (reduce) {
+    if (Motion.off) {
       _c.value = 1;
     } else {
       _c.forward();

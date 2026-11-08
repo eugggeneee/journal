@@ -5,7 +5,7 @@ import '../../data/store.dart';
 import '../app/scope.dart';
 import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
-import '../kit/components/edge_fade.dart';
+import '../kit/components/scroll_depth.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
 import '../kit/inputs/selectors.dart';
@@ -54,7 +54,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     if (context.reduceMotion) {
       _pc.jumpToPage(p);
     } else {
-      _pc.animateToPage(p, duration: const Duration(milliseconds: 380), curve: Motion.standard);
+      _pc.animateToPage(p, duration: Motion.page, curve: Motion.emphasized);
     }
   }
 
@@ -133,10 +133,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   // ───────────── страницы ─────────────
 
-  /// Прокручиваемая страница: нижний край плавно растворяется, а не обрезается резкой линией.
-  Widget _scrolling(List<Widget> children, {double top = 24}) => EdgeFade(
-        top: 16,
-        bottom: 28,
+  /// Прокручиваемая страница: содержимое уходит под нижнюю панель с мягкой тенью, а не обрезается резкой линией.
+  Widget _scrolling(List<Widget> children, {double top = 24}) => ScrollDepth(
         child: ListView(padding: EdgeInsets.fromLTRB(24, top, 24, 28), children: children),
       );
 
@@ -154,7 +152,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           TweenAnimationBuilder<double>(
             tween: Tween<double>(begin: 0.55, end: 1),
-            duration: context.motion(const Duration(milliseconds: 1000)),
+            duration: Motion.ms(1000),
             curve: Curves.elasticOut,
             builder: (context, v, child) => Opacity(opacity: v.clamp(0.0, 1.0).toDouble(), child: Transform.scale(scale: v, child: child)),
             child: CookieIcon(icon: Icons.school_rounded, size: 156, bg: cs.primary, fg: cs.onPrimary),

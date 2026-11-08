@@ -63,7 +63,7 @@ class ProfilePage extends StatelessWidget {
       _Section(
         icon: Icons.tune_rounded,
         title: 'Поведение',
-        subtitle: s.haptics ? 'Виброотклик включён' : 'Виброотклик выключен',
+        subtitle: '${s.haptics ? 'Вибро включено' : 'Вибро выключено'} · ${const ['анимации полные', 'анимации спокойные', 'без анимаций'][s.motion]}',
         tone: Tone(cs.primaryContainer, cs.onPrimaryContainer),
         page: const BehaviorSettingsPage(),
       ),

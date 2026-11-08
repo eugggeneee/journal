@@ -418,6 +418,8 @@ class Settings {
     this.themeColor = 'auto',
     this.absenceHours = 2,
     this.haptics = true,
+    this.motion = 0,
+    this.depth = true,
     this.autoRefresh = true,
     Map<String, BellProfile>? bells,
     Map<String, String>? semesterSplits,
@@ -435,6 +437,8 @@ class Settings {
   String themeColor; // цветовая тема: 'auto' — подстраивается под систему (Material You), либо id из палитры
   int absenceHours; // сколько часов отмечать при быстром нажатии: 1 или 2
   bool haptics; // тактильная отдача
+  int motion; // анимации: 0 — выразительные, 1 — спокойные, 2 — выключены
+  bool depth; // тень под шапкой и над нижней панелью, когда список уходит под них
   bool autoRefresh; // подгружать расписание при запуске и возвращении в приложение
 
   /// Расписание звонков: 'week' (пн–пт) и 'sat' (суббота).
@@ -456,6 +460,8 @@ class Settings {
         'tc': themeColor,
         'ah': absenceHours,
         'hap': haptics,
+        'mot': motion,
+        'dep': depth,
         'auto': autoRefresh,
         'bells': {for (final e in bells.entries) e.key: e.value.toJson()},
         'sem': semesterSplits,
@@ -469,6 +475,7 @@ class Settings {
       final theme = _int(j['theme'], 0);
       final color = _str(j['tc']).trim();
       final hours = _int(j['ah'], 2);
+      final motion = _int(j['mot'], 0);
       return Settings(
         group: group,
         extraSubjects: ((j['extra'] as List?) ?? const []).map(_str).toList(),
@@ -478,6 +485,8 @@ class Settings {
         themeColor: color.isEmpty ? 'auto' : color,
         absenceHours: hours == 1 ? 1 : 2,
         haptics: j['hap'] is bool ? j['hap'] as bool : true,
+        motion: motion >= 0 && motion <= 2 ? motion : 0,
+        depth: j['dep'] is bool ? j['dep'] as bool : true,
         autoRefresh: j['auto'] is bool ? j['auto'] as bool : true,
         bells: {
           for (final e in Map<String, dynamic>.from((j['bells'] as Map?) ?? const {}).entries)

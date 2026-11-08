@@ -47,8 +47,9 @@ class LessonCard extends StatelessWidget {
     final base = isNow ? Tone(cs.primary, cs.onPrimary) : Tone(cs.primaryContainer, cs.onPrimaryContainer);
     final tone = absence == null ? base : absenceTone(context, excused: absence.excused);
     final title = slot.subjects.map(store.subjectName).join(' / ');
+    // Аудитория и преподаватель: каждая запись — отдельная строка, внутри неё части переносятся целиком.
     final lines = [
-      for (final e in slot.entries) [roomText(e.room), e.teacher].where((x) => x.isNotEmpty).join(' · '),
+      for (final e in slot.entries) [roomText(e.room), e.teacher].where((x) => x.isNotEmpty).toList(),
     ].where((x) => x.isNotEmpty).toList();
     // Идущая пара чуть плотнее окрашена, чтобы взгляд находил её сразу.
     final Color? cardColor = absence != null
@@ -56,6 +57,7 @@ class LessonCard extends StatelessWidget {
         : (isNow ? cs.primaryContainer.withValues(alpha: 0.5) : null);
     final ring = Color.alphaBlend(cardColor ?? cs.surfaceContainerLow, cs.surfaceContainerLow);
 
+    final hasBreak = bell?.hasBreak ?? false;
     return SegmentCard(
       index: 0,
       count: 1,
@@ -63,75 +65,81 @@ class LessonCard extends StatelessWidget {
       color: cardColor,
       onTap: () => showLessonSheet(context, date, slot),
       onLongPress: () => toggleLessonAbsence(context, store, date, slot),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 14, 2, 14),
-        child: Row(children: [
-          // Пропуск — плашка с цифрой на верхнем углу номера пары, пометка — на нижнем краю:
-          // размер карточки не меняется.
-          SizedBox(
-            width: 46,
-            height: 46,
-            child: Stack(clipBehavior: Clip.none, children: [
-              NumberBadge('${slot.number}', tone: tone, size: 46, round: false),
-              Positioned(
-                top: -7,
-                right: -7,
-                child: PopIn(
-                  token: absence == null ? null : '${absence.hours}-${absence.excused}',
-                  child: absence == null ? null : AbsenceBadge(hours: absence.hours, excused: absence.excused, ringColor: ring),
-                ),
-              ),
-              Positioned(
-                bottom: -9,
-                left: -8,
-                right: -8,
-                child: Center(
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(14, 14, 4, hasBreak ? 10 : 14),
+          child: Row(children: [
+            // Пропуск — плашка с цифрой на верхнем углу номера пары, пометка — на нижнем краю:
+            // размер карточки не меняется.
+            SizedBox(
+              width: 46,
+              height: 46,
+              child: Stack(clipBehavior: Clip.none, children: [
+                NumberBadge('${slot.number}', tone: tone, size: 46, round: false),
+                Positioned(
+                  top: -7,
+                  right: -7,
                   child: PopIn(
-                    token: mark?.label,
-                    child: mark == null ? null : MarkTag(label: mark.label, ringColor: ring),
+                    token: absence == null ? null : '${absence.hours}-${absence.excused}',
+                    child: absence == null ? null : AbsenceBadge(hours: absence.hours, excused: absence.excused, ringColor: ring),
                   ),
                 ),
-              ),
-            ]),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-              for (final l in lines)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(l, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                Positioned(
+                  bottom: -9,
+                  left: -8,
+                  right: -8,
+                  child: Center(
+                    child: PopIn(
+                      token: mark?.label,
+                      child: mark == null ? null : MarkTag(label: mark.label, ringColor: ring),
+                    ),
+                  ),
                 ),
-              if (bell != null && bell.hasBreak)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: _InnerBreak(bell: bell, active: isNow && _inBreak(bell)),
-                ),
-            ]),
-          ),
-          IconButton(
-            tooltip: absence == null ? 'Отметить пропуск' : 'Снять пропуск',
-            constraints: const BoxConstraints.tightFor(width: 44, height: 44),
-            padding: EdgeInsets.zero,
-            icon: AnimatedSwitcher(
-              duration: context.motion(Motion.short),
-              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
-              child: Icon(
-                absence == null ? Icons.event_busy_outlined : Icons.event_available_rounded,
-                key: ValueKey(absence != null),
-              ),
+              ]),
             ),
-            color: absence == null ? cs.onSurfaceVariant : tone.fg,
-            onPressed: () => toggleLessonAbsence(context, store, date, slot),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(title, maxLines: 3, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, height: 1.2)),
+                for (final parts in lines)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 3),
+                    child: Wrap(spacing: 10, children: [
+                      for (final p in parts) Text(p, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                    ]),
+                  ),
+              ]),
+            ),
+            IconButton(
+              tooltip: absence == null ? 'Отметить пропуск' : 'Снять пропуск',
+              constraints: const BoxConstraints.tightFor(width: 40, height: 44),
+              padding: EdgeInsets.zero,
+              icon: AnimatedSwitcher(
+                duration: context.motion(Motion.short),
+                switchInCurve: Motion.spring,
+                transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
+                child: Icon(
+                  absence == null ? Icons.event_busy_outlined : Icons.event_available_rounded,
+                  key: ValueKey(absence != null),
+                ),
+              ),
+              color: absence == null ? cs.onSurfaceVariant : tone.fg,
+              onPressed: () => toggleLessonAbsence(context, store, date, slot),
+            ),
+          ]),
+        ),
+        // Перерыв внутри пары занимает всю ширину карточки: время читается целиком.
+        if (bell != null && bell.hasBreak)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            child: _InnerBreak(bell: bell, active: isNow && _inBreak(bell)),
           ),
-        ]),
-      ),
+      ]),
     );
   }
 }
 
-/// Перерыв внутри пары: «Обед 12:35–12:40». Во время перерыва подсвечивается.
+/// Перерыв внутри пары: «Обед» слева и время справа на всю ширину карточки. Во время перерыва подсвечивается.
 class _InnerBreak extends StatelessWidget {
   const _InnerBreak({required this.bell, required this.active});
   final BellSlot bell;
@@ -146,18 +154,25 @@ class _InnerBreak extends StatelessWidget {
     return AnimatedContainer(
       duration: context.motion(Motion.medium),
       curve: Motion.standard,
-      padding: const EdgeInsets.fromLTRB(8, 4, 10, 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(bell.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded, size: 14, color: fg),
-        const SizedBox(width: 6),
-        Flexible(
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
+      child: Row(children: [
+        Icon(bell.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded, size: 16, color: fg),
+        const SizedBox(width: 8),
+        Expanded(
           child: Text(
-            '${word[0].toUpperCase()}${word.substring(1)} ${shortRange(bell.breakStart!, bell.breakEnd!)}',
+            '${word[0].toUpperCase()}${word.substring(1)}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: context.tt.labelMedium?.copyWith(color: fg, fontWeight: FontWeight.w700, fontFeatures: const [FontFeature.tabularFigures()]),
+            style: context.tt.labelLarge?.copyWith(color: fg, fontWeight: FontWeight.w700),
           ),
+        ),
+        Text(
+          shortRange(bell.breakStart!, bell.breakEnd!),
+          maxLines: 1,
+          softWrap: false,
+          style: context.tt.labelMedium?.copyWith(color: fg, fontWeight: FontWeight.w700, fontFeatures: const [FontFeature.tabularFigures()]),
         ),
       ]),
     );

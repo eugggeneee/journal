@@ -7,6 +7,7 @@ import '../../core/haptics.dart';
 import '../../data/store.dart';
 import '../../logic/limits.dart';
 import '../app/scope.dart';
+import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
@@ -121,7 +122,7 @@ class _Banner extends StatelessWidget {
           child: Row(children: [
             TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: 0.5, end: 1),
-              duration: const Duration(milliseconds: 650),
+              duration: Motion.ms(650),
               curve: Curves.elasticOut,
               builder: (context, v, child) => Transform.scale(scale: v, child: child),
               child: Container(
@@ -259,7 +260,7 @@ class LimitCard extends StatelessWidget {
               height: 62,
               child: TweenAnimationBuilder<double>(
                 tween: Tween<double>(end: limit == 0 ? 0 : hours / limit),
-                duration: const Duration(milliseconds: 800),
+                duration: Motion.ms(800),
                 curve: Curves.easeOutCubic,
                 builder: (context, v, _) => CustomPaint(
                   painter: _RingPainter(progress: v, color: accent, track: tone.fg.withValues(alpha: 0.14), stroke: 7),

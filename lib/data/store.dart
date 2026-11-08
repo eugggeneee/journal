@@ -340,6 +340,19 @@ class AppStore extends ChangeNotifier {
     _changed();
   }
 
+  /// Анимации: 0 — выразительные, 1 — спокойные, 2 — выключены.
+  void setMotion(int v) {
+    if (v == settings.motion || v < 0 || v > 2) return;
+    settings.motion = v;
+    _changed();
+  }
+
+  void setDepth(bool v) {
+    if (v == settings.depth) return;
+    settings.depth = v;
+    _changed();
+  }
+
   void setAutoRefresh(bool v) {
     if (v == settings.autoRefresh) return;
     settings.autoRefresh = v;
