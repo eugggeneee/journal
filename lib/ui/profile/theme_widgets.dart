@@ -106,7 +106,7 @@ class _ChoiceTile extends StatelessWidget {
               child: Stack(alignment: Alignment.center, clipBehavior: Clip.none, children: [
                 AnimatedContainer(
                   duration: Motion.ms(280),
-                  curve: Curves.easeOutCubic,
+                  curve: Motion.standard,
                   width: _size + 10,
                   height: _size + 10,
                   decoration: BoxDecoration(
@@ -118,7 +118,7 @@ class _ChoiceTile extends StatelessWidget {
                 AnimatedScale(
                   scale: sel ? 0.88 : 1.0,
                   duration: Motion.ms(280),
-                  curve: Curves.easeOutCubic,
+                  curve: Motion.standard,
                   child: SizedBox(width: _size, height: _size, child: item.visual),
                 ),
                 Positioned(
@@ -127,7 +127,7 @@ class _ChoiceTile extends StatelessWidget {
                   child: AnimatedScale(
                     scale: sel ? 1.0 : 0.0,
                     duration: Motion.ms(280),
-                    curve: Curves.easeOutBack,
+                    curve: Motion.spring,
                     child: Container(
                       width: 22,
                       height: 22,

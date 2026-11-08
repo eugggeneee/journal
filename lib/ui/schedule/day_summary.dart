@@ -35,42 +35,52 @@ class DaySummary extends StatelessWidget {
     final cs = context.cs;
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 4, 0, 14),
-      child: Row(children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(pairsText(pairs), maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-            // Высота строки постоянна: плашка с часами появляется на её месте и ничего не сдвигает.
-            SizedBox(
-              height: 26,
-              child: Row(children: [
-                AnimatedSize(
-                  duration: context.motion(Motion.short),
-                  curve: Motion.standard,
-                  alignment: Alignment.centerLeft,
-                  child: PopIn(
-                    token: hours,
-                    child: hours > 0
-                        ? Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Pill(hoursText(hours), tone: absenceTone(context, excused: false), icon: Icons.event_busy_rounded),
-                          )
-                        : null,
-                  ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // Заголовок и кнопка в одной строке; подпись ниже на всю ширину, поэтому время не обрезается.
+        Row(children: [
+          Expanded(
+            child: Text(pairsText(pairs), maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+          ),
+          const SizedBox(width: 8),
+          _WholeDaySplit(
+            allMarked: allMarked,
+            shortDay: shortDay,
+            onWholeDay: onWholeDay,
+            onShortDay: onShortDay,
+            onMark: onMark,
+          ),
+        ]),
+        const SizedBox(height: 8),
+        // Высота строки постоянна: плашка с часами появляется на её месте и ничего не сдвигает.
+        SizedBox(
+          height: 28,
+          child: Row(children: [
+            AnimatedSize(
+              duration: context.motion(Motion.short),
+              curve: Motion.standard,
+              alignment: Alignment.centerLeft,
+              child: PopIn(
+                token: hours,
+                child: hours > 0
+                    ? Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: Pill(hoursText(hours), tone: absenceTone(context, excused: false), icon: Icons.event_busy_rounded),
+                      )
+                    : null,
+              ),
+            ),
+            Expanded(
+              child: Swap(
+                child: Text(
+                  subtitle,
+                  key: ValueKey(subtitle),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
                 ),
-                Expanded(
-                  child: Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
-                ),
-              ]),
+              ),
             ),
           ]),
-        ),
-        const SizedBox(width: 8),
-        _WholeDaySplit(
-          allMarked: allMarked,
-          shortDay: shortDay,
-          onWholeDay: onWholeDay,
-          onShortDay: onShortDay,
-          onMark: onMark,
         ),
       ]),
     );
@@ -111,9 +121,14 @@ class _WholeDaySplit extends StatelessWidget {
           transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
           child: Icon(allMarked ? Icons.event_available_rounded : Icons.event_busy_rounded, key: ValueKey(allMarked), size: 20),
         ),
-        label: Swap(
-          alignment: Alignment.center,
-          child: Text(allMarked ? 'Снять день' : 'Весь день', key: ValueKey(allMarked)),
+        // Ширина кнопки меняется вместе с подписью плавно, а не рывком.
+        label: AnimatedSize(
+          duration: d,
+          curve: Motion.standard,
+          child: Swap(
+            alignment: Alignment.center,
+            child: Text(allMarked ? 'Снять день' : 'Весь день', key: ValueKey(allMarked)),
+          ),
         ),
         onPressed: onWholeDay,
       ),

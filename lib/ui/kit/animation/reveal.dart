@@ -91,8 +91,8 @@ class Smooth extends StatelessWidget {
       alignment: Alignment.topCenter,
       child: AnimatedSwitcher(
         duration: d,
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
+        switchInCurve: Motion.fadeIn,
+        switchOutCurve: Motion.fadeOut,
         transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: child),
         layoutBuilder: (current, previous) => Stack(
           alignment: Alignment.topCenter,
@@ -115,13 +115,13 @@ class Swap extends StatelessWidget {
   /// По умолчанию [Motion.short].
   final Duration? duration;
 
-  static final Tween<Offset> _rise = Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero);
+  static final Tween<Offset> _rise = Tween<Offset>(begin: const Offset(0, 0.16), end: Offset.zero);
 
   @override
   Widget build(BuildContext context) => AnimatedSwitcher(
         duration: context.motion(duration ?? Motion.short),
         switchInCurve: Motion.decelerate,
-        switchOutCurve: Curves.easeIn,
+        switchOutCurve: Motion.fadeOut,
         transitionBuilder: (child, anim) => FadeTransition(
           opacity: anim,
           child: SlideTransition(position: anim.drive(_rise), child: child),
@@ -151,8 +151,8 @@ class PopIn extends StatelessWidget {
       switchOutCurve: Curves.easeInCubic,
       transitionBuilder: (child, anim) => ScaleTransition(
         scale: anim,
-        // Кривая «с отскоком» выходит за 0…1, прозрачность ограничиваем отдельно.
-        child: FadeTransition(opacity: anim.drive(CurveTween(curve: const Interval(0.0, 0.6))), child: child),
+        // Кривая с пружинкой выходит за 0…1: для прозрачности значение сначала ограничивается.
+        child: FadeTransition(opacity: anim.clamped.drive(CurveTween(curve: const Interval(0.0, 0.6))), child: child),
       ),
       layoutBuilder: (current, previous) => Stack(
         alignment: Alignment.center,

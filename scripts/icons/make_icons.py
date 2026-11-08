@@ -3,7 +3,8 @@
 
 Запуск (нужны Pillow и numpy):  python3 scripts/icons/make_icons.py
 
-Рисунок строится в сетке 108 x 108 и целиком задан кодом, исходных картинок нет.
+Рисунок строится в сетке 108 x 108. «Тарелки» заданы кодом, колокольчик берётся из маски
+scripts/icons/bell.png (белое на чёрном: 255 — колокольчик), одной на все темы.
 Результат:
   assets/icon/icon.png, icon_ios.png    исходники для flutter_launcher_icons (тема «default»)
   assets/icons/<id>/ios.png             1024 x 1024, квадрат без прозрачности, светлый вариант iOS
@@ -13,6 +14,7 @@
   assets/icons/<id>/legacy.png          144 x 144, скруглённый значок для Android до 8.0
   assets/icons/layer_mono.png           одноцветный слой для «тематических значков» Android 13+
   assets/icons/preview/<id>.png         превью для экрана «Оформление»
+  assets/icons/bell.png                 колокольчик без фона для экрана приветствия (белый, прозрачный)
   assets/icons/icons.json               список id тем
 
 Адаптивный значок Android рисуется на холсте 108 dp, но лаунчер показывает центральные 72 dp
@@ -31,6 +33,7 @@ from PIL import Image, ImageDraw, ImageFilter
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SRC = os.path.join(ROOT, 'assets', 'icon')
 OUT = os.path.join(ROOT, 'assets', 'icons')
+BELL = os.path.join(ROOT, 'scripts', 'icons', 'bell.png')
 
 # id темы → оттенок (градусы). Совпадает с палитрой в lib/core/palette.dart (Material, оттенок 500).
 HUES = {
@@ -46,6 +49,8 @@ VISIBLE = 288           # видимая область 72 dp
 OFFSET = (CANVAS - VISIBLE) // 2
 CORNER = 23.6 / GRID    # скругление плитки (доля стороны)
 SS = 3                  # суперсэмплинг при отрисовке
+BELL_H = 60.0           # высота колокольчика в сетке 108 (вместе с ушком и язычком)
+BELL_CY = 54.0          # вертикальный центр колокольчика в сетке
 
 
 # ───────────────────────── цвета ─────────────────────────
@@ -83,18 +88,6 @@ def tinted_variant():
 
 # ───────────────────────── геометрия (сетка 108) ─────────────────────────
 
-def bez(p0, p1, p2, p3, n=48):
-    pts = []
-    for i in range(n + 1):
-        t = i / n
-        u = 1 - t
-        pts.append((
-            u ** 3 * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t ** 3 * p3[0],
-            u ** 3 * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t ** 3 * p3[1],
-        ))
-    return pts
-
-
 def lobe(cx, cy, r, n, amp, rot=0.0, steps=240):
     """Волнистый круг («печенье» Material 3 Expressive)."""
     pts = []
@@ -106,21 +99,25 @@ def lobe(cx, cy, r, n, amp, rot=0.0, steps=240):
     return pts
 
 
-def bell_body():
-    """Корпус колокольчика: круглый купол и мягко расходящаяся юбка со скруглённой кромкой."""
-    right = []
-    right += bez((54, 30), (62.4, 30), (68.6, 36.4), (68.6, 45))
-    right += bez((68.6, 45), (68.6, 53), (69, 57.6), (71.6, 62.0))[1:]
-    right += bez((71.6, 62.0), (73.6, 65.4), (77.4, 66.0), (79.2, 69.4))[1:]
-    right += bez((79.2, 69.4), (81.0, 72.4), (79.4, 74.4), (76.2, 74.4))[1:]
-    left = [(GRID - x, y) for x, y in reversed(right)]
-    return right + left
+def load_bell():
+    """Маска колокольчика (0…1). Лёгкое сглаживание убирает мелкие зазубрины исходной картинки."""
+    src = Image.open(BELL).convert('L')
+    sigma = 2.2
+    blurred = np.asarray(src.filter(ImageFilter.GaussianBlur(sigma)), dtype=np.float64) / 255.0
+    a = np.clip((blurred - 0.5) * 2.2 * sigma + 0.5, 0, 1)
+    return Image.fromarray((a * 255 + .5).astype(np.uint8), 'L')
 
 
-def arc_points(side):
-    """Короткая дуга «звука» с одной из сторон."""
-    pts = bez((22, 49.5), (19, 55), (19, 60.5), (22, 66))
-    return pts if side == 0 else [(GRID - x, y) for x, y in pts]
+def bell_layer(fr, src):
+    """Колокольчик нужного размера на холсте кадра: центр по горизонтали и BELL_CY по вертикали."""
+    h = BELL_H * fr.k
+    w = src.width * h / src.height
+    big = src.resize((max(1, round(w)), max(1, round(h))), Image.LANCZOS)
+    canvas = Image.new('L', (fr.px, fr.px), 0)
+    cx = fr.ox + GRID / 2 * fr.k
+    cy = fr.oy + BELL_CY * fr.k
+    canvas.paste(big, (round(cx - big.width / 2), round(cy - big.height / 2)))
+    return np.asarray(canvas, dtype=np.float64) / 255.0
 
 
 # ───────────────────────── растеризация ─────────────────────────
@@ -143,41 +140,17 @@ class Frame:
     def poly(self, d, pts):
         d.polygon([self.pt(p) for p in pts], fill=255)
 
-    def circle(self, d, cx, cy, r):
-        x, y = self.pt((cx, cy))
-        rr = r * self.k * SS
-        d.ellipse((x - rr, y - rr, x + rr, y + rr), fill=255)
-
-    def stroke(self, d, pts, width):
-        """Линия с круглыми концами и соединениями."""
-        pp = [self.pt(p) for p in pts]
-        w = width * self.k * SS
-        d.line(pp, fill=255, width=int(round(w)), joint='curve')
-        for x, y in (pp[0], pp[-1]):
-            d.ellipse((x - w / 2, y - w / 2, x + w / 2, y + w / 2), fill=255)
-
-    def finish(self, img, soften=0.0):
-        """Скругляет углы размытием с порогом (мягкий, «пухлый» контур) и сжимает до px."""
-        if soften > 0:
-            sigma = soften * self.k * SS
-            blurred = np.asarray(img.filter(ImageFilter.GaussianBlur(sigma)), dtype=np.float64) / 255.0
-            a = np.clip((blurred - 0.5) * 2.5 * sigma + 0.5, 0, 1)
-            img = Image.fromarray((a * 255 + .5).astype(np.uint8), 'L')
+    def finish(self, img):
+        """Сжимает суперсэмплированную маску до px."""
         return np.asarray(img.resize((self.px, self.px), Image.BOX), dtype=np.float64) / 255.0
 
 
-def masks(fr):
+def masks(fr, bell_src):
     """Покрытие трёх слоёв: внешняя «тарелка», внутренняя «тарелка», колокольчик."""
-    outer, inner, bell = fr.new(), fr.new(), fr.new()
+    outer, inner = fr.new(), fr.new()
     fr.poly(ImageDraw.Draw(outer), lobe(54, 54, 46, 12, 3.0))
     fr.poly(ImageDraw.Draw(inner), lobe(54, 54, 37, 9, 2.5))
-    d = ImageDraw.Draw(bell)
-    fr.poly(d, bell_body())
-    fr.circle(d, 54, 27.2, 4.4)    # ушко
-    fr.circle(d, 54, 79.0, 6.2)    # язычок
-    fr.stroke(d, arc_points(0), 6.0)
-    fr.stroke(d, arc_points(1), 6.0)
-    return fr.finish(outer), fr.finish(inner), fr.finish(bell, soften=0.9)
+    return fr.finish(outer), fr.finish(inner), bell_layer(fr, bell_src)
 
 
 def compose(stops, cap, m):
@@ -229,8 +202,9 @@ def build(icon_id, ios_masks, android_masks):
 
 
 def main():
-    ios_masks = masks(Frame(1024, 1024))
-    android_masks = masks(Frame(CANVAS, VISIBLE, OFFSET, OFFSET))
+    bell_src = load_bell()
+    ios_masks = masks(Frame(1024, 1024), bell_src)
+    android_masks = masks(Frame(CANVAS, VISIBLE, OFFSET, OFFSET), bell_src)
 
     ids = ['default', 'mono'] + list(HUES)
     os.makedirs(os.path.join(OUT, 'preview'), exist_ok=True)
@@ -256,6 +230,14 @@ def main():
     mono = Image.new('RGBA', (CANVAS, CANVAS), (0, 0, 0, 0))
     mono.putalpha(Image.fromarray((bell_layer * 255 + .5).astype(np.uint8), 'L'))
     mono.save(os.path.join(OUT, 'layer_mono.png'), optimize=True)
+    # колокольчик без фона для экрана приветствия: белый, форма в альфа-канале, окрашивается в коде
+    crop = bell_src.crop(bell_src.getbbox())
+    side = 512
+    h = side
+    w = round(crop.width * h / crop.height)
+    glyph = Image.new('RGBA', (w, h), (255, 255, 255, 0))
+    glyph.putalpha(crop.resize((w, h), Image.LANCZOS))
+    glyph.save(os.path.join(OUT, 'bell.png'), optimize=True)
     with open(os.path.join(OUT, 'icons.json'), 'w', encoding='utf-8') as f:
         json.dump(ids, f)
         f.write('\n')

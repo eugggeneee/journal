@@ -50,7 +50,6 @@ bash scripts/release/make-keystore.sh --gh
 4. Создать `.github/releases/vX.Y.Z.md`: строки вида `- что изменилось`, без заголовков и эмодзи, только факты для пользователя.
 5. Выполнить проверки:
    ```bash
-   python3 scripts/project/graph.py
    python3 scripts/project/check.py
    flutter analyze
    flutter test
@@ -94,4 +93,4 @@ gh attestation verify Journal-vX.Y.Z-android.apk --repo eugggeneee/journal
 ## Название и значки
 
 - Название приложения на устройстве: Journal (задаётся в workflow).
-- Исходники значка: `assets/icon/`, готовые значки тем: `assets/icons/` (генерируются `scripts/icons/make_icons.py`).
+- Рисунок колокольчика: `scripts/icons/bell.png`; готовые значки тем: `assets/icons/` и `assets/icon/` (генерируются `scripts/icons/make_icons.py`).

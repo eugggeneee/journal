@@ -5,7 +5,7 @@
 ## Проверка
 
 - [ ] `python3 scripts/project/check.py` проходит
-- [ ] `docs/GRAPH.md` обновлён (`python3 scripts/project/graph.py`), если менялись `lib/` или `test/`
+- [ ] Прочитаны правила из `AGENTS.md`, `python3 scripts/project/check.py` проходит
 - [ ] `flutter analyze` без новых замечаний
 - [ ] `flutter test` проходит
 - [ ] Строка в `CHANGELOG.md` добавлена, если меняется поведение

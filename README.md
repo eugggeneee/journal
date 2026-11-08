@@ -95,13 +95,13 @@ python3 scripts/project/check.py
 flutter run
 ```
 
-Папки `android/` и `ios/` не хранятся в репозитории: их создаёт `flutter create`. Идентификатор приложения: `eugggeneee.journal`. Если менялись файлы в `lib/` или `test/`, перед коммитом выполните `python3 scripts/project/graph.py`.
+Папки `android/` и `ios/` не хранятся в репозитории: их создаёт `flutter create`. Идентификатор приложения: `eugggeneee.journal`. Перед коммитом выполните `python3 scripts/project/check.py`.
 
 | Документ | Содержание |
 |---|---|
+| [AGENTS.md](AGENTS.md) | Обязательные правила для ИИ-ассистентов и автоматических инструментов |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Порядок работы и проверки перед коммитом |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Структура проекта, слои, данные |
-| [docs/GRAPH.md](docs/GRAPH.md) | Граф зависимостей (генерируется) |
 | [docs/STYLE.md](docs/STYLE.md) | Правила кода и интерфейса |
 | [docs/COMMITS.md](docs/COMMITS.md) | Формат коммитов |
 | [docs/VERSIONING.md](docs/VERSIONING.md) | Нумерация версий |

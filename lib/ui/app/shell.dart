@@ -253,7 +253,7 @@ class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
           duration: context.motion(Motion.short),
           switchInCurve: Motion.spring,
           switchOutCurve: Curves.easeIn,
-          transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
+          transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim.clamped, child: child)),
           child: _fab(context),
         ),
       ),

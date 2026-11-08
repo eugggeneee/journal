@@ -2,8 +2,6 @@
 
 Приложение на Flutter, интерфейс на Material 3 (пакет `material_ui`). Состояние в одном `ChangeNotifier`, данные локальные. Платформенные папки `android/` и `ios/` не хранятся: их создаёт `flutter create` (локально и в CI).
 
-Граф зависимостей: [GRAPH.md](GRAPH.md) (генерируется).
-
 ## Структура
 
 ```
@@ -16,11 +14,11 @@ journal/
     dependabot.yml, PULL_REQUEST_TEMPLATE.md
   assets/
     icon/               значок темы по умолчанию для flutter_launcher_icons
-    icons/              значки по темам: iOS (светлый, тёмный, тонированный), слои Android (генерируются scripts/icons/make_icons.py)
+    icons/              значки по темам: iOS (светлый, тёмный, тонированный), слои Android; bell.png для экрана приветствия (всё генерируется scripts/icons/make_icons.py)
   docs/
     logo.png            логотип для README
     ARCHITECTURE.md, COMMITS.md, PRERELEASES.md, RELEASING.md,
-    STYLE.md, TESTING.md, VERSIONING.md, GRAPH.md
+    STYLE.md, TESTING.md, VERSIONING.md
   lib/
     core/               даты, вибро, палитра тем, смена значка
     data/               models.dart (модели), store.dart (хранилище)
@@ -37,8 +35,8 @@ journal/
         sheets/         нижние шторки и диалоги
       schedule/ grades/ absences/ profile/ settings/ onboarding/   экраны
   scripts/
-    icons/              генерация и подключение значков тем
-    project/            check.py, graph.py, version.py
+    icons/              генерация и подключение значков тем; bell.png: маска колокольчика
+    project/            check.py, layers.py, version.py
     release/            make-keystore.sh
   test/
     data/ logic/ project/ fixtures/
@@ -58,7 +56,7 @@ journal/
 | экраны | всё, кроме `test` | |
 | `lib` | | `test` |
 
-Правила проверяет `scripts/project/graph.py --check` (входит в `check.py` и CI).
+Правила проверяет `scripts/project/check.py` (разбор импортов в `layers.py`; запускается и в CI).
 
 ## Данные
 

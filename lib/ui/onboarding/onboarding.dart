@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/haptics.dart';
@@ -152,10 +155,10 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           TweenAnimationBuilder<double>(
             tween: Tween<double>(begin: 0.55, end: 1),
-            duration: Motion.ms(1000),
-            curve: Curves.elasticOut,
+            duration: Motion.ms(900),
+            curve: Motion.spring,
             builder: (context, v, child) => Opacity(opacity: v.clamp(0.0, 1.0).toDouble(), child: Transform.scale(scale: v, child: child)),
-            child: CookieIcon(icon: Icons.school_rounded, size: 156, bg: cs.primary, fg: cs.onPrimary),
+            child: CookieIcon(size: 156, bg: cs.primary, glyph: _BellSwing(size: 84, color: cs.onPrimary)),
           ),
           const SizedBox(height: 36),
           Text('Journal', textAlign: TextAlign.center, style: context.tt.displaySmall?.copyWith(fontWeight: FontWeight.w800)),
@@ -451,4 +454,64 @@ class _Dots extends StatelessWidget {
       ]),
     );
   }
+}
+
+/// Колокольчик приветствия: после появления один раз «звонит» и затихает, по нажатию звонит снова.
+class _BellSwing extends StatefulWidget {
+  const _BellSwing({required this.size, required this.color});
+  final double size;
+  final Color color;
+
+  @override
+  State<_BellSwing> createState() => _BellSwingState();
+}
+
+class _BellSwingState extends State<_BellSwing> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: Motion.ms(1700));
+  Timer? _start;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!Motion.off) {
+      _start = Timer(Motion.ms(650), () {
+        if (mounted) _c.forward();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _start?.cancel();
+    _c.dispose();
+    super.dispose();
+  }
+
+  void _ring() {
+    Haptics.selection();
+    if (!Motion.off) _c.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _ring,
+        child: AnimatedBuilder(
+          animation: _c,
+          child: Image.asset(
+            'assets/icons/bell.png',
+            height: widget.size,
+            color: widget.color,
+            colorBlendMode: BlendMode.srcIn,
+            filterQuality: FilterQuality.medium,
+            excludeFromSemantics: true,
+          ),
+          builder: (context, child) {
+            final t = _c.value;
+            // Затухающее покачивание: амплитуда падает к нулю вместе с временем.
+            final angle = 0.34 * math.sin(t * math.pi * 5) * math.pow(1 - t, 2).toDouble();
+            return Transform.rotate(angle: angle, alignment: const Alignment(0, -0.75), child: child);
+          },
+        ),
+      );
 }

@@ -96,13 +96,13 @@ class _GradeFormState extends State<_GradeForm> {
     final details = [dayCaption(date), if (kind.isNotEmpty) kind].join(' · ');
     return AnimatedContainer(
       duration: Motion.ms(260),
-      curve: Curves.easeOutCubic,
+      curve: Motion.standard,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(28)),
       child: Row(children: [
         AnimatedContainer(
           duration: Motion.ms(260),
-          curve: Curves.easeOutCubic,
+          curve: Motion.standard,
           width: 72,
           height: 72,
           alignment: Alignment.center,

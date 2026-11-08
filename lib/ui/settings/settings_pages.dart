@@ -217,7 +217,7 @@ class AbsenceSettingsPage extends StatelessWidget {
             TweenAnimationBuilder<double>(
               tween: Tween<double>(end: hours / kSemesterLimit),
               duration: Motion.ms(500),
-              curve: Curves.easeOutCubic,
+              curve: Motion.standard,
               builder: (context, v, _) => Bar(
                 value: v,
                 color: hours >= kSemesterLimit ? absenceAccent(context, excused: false) : cs.primary,

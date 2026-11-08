@@ -123,7 +123,7 @@ class _Banner extends StatelessWidget {
             TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: 0.5, end: 1),
               duration: Motion.ms(650),
-              curve: Curves.elasticOut,
+              curve: Motion.spring,
               builder: (context, v, child) => Transform.scale(scale: v, child: child),
               child: Container(
                 width: 48,
@@ -261,7 +261,7 @@ class LimitCard extends StatelessWidget {
               child: TweenAnimationBuilder<double>(
                 tween: Tween<double>(end: limit == 0 ? 0 : hours / limit),
                 duration: Motion.ms(800),
-                curve: Curves.easeOutCubic,
+                curve: Motion.standard,
                 builder: (context, v, _) => CustomPaint(
                   painter: _RingPainter(progress: v, color: accent, track: tone.fg.withValues(alpha: 0.14), stroke: 7),
                   child: Center(

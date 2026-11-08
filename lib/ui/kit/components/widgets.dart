@@ -148,8 +148,11 @@ class SectionHeader extends StatelessWidget {
 /// Иконка в «печенье» — фирменная выразительная форма Material 3 Expressive.
 /// Цвета меняются плавно.
 class CookieIcon extends StatelessWidget {
-  const CookieIcon({super.key, required this.icon, this.size = 96, this.bg, this.fg});
-  final IconData icon;
+  const CookieIcon({super.key, this.icon, this.glyph, this.size = 96, this.bg, this.fg}) : assert(icon != null || glyph != null);
+
+  /// Значок Material; вместо него можно передать готовое изображение в [glyph].
+  final IconData? icon;
+  final Widget? glyph;
   final double size;
   final Color? bg;
   final Color? fg;
@@ -167,12 +170,13 @@ class CookieIcon extends StatelessWidget {
         color: bg ?? context.cs.primaryContainer,
         shape: const StarBorder(points: 10, innerRadiusRatio: 0.86, pointRounding: 0.55, valleyRounding: 0.4),
       ),
-      child: TweenAnimationBuilder<Color?>(
-        tween: ColorTween(end: iconColor),
-        duration: Motion.short,
-        curve: Motion.standard,
-        builder: (context, color, _) => Icon(icon, size: size * 0.42, color: color ?? iconColor),
-      ),
+      child: glyph ??
+          TweenAnimationBuilder<Color?>(
+            tween: ColorTween(end: iconColor),
+            duration: Motion.short,
+            curve: Motion.standard,
+            builder: (context, color, _) => Icon(icon, size: size * 0.42, color: color ?? iconColor),
+          ),
     );
   }
 }

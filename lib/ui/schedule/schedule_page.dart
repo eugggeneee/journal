@@ -36,7 +36,7 @@ class SchedulePage extends StatefulWidget {
   State<SchedulePage> createState() => _SchedulePageState();
 }
 
-class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver {
   static const _back = 120;
   static const _fwd = 90;
   static const _total = _back + _fwd + 1;
@@ -46,47 +46,6 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
   late PageController _pc = PageController(initialPage: _back);
   final ScrollController _strip = ScrollController();
   late DateTime _selected = _base;
-
-  // Прокрутка вниз прячет месяц и ленту дат (больше места под пары), прокрутка вверх возвращает их.
-  late final AnimationController _collapse = AnimationController(vsync: this, duration: Motion.medium);
-  late final Animation<double> _size = _collapse.drive(CurveTween(curve: Motion.emphasized)).drive(Tween<double>(begin: 1, end: 0));
-  late final Animation<double> _fade =
-      _collapse.drive(CurveTween(curve: const Interval(0, 0.6, curve: Curves.easeOut))).drive(Tween<double>(begin: 1, end: 0));
-  late final Animation<Offset> _lift =
-      _collapse.drive(CurveTween(curve: Motion.emphasized)).drive(Tween<Offset>(begin: Offset.zero, end: const Offset(0, -0.35)));
-  bool _collapsed = false;
-  double _acc = 0;
-
-  void _setCollapsed(bool v) {
-    if (_collapsed == v) return;
-    _collapsed = v;
-    _collapse.duration = Motion.medium;
-    if (context.reduceMotion) {
-      _collapse.value = v ? 1 : 0;
-    } else {
-      _collapse.animateTo(v ? 1 : 0);
-    }
-  }
-
-  /// Следит за вертикальной прокруткой дня: уходящий вниз список прячет ленту дат, возвращающийся — показывает.
-  bool _onScroll(ScrollNotification n) {
-    if (n.metrics.axis != Axis.vertical) return false;
-    final m = n.metrics;
-    if (n is ScrollUpdateNotification) {
-      final d = n.scrollDelta ?? 0;
-      if (d == 0 || m.pixels < 0 || m.pixels > m.maxScrollExtent) return false;
-      _acc = (d > 0) == (_acc > 0) ? _acc + d : d;
-      if (_acc > 14 && m.pixels > 48 && m.maxScrollExtent > 260 && m.maxScrollExtent - m.pixels > 80) {
-        _setCollapsed(true);
-      } else if (_acc < -10 || m.pixels <= 4) {
-        _setCollapsed(false);
-      }
-    } else if (n is ScrollEndNotification) {
-      _acc = 0;
-      if (m.pixels <= 4) _setCollapsed(false);
-    }
-    return false;
-  }
 
   DateTime _dateAt(int i) => addDays(_base, i - _back);
   int _indexOf(DateTime d) => (dayDiff(d, _base) + _back).clamp(0, _total - 1).toInt();
@@ -108,7 +67,6 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     WidgetsBinding.instance.removeObserver(this);
     _pc.dispose();
     _strip.dispose();
-    _collapse.dispose();
     super.dispose();
   }
 
@@ -188,7 +146,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
             duration: context.motion(Motion.short),
             switchInCurve: Motion.spring,
             switchOutCurve: Curves.easeIn,
-            transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
+            transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim.clamped, child: child)),
             child: isToday
                 ? const SizedBox.shrink(key: ValueKey('no-today'))
                 : IconButton(
@@ -245,7 +203,6 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
       itemCount: _total,
       onPageChanged: (i) {
         Haptics.selection();
-        _setCollapsed(false);
         setState(() => _selected = _dateAt(i));
         widget.controller.setSelected(_selected);
         _centerStrip(i);
@@ -259,35 +216,23 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     return ContentFrame(
       child: Column(children: [
         header,
-        // Месяц и лента дат плавно сворачиваются при прокрутке дня вниз.
-        SizeTransition(
-          sizeFactor: _size,
-          axisAlignment: -1,
-          child: FadeTransition(
-            opacity: _fade,
-            child: SlideTransition(
-              position: _lift,
-              child: Column(children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-                  child: Row(children: [
-                    Swap(
-                      child: Text(
-                        monthYear(_selected),
-                        key: ValueKey(monthYear(_selected)),
-                        style: context.tt.titleSmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    const Spacer(),
-                    Pill('Группа ${store.settings.group}', tone: Tone(cs.secondaryContainer, cs.onSecondaryContainer), icon: Icons.groups_rounded),
-                  ]),
-                ),
-                strip,
-              ]),
+        // Месяц и лента дат всегда на виду: прокрутка дня их не трогает.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+          child: Row(children: [
+            Swap(
+              child: Text(
+                monthYear(_selected),
+                key: ValueKey(monthYear(_selected)),
+                style: context.tt.titleSmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w700),
+              ),
             ),
-          ),
+            const Spacer(),
+            Pill('Группа ${store.settings.group}', tone: Tone(cs.secondaryContainer, cs.onSecondaryContainer), icon: Icons.groups_rounded),
+          ]),
         ),
-        Expanded(child: NotificationListener<ScrollNotification>(onNotification: _onScroll, child: pages)),
+        strip,
+        Expanded(child: pages),
       ]),
     );
   }

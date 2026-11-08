@@ -117,7 +117,7 @@ class LessonCard extends StatelessWidget {
               icon: AnimatedSwitcher(
                 duration: context.motion(Motion.short),
                 switchInCurve: Motion.spring,
-                transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
+                transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim.clamped, child: child)),
                 child: Icon(
                   absence == null ? Icons.event_busy_outlined : Icons.event_available_rounded,
                   key: ValueKey(absence != null),

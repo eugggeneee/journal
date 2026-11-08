@@ -3,8 +3,7 @@
 
   python3 scripts/project/check.py
 
-Проверяет: импорты Dart, правила слоёв, неиспользуемые файлы, актуальность docs/GRAPH.md,
-версию и заметки релиза, ссылки в Markdown, отсутствие эмодзи и мусора, пути скриптов в workflow.
+Проверяет: импорты Dart, правила слоёв, неиспользуемые файлы, версию и заметки релиза, ссылки в Markdown, отсутствие эмодзи и мусора, пути скриптов в workflow.
 """
 from __future__ import annotations
 
@@ -15,10 +14,10 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-import graph  # noqa: E402
+import layers  # noqa: E402
 import version  # noqa: E402
 
-ROOT = graph.ROOT
+ROOT = layers.ROOT
 SKIP_DIRS = {'.git', '.dart_tool', 'build', 'android', 'ios', 'node_modules'}
 TEXT_SUFFIXES = {'.md', '.yml', '.yaml', '.py', '.dart', '.sh', '.json', '.txt', '.gitignore', '.gitattributes', '.editorconfig'}
 EMOJI_RE = re.compile('[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF\uFE0F\u200D]')
@@ -44,14 +43,10 @@ def is_text(p: Path) -> bool:
 
 
 def check_dart() -> list[str]:
-    g = graph.imports()
-    out = [f'импорт не найден: {m}' for m in graph.missing_imports(g)]
-    out += [f'правило слоёв: {v}' for v in graph.violations(g)]
-    out += [f'файл нигде не используется: {o}' for o in graph.orphans(g)]
-    text = graph.render(g)
-    current = graph.OUT.read_text(encoding='utf-8') if graph.OUT.exists() else ''
-    if current != text:
-        out.append('docs/GRAPH.md устарел: python3 scripts/project/graph.py')
+    g = layers.imports()
+    out = [f'импорт не найден: {m}' for m in layers.missing_imports(g)]
+    out += [f'правило слоёв: {v}' for v in layers.violations(g)]
+    out += [f'файл нигде не используется: {o}' for o in layers.orphans(g)]
     return out
 
 
