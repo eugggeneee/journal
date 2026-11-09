@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Journal: дневник студента МГТЭК</title>
+<meta name="description" content="Расписание, оценки и пропуски в одном приложении. Android и iPhone, без рекламы и аккаунтов, работает офлайн.">
+<meta name="theme-color" content="#FBF8FF">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">К содержимому</a>
+<header class="top" id="top">
+  <div class="top-row">
+    <a class="brand" href="#hero" aria-label="Journal, в начало"><img src="assets/logo.png" width="40" height="40" alt=""><span>Journal</span></a>
+    <nav class="nav" id="nav" aria-label="Разделы">
+      <a href="#features">Возможности</a>
+      <a href="#screens">Экраны</a>
+      <a href="#themes">Темы</a>
+      <a href="#privacy">Приватность</a>
+      <a href="#download">Скачать</a>
+      <a href="#news">Что нового</a>
+      <a href="#faq">Вопросы</a>
+    </nav>
+    <div class="top-actions">
+      <button class="icon-btn" id="mode" type="button" aria-label="Светлая или тёмная тема"></button>
+      <a class="btn btn-fill top-cta" href="#download">Скачать</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+<section class="hero" id="hero">
+  <div class="hero-card">
+    <span class="blob b1" aria-hidden="true"></span><span class="blob b2" aria-hidden="true"></span><span class="blob b3" aria-hidden="true"></span>
+    <div class="hero-text">
+      <p class="chip-line"><span class="chip" id="verChip">Для студентов МГТЭК</span></p>
+      <h1>Всё учебное<br>в одном <em>дневнике</em></h1>
+      <p class="lead">Расписание, оценки и пропуски. Без рекламы, без аккаунтов, даже без интернета.</p>
+      <div class="cta">
+        <a class="btn btn-fill big" href="#download">Скачать бесплатно</a>
+        <a class="btn btn-tonal big" href="#screens">Посмотреть</a>
+      </div>
+      <ul class="facts">
+        <li><b>20</b><span>цветовых тем</span></li>
+        <li><b>0</b><span>рекламы</span></li>
+        <li><b>2</b><span>платформы</span></li>
+      </ul>
+    </div>
+    <div class="hero-phone" data-phone="0" data-tilt></div>
+  </div>
+</section>
+
+<section class="sec" id="features">
+  <p class="eyebrow">Возможности</p>
+  <h2>Всё, что нужно студенту</h2>
+  <div class="bento">
+    <article class="card c-sched rv">
+      <div class="ic" data-ic="cal"></div>
+      <h3>Расписание</h3>
+      <p>Пары на любую дату, время звонков, перерывы и обед. Идущая пара подсвечена, до конца остаётся столько-то минут. Загруженные дни открываются без интернета.</p>
+      <div class="mini-now"><span>Идёт сейчас</span><b>до конца 17 мин</b><i><u></u></i></div>
+    </article>
+    <article class="card c-grades rv">
+      <div class="ic" data-ic="star"></div>
+      <h3>Оценки</h3>
+      <p>Шкала 1-10, предмет, тип работы и заметка. Средний балл и динамика по каждому предмету.</p>
+      <div class="mini-bars" data-bars></div>
+    </article>
+    <article class="card c-abs rv">
+      <div class="ic" data-ic="busy"></div>
+      <h3>Пропуски</h3>
+      <p>Отметка у пары или на весь день, уважительная причина. Лимиты 10 часов в месяц и 72 в семестр с предупреждениями заранее.</p>
+      <div class="mini-limit"><span>За месяц</span><i><u style="--w:60%"></u></i><b>6 из 10</b></div>
+    </article>
+    <article class="card c-undo rv">
+      <div class="ic" data-ic="undo"></div>
+      <h3>Отмена любого действия</h3>
+      <p>Случайно отметили пропуск? Одно нажатие, и всё как было.</p>
+    </article>
+    <article class="card c-theme rv">
+      <div class="ic" data-ic="palette"></div>
+      <h3>Ваши цвета</h3>
+      <p>Светлая и тёмная темы, 20 цветовых тем со своим значком, цвета обоев на Android 12 и новее.</p>
+      <a class="btn btn-tonal" href="#themes">Попробовать на сайте</a>
+    </article>
+  </div>
+</section>
+
+<section class="sec" id="screens">
+  <p class="eyebrow">Экраны</p>
+  <h2>Выглядит ровно так</h2>
+  <div class="show">
+    <div class="show-side">
+      <div class="seg" id="seg" role="tablist" aria-label="Экран приложения"></div>
+      <div class="show-text" id="showText" aria-live="polite"></div>
+    </div>
+    <div class="show-phone" data-phone="0" data-main></div>
+  </div>
+</section>
+
+<section class="sec" id="themes">
+  <p class="eyebrow">Темы</p>
+  <h2>Выберите свой цвет</h2>
+  <p class="sub">Нажмите на значок: изменится весь сайт и экран телефона. В приложении то же самое.</p>
+  <div class="themes" id="themeGrid" role="radiogroup" aria-label="Цветовая тема"></div>
+</section>
+
+<section class="sec" id="privacy">
+  <p class="eyebrow">Приватность</p>
+  <h2>Ваши данные остаются у вас</h2>
+  <div class="trio">
+    <article class="card t1 rv"><div class="ic" data-ic="lock"></div><h3>Только на телефоне</h3><p>Оценки, пропуски и настройки хранятся на устройстве и никуда не отправляются.</p></article>
+    <article class="card t2 rv"><div class="ic" data-ic="noacc"></div><h3>Без аккаунтов</h3><p>Ни регистрации, ни входа, ни рекламы, ни аналитики. Открыли и пользуетесь.</p></article>
+    <article class="card t3 rv"><div class="ic" data-ic="offline"></div><h3>Работает офлайн</h3><p>Интернет нужен только чтобы загрузить расписание. Остальное доступно всегда.</p></article>
+  </div>
+</section>
+
+<section class="sec" id="download">
+  <p class="eyebrow">Скачать</p>
+  <h2>Установите за минуту</h2>
+  <div class="dl">
+    <article class="card dl-card dl-a rv">
+      <div class="ic" data-ic="android"></div>
+      <h3>Android</h3>
+      <ol><li>Скачайте файл</li><li>Откройте его</li><li>Разрешите установку из этого источника</li></ol>
+      <a class="btn btn-fill big" id="dlAndroid" href="https://github.com/eugggeneee/journal/releases/latest">Скачать для Android</a>
+      <p class="dl-meta" id="metaAndroid">Файл .apk</p>
+    </article>
+    <article class="card dl-card dl-i rv">
+      <div class="ic" data-ic="apple"></div>
+      <h3>iPhone и iPad</h3>
+      <ol><li>Скачайте файл</li><li>Установите через <a href="https://altstore.io" rel="noopener">AltStore</a> или <a href="https://sideloadly.io" rel="noopener">Sideloadly</a></li><li>AltStore продлевает подпись сам</li></ol>
+      <a class="btn btn-fill big" id="dlIos" href="https://github.com/eugggeneee/journal/releases/latest">Скачать для iPhone</a>
+      <p class="dl-meta" id="metaIos">Файл .ipa</p>
+    </article>
+  </div>
+  <p class="note">Приложение неофициальное. Расписание берётся с общедоступной страницы сайта колледжа и может отличаться от актуального.</p>
+</section>
+
+<section class="sec" id="news">
+  <p class="eyebrow">Что нового</p>
+  <h2>Последнее обновление</h2>
+  <div class="news" id="news" aria-live="polite"><div class="card news-card"><p class="sub">Загружаем данные с GitHub...</p></div></div>
+</section>
+
+<section class="sec" id="faq">
+  <p class="eyebrow">Вопросы</p>
+  <h2>Коротко о главном</h2>
+  <div class="faq">
+    <details class="card"><summary>Нужен ли интернет?</summary><p>Только для загрузки расписания. Уже загруженные дни, оценки и пропуски доступны без сети.</p></details>
+    <details class="card"><summary>Почему расписание может отличаться от актуального?</summary><p>Приложение читает общедоступную страницу сайта колледжа и не является официальным. Если колледж изменил расписание после загрузки, данные в приложении устареют.</p></details>
+    <details class="card"><summary>Почему на iPhone приложение нужно переподписывать?</summary><p>Бесплатный Apple ID даёт подпись на 7 дней. AltStore продлевает её автоматически.</p></details>
+    <details class="card"><summary>Как не потерять данные при смене телефона?</summary><p>Перед переездом сделайте резервную копию через буфер обмена: данные хранятся только на устройстве.</p></details>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <div class="foot-card">
+    <div class="brand"><img src="assets/logo.png" width="40" height="40" alt=""><span>Journal</span></div>
+    <p>Дневник студента МГТЭК. Открытый код под лицензией MIT.</p>
+    <p class="links"><a href="https://github.com/eugggeneee/journal" rel="noopener">GitHub</a><a href="https://github.com/eugggeneee/journal/releases" rel="noopener">Все релизы</a><a href="https://github.com/eugggeneee/journal/issues" rel="noopener">Сообщить об ошибке</a></p>
+  </div>
+</footer>
+<script src="palette.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

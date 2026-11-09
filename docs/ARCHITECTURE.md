@@ -7,7 +7,7 @@
 ```
 journal/
   .github/
-    workflows/          ci.yml, release.yml, setup-signing.yml
+    workflows/          ci.yml, release.yml, setup-signing.yml, site.yml (публикация сайта)
     releases/           vX.Y.Z.md: текст релиза стабильной версии
     ISSUE_TEMPLATE/     шаблоны issue
     release-notes.md    шаблон оформления релиза
@@ -18,7 +18,7 @@ journal/
   docs/
     logo.png            логотип для README
     ARCHITECTURE.md, COMMITS.md, PRERELEASES.md, RELEASING.md,
-    STYLE.md, TESTING.md, VERSIONING.md
+    SITE.md, STYLE.md, TESTING.md, VERSIONING.md
   lib/
     core/               даты, вибро, палитра тем, смена значка
     data/               models.dart (модели), store.dart (хранилище)
@@ -36,8 +36,10 @@ journal/
       schedule/ grades/ absences/ profile/ settings/ onboarding/   экраны
   scripts/
     icons/              генерация и подключение значков тем; bell.png: маска колокольчика
-    project/            check.py, layers.py, version.py
+    project/            check.py, layers.py, site_check.py, version.py
+    site/               build.py (сборка сайта), make_palette.py (палитра темы для сайта)
     release/            make-keystore.sh
+  site/                 сайт приложения: index.html, styles.css, app.js, palette.js (создаётся скриптом)
   test/
     data/ logic/ project/ fixtures/
   CHANGELOG.md, CONTRIBUTING.md, AGENTS.md, SECURITY.md, README.md, LICENSE

@@ -5,7 +5,8 @@
 # Journal
 
 Дневник студента МГТЭК: расписание, оценки и пропуски.<br>
-Android и iOS. Без рекламы и аккаунтов, работает офлайн.
+Android и iOS. Без рекламы и аккаунтов, работает офлайн.<br>
+Сайт: [eugggeneee.github.io/journal](https://eugggeneee.github.io/journal/)
 
 [![Релиз](https://img.shields.io/github/v/release/eugggeneee/journal?include_prereleases&style=flat-square&labelColor=1E1F25&color=BEC3FF)](https://github.com/eugggeneee/journal/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/eugggeneee/journal/ci.yml?branch=main&style=flat-square&labelColor=1E1F25&label=CI)](https://github.com/eugggeneee/journal/actions/workflows/ci.yml)
@@ -108,6 +109,7 @@ flutter run
 | [docs/RELEASING.md](docs/RELEASING.md) | Выпуск релиза и ключ подписи |
 | [docs/PRERELEASES.md](docs/PRERELEASES.md) | Тестовые версии |
 | [docs/TESTING.md](docs/TESTING.md) | Автоматические и ручные проверки |
+| [docs/SITE.md](docs/SITE.md) | Сайт приложения: что на нём показано и как его обновлять |
 | [SECURITY.md](SECURITY.md) | Сообщения об уязвимостях |
 | [CHANGELOG.md](CHANGELOG.md) | История изменений |
 
