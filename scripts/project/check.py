@@ -3,7 +3,7 @@
 
   python3 scripts/project/check.py
 
-Проверяет: импорты Dart, правила слоёв, неиспользуемые файлы, версию и заметки релиза, ссылки в Markdown, отсутствие эмодзи и мусора, пути скриптов в workflow.
+Проверяет: сайт (site/) на соответствие приложению, импорты Dart, правила слоёв, неиспользуемые файлы, версию и заметки релиза, ссылки в Markdown, отсутствие эмодзи и мусора, пути скриптов в workflow.
 """
 from __future__ import annotations
 
@@ -16,10 +16,11 @@ sys.path.insert(0, str(HERE))
 
 import layers  # noqa: E402
 import version  # noqa: E402
+import site_check  # noqa: E402
 
 ROOT = layers.ROOT
 SKIP_DIRS = {'.git', '.dart_tool', 'build', 'android', 'ios', 'node_modules'}
-TEXT_SUFFIXES = {'.md', '.yml', '.yaml', '.py', '.dart', '.sh', '.json', '.txt', '.gitignore', '.gitattributes', '.editorconfig'}
+TEXT_SUFFIXES = {'.html', '.css', '.js', '.md', '.yml', '.yaml', '.py', '.dart', '.sh', '.json', '.txt', '.gitignore', '.gitattributes', '.editorconfig'}
 EMOJI_RE = re.compile('[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF\uFE0F\u200D]')
 JUNK_NAMES = {'.DS_Store', 'Thumbs.db', 'pubspec.lock', '.metadata'}
 JUNK_SUFFIXES = ('.orig', '.rej', '.bak', '.tmp', '.swp', '.pyc', '.jks', '.keystore', '.p12', '.log')
@@ -123,6 +124,7 @@ def main() -> int:
         ('Ссылки', check_markdown_links()),
         ('Workflow', check_workflows()),
         ('Идентификатор пакета', check_package_id()),
+        ('Сайт', site_check.check()),
     ]
     failed = False
     for title, problems in sections:
