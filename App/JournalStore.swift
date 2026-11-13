@@ -58,6 +58,7 @@ final class JournalStore {
                 }
             }
         } catch {
+            folder = nil
             errorMessage = "Не удалось открыть хранилище: \(error.localizedDescription)"
         }
     }
@@ -148,7 +149,11 @@ final class JournalStore {
         case .page(let page):
             let schedule = Schedule(day: day, group: group, lessons: page.lessons(for: group))
             let stored = change("Расписание обновлено", undoable: false) { $0.cache(schedule) }
-            states[key] = schedule.lessons.isEmpty ? .empty("Занятий нет", "На опубликованной странице для группы \(group) пар нет.") : .ready(stored ? "Обновлено · \(Date().formatted(date: .omitted, time: .shortened))" : "Не удалось сохранить обновление")
+            guard stored else {
+                states[key] = saved == nil ? .empty("Не удалось сохранить расписание", "Проверьте свободное место на iPhone и попробуйте снова.") : .ready("Не удалось записать обновление — показано сохранённое расписание.")
+                return
+            }
+            states[key] = schedule.lessons.isEmpty ? .empty("Занятий нет", "На опубликованной странице для группы \(group) пар нет.") : .ready("Обновлено · \(Date().formatted(date: .omitted, time: .shortened))")
         case .rest: states[key] = .empty("Выходной", "В этот день занятий нет.")
         case .unpublished:
             states[key] = saved != nil ? .ready("На сайте нет актуальной страницы — показано сохранённое") : .empty("Расписание пока отсутствует", day < Day() ? "Этот день не был сохранён. Колледж удаляет старые расписания с сайта." : "Колледж публикует ближайшие дни постепенно. Потяните вниз, чтобы проверить ещё раз.")
