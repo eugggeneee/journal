@@ -6,6 +6,7 @@ struct AbsencesView: View {
     @State private var mode = 0
     @State private var filter = 0
     @State private var editor: EditorRoute?
+    @State private var subjectEditor: EditorRoute?
     @State private var semesterSettings = false
     @State private var selectedSubject: String?
     private var absences: [Absence] {
@@ -78,16 +79,16 @@ struct AbsencesView: View {
         .sheet(isPresented: $semesterSettings) { NavigationStack { SemesterSettingsView() } }
         .sheet(isPresented: Binding(get: { selectedSubject != nil }, set: { if !$0 { selectedSubject = nil } })) {
             NavigationStack {
-                List { ForEach(absences.filter { $0.subject == selectedSubject }) { item in absenceRow(item) } }
+                List { ForEach(absences.filter { $0.subject == selectedSubject }) { item in absenceRow(item, nested: true) } }
                     .navigationTitle(selectedSubject == "" ? "Без предмета" : store.data.name(for: selectedSubject ?? ""))
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Готово") { selectedSubject = nil } } }
-                    .sheet(item: $editor) { EditorSheet(route: $0) }
+                    .sheet(item: $subjectEditor) { EditorSheet(route: $0) }
             }
         }
     }
-    private func absenceRow(_ item: Absence) -> some View {
-        Button { editor = .absence(item) } label: {
+    private func absenceRow(_ item: Absence, nested: Bool = false) -> some View {
+        Button { if nested { subjectEditor = .absence(item) } else { editor = .absence(item) } } label: {
             HStack(spacing: 14) {
                 Image(systemName: item.excused ? "checkmark.shield" : "person.crop.circle.badge.minus").font(.title2).foregroundStyle(item.excused ? Color.blue : .orange).frame(width: 40).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {

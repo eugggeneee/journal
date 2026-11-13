@@ -9,6 +9,7 @@ struct BellsView: View {
     @State private var generator = false
     @State private var loaded = false
     @State private var clearConfirmation = false
+    @State private var discardConfirmation = false
     init(initial: BellKind = .weekdays) { _kind = State(initialValue: initial) }
     private var profile: BellProfile { drafts[kind.rawValue] ?? BellProfile() }
     private var hasChanges: Bool { drafts != store.data.settings.bells }
@@ -67,12 +68,19 @@ struct BellsView: View {
             }
         }
         .navigationTitle("Звонки").navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Готово") { if !hasChanges || save() { dismiss() } }.disabled(error != nil) } }
+        .navigationBarBackButtonHidden(hasChanges)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) { Button("Готово") { if !hasChanges || save() { dismiss() } }.disabled(error != nil) }
+            if hasChanges { ToolbarItem(placement: .cancellationAction) { Button("Отмена") { discardConfirmation = true } } }
+        }
         .onAppear { if !loaded { drafts = store.data.settings.bells; loaded = true } }
         .interactiveDismissDisabled(hasChanges)
         .sheet(isPresented: $generator) { BellGenerator { drafts[kind.rawValue] = $0 } }
         .confirmationDialog("Очистить звонки для «\(kind.title)»?", isPresented: $clearConfirmation, titleVisibility: .visible) {
             Button("Очистить профиль", role: .destructive) { drafts.removeValue(forKey: kind.rawValue) }
+        }
+        .confirmationDialog("Отменить изменения звонков?", isPresented: $discardConfirmation, titleVisibility: .visible) {
+            Button("Не сохранять изменения", role: .destructive) { drafts = store.data.settings.bells; dismiss() }
         }
     }
     private func preset(_ title: String, detail: String, value: BellProfile) -> some View {
