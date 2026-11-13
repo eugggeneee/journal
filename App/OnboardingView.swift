@@ -8,6 +8,7 @@ struct OnboardingView: View {
     var completed: () -> Void
     @State private var groupPicker = false
     @State private var bells = false
+    @State private var setup = false
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -26,33 +27,15 @@ struct OnboardingView: View {
                         feature("chart.bar.fill", "Всё по порядку", "Плотное расписание, понятные показатели и привычные элементы iOS.")
                         feature("externaldrive.fill", "Ваши записи с вами", "Оценки и пропуски хранятся на iPhone. Полную копию можно сохранить в «Файлы».")
                     }
-                    if firstRun || !validGroup(store.data.settings.group) {
-                        VStack(spacing: 0) {
-                            Button { groupPicker = true } label: {
-                                HStack {
-                                    Label(validGroup(store.data.settings.group) ? "Группа выбрана" : "Выбрать группу", systemImage: "person.2.fill")
-                                    Spacer()
-                                    Image(systemName: validGroup(store.data.settings.group) ? "checkmark" : "chevron.right")
-                                }.frame(minHeight: 50).contentShape(Rectangle())
-                            }.accessibilityIdentifier("onboarding-group")
-                            Divider()
-                            Button { bells = true } label: {
-                                HStack { Label("Настроить звонки", systemImage: "clock.fill"); Spacer(); Image(systemName: "chevron.right") }
-                                    .frame(minHeight: 50).contentShape(Rectangle())
-                            }
-                        }.padding(.horizontal, 16)
-                            .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12))
-                    }
                     Text("Неофициальное приложение МГТЭК. Источник расписания — сайт колледжа. Личные записи остаются на вашем устройстве.")
                         .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 }.padding(.horizontal, 28).padding(.bottom, 20)
             }
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 4) {
-                    Button { finish() } label: {
-                        Text(firstRun ? "Начать" : "Продолжить").font(.body.bold()).frame(maxWidth: .infinity).frame(minHeight: 44)
+                    Button { if firstRun || !validGroup(store.data.settings.group) { setup = true } else { finish() } } label: {
+                        Text("Продолжить").font(.body.bold()).frame(maxWidth: .infinity).frame(minHeight: 44)
                     }.buttonStyle(.borderedProminent).controlSize(.large)
-                        .disabled(firstRun && !validGroup(store.data.settings.group))
                         .accessibilityIdentifier("welcome-continue")
                     if firstRun {
                         Button("Настроить позже") { finish() }.frame(minHeight: 44)
@@ -62,9 +45,39 @@ struct OnboardingView: View {
                     .background(Color(uiColor: .systemBackground))
             }
             .background(Color(uiColor: .systemBackground))
-            .navigationDestination(isPresented: $groupPicker) { GroupPicker(embedded: true) }
-            .navigationDestination(isPresented: $bells) { BellsView() }
+            .navigationDestination(isPresented: $setup) { setupView }
         }
+    }
+    private var setupView: some View {
+        Form {
+            Section {
+                Button { groupPicker = true } label: {
+                    HStack {
+                        Label("Группа", systemImage: "person.2.fill")
+                        Spacer()
+                        Text(validGroup(store.data.settings.group) ? store.data.settings.group : "Выбрать").foregroundStyle(.secondary)
+                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                    }.frame(minHeight: 44)
+                }.accessibilityIdentifier("onboarding-group")
+            } header: { Text("Ваше расписание") } footer: {
+                Text("Выберите группу из списка колледжа или введите её номер. Личные оценки и пропуски сохранятся при смене группы.")
+            }
+            Section {
+                Button { bells = true } label: {
+                    HStack { Label("Звонки", systemImage: "clock.fill"); Spacer(); Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary) }.frame(minHeight: 44)
+                }
+            } footer: { Text("Проверьте выбранное время занятий. Звонки можно изменить в настройках в любой момент.") }
+        }
+        .navigationTitle("Настройка Journal").navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Позже") { finish() } } }
+        .safeAreaInset(edge: .bottom) {
+            Button { finish() } label: { Text("Начать").font(.body.bold()).frame(maxWidth: .infinity).frame(minHeight: 44) }
+                .buttonStyle(.borderedProminent).controlSize(.large)
+                .disabled(!validGroup(store.data.settings.group)).accessibilityIdentifier("setup-start")
+                .padding(24).background(Color(uiColor: .systemGroupedBackground))
+        }
+        .navigationDestination(isPresented: $groupPicker) { GroupPicker(embedded: true) }
+        .navigationDestination(isPresented: $bells) { BellsView() }
     }
     private func finish() {
         if store.change("Начальная настройка завершена", undoable: false, { $0.settings.onboarded = true }) {

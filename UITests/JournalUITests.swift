@@ -58,16 +58,19 @@ final class JournalUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--demo", "--welcome"]
         app.launch()
-        let chooseGroup = app.buttons["onboarding-group"]
-        XCTAssertTrue(chooseGroup.waitForExistence(timeout: 15))
+        let next = app.buttons["welcome-continue"]
+        XCTAssertTrue(next.waitForExistence(timeout: 15))
         capture("04-welcome", app)
-        if !chooseGroup.isHittable { app.scrollViews.firstMatch.swipeUp() }
+        next.tap()
+        let chooseGroup = app.buttons["onboarding-group"]
+        XCTAssertTrue(chooseGroup.waitForExistence(timeout: 5))
+        XCTAssertTrue(chooseGroup.isHittable)
         chooseGroup.tap()
         XCTAssertTrue(app.navigationBars["Ваша группа"].waitForExistence(timeout: 5))
         let group = app.descendants(matching: .any).matching(identifier: "group-option-1234").firstMatch
         XCTAssertTrue(group.waitForExistence(timeout: 5))
         group.tap()
-        let start = app.buttons["welcome-continue"]
+        let start = app.buttons["setup-start"]
         XCTAssertTrue(start.waitForExistence(timeout: 5))
         XCTAssertTrue(start.isEnabled)
         start.tap()
