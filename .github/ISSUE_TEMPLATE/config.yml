@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Помощь с установкой
+    url: https://github.com/eugggeneee/journal/blob/main/docs/INSTALL.md
+    about: Установка через AltStore Classic и обновление подписи
+  - name: Сообщить об уязвимости конфиденциально
+    url: https://github.com/eugggeneee/journal/security/advisories/new
+    about: Не публикуйте секреты и личные данные в Issues

@@ -168,7 +168,7 @@ struct ScheduleView: View {
                             }
                         }
                         if let note = store.data.note(day, lesson: lesson.number) { Label(note.title, systemImage: "note.text").font(.subheadline.weight(.medium)).foregroundStyle(.orange) }
-                        if let absence { Label("\(absence.hours) ч · \(absence.excused ? "уважительная" : "без уважительной")", systemImage: "person.crop.circle.badge.minus").font(.caption).foregroundStyle(absence.excused ? .secondary : .red) }
+                        if let absence { Label("\(absence.hours) ч · \(absence.excused ? "уважительная" : "без уважительной")", systemImage: "person.crop.circle.badge.minus").font(.caption).foregroundStyle(absence.excused ? Color.secondary : Color.red) }
                     }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
                 }.buttonStyle(.plain).accessibilityLabel("\(lesson.number)-я пара. \(lesson.entries.map { store.data.name(for: $0.subject) }.joined(separator: ", ")). \(bell.map { timeText($0.start) + "–" + timeText($0.end) } ?? "Время не задано"). Подробнее")
                 Menu {

@@ -1,0 +1,17 @@
+name: Предложение
+description: Идея для Journal
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Что сейчас неудобно?
+      description: Опишите реальную ситуацию и желаемый результат.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Ваше предложение
+    validations:
+      required: true

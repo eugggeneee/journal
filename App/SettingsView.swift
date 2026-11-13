@@ -65,12 +65,12 @@ struct SemesterSettingsView: View {
     private var canSplit: Bool { !semester.notStarted && semester.number == 1 && Day() > semester.start }
     var body: some View {
         Form {
-            Section("Этот учебный год") {
+            Section {
                 Text(semester.notStarted ? "Каникулы · с 1 сентября" : semester.title).font(.headline)
                 Text("\(semester.start.formatted("d MMMM yyyy")) — \(semester.end.formatted("d MMMM yyyy"))").foregroundStyle(.secondary)
                 Button(semester.number == 2 ? "Вернуть первый семестр" : "Завершить первый семестр") { confirmation = true }
                     .disabled(semester.number != 2 && !canSplit)
-            } footer: { Text("При завершении второй семестр начинается сегодня. Старые пропуски остаются в журнале. Действие можно отменить.") }
+            } header: { Text("Этот учебный год") } footer: { Text("При завершении второй семестр начинается сегодня. Старые пропуски остаются в журнале. Действие можно отменить.") }
             Section("Месяц · неуважительные часы") {
                 Stepper("Лимит: \(limits.month) ч", value: $limits.month, in: 1...1000)
                 Stepper("Предупреждать с \(limits.monthWarning) ч", value: $limits.monthWarning, in: 0...max(0, limits.month - 1))

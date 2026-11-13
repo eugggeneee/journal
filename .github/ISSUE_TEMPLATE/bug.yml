@@ -1,0 +1,32 @@
+name: Ошибка
+description: Что-то работает неправильно
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: 'Не прикладывайте пароли, полные резервные копии или личные данные.'
+  - type: input
+    id: version
+    attributes:
+      label: Версии Journal и iOS, модель iPhone
+      placeholder: 'Journal 1.0.0-beta.1, iOS 26.2, iPhone 15'
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Что вы сделали?
+      description: Перечислите шаги, чтобы ошибку можно было повторить.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Что произошло и что ожидалось?
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Дополнительно
+      description: Скриншот без личных данных или текст ошибки, если есть.

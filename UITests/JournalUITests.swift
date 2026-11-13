@@ -19,7 +19,7 @@ final class JournalUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Отменить"].waitForExistence(timeout: 5))
         app.buttons["Отменить"].tap()
         app.tabBars.buttons["Пропуски"].tap()
-        XCTAssertTrue(app.staticTexts["За месяц"].waitForExistence(timeout: 5) || app.otherElements.matching(NSPredicate(format: "label CONTAINS %@", "За месяц")).firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "За месяц")).firstMatch.waitForExistence(timeout: 5))
         app.buttons["settings-button"].tap()
         XCTAssertTrue(app.navigationBars["Настройки"].waitForExistence(timeout: 5))
         app.buttons["Готово"].tap()
