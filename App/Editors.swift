@@ -37,8 +37,8 @@ struct GradeEditor: View {
         Form {
             Section {
                 HStack(alignment: .center, spacing: 20) {
-                    Text("\(grade.value)").font(.system(.largeTitle, design: .rounded, weight: .bold)).foregroundStyle(JournalStyle.gradeColor(grade.value))
-                    VStack(alignment: .leading, spacing: 4) { Text(grade.subject.isEmpty ? "Новая оценка" : store.data.name(for: grade.subject)).font(.headline); Text(grade.day.formatted("d MMMM yyyy")).font(.subheadline).foregroundStyle(.secondary) }
+                    Text("\(grade.value)").font(.largeTitle.bold()).foregroundStyle(JournalStyle.gradeColor(grade.value))
+                    VStack(alignment: .leading, spacing: 4) { Text(grade.subject.isEmpty ? "Новая оценка" : store.data.name(for: grade.subject)).font(.headline.bold()); Text(grade.day.formatted("d MMMM yyyy")).font(.subheadline).foregroundStyle(.secondary) }
                 }.padding(.vertical, 8)
                 Stepper("Оценка: \(grade.value)", value: $grade.value, in: 1...10).accessibilityIdentifier("grade-value")
                 SubjectField(subject: $grade.subject, day: grade.day)
@@ -172,7 +172,7 @@ struct LessonDetail: View {
             }
             ForEach(Array(lesson.entries.enumerated()), id: \.offset) { _, entry in
                 Section(lesson.entries.count > 1 ? "Вариант занятия" : "Занятие") {
-                    Text(store.data.name(for: entry.subject)).font(.headline)
+                    Text(store.data.name(for: entry.subject)).font(.headline.bold())
                     if !entry.room.isEmpty { LabeledContent("Аудитория", value: entry.room) }
                     if !entry.teacher.isEmpty { LabeledContent("Преподаватель", value: entry.teacher) }
                     Button("Добавить оценку", systemImage: "plus.circle") { editor = .grade(Grade(day: day, subject: entry.subject)) }

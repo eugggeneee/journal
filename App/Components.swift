@@ -2,32 +2,12 @@ import SwiftUI
 import JournalCore
 
 enum JournalStyle {
+    static let accent = Color("AccentColor")
     static let page = Color(uiColor: .systemGroupedBackground)
     static let surface = Color(uiColor: .secondarySystemGroupedBackground)
-    static let warm = Color.orange
+    static let warm = accent
     static func gradeColor(_ value: Int) -> Color {
         switch value { case 1...3: .red; case 4...5: .orange; case 6...7: .blue; default: .green }
-    }
-}
-
-struct Surface<Content: View>: View {
-    var padding: CGFloat = 20
-    @ViewBuilder var content: Content
-    var body: some View {
-        content.padding(padding).frame(maxWidth: .infinity, alignment: .leading)
-            .background(JournalStyle.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-    }
-}
-
-struct SectionHeading: View {
-    let title: String
-    var detail: String? = nil
-    var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(title).font(.title3.weight(.bold)).foregroundStyle(.primary)
-            Spacer()
-            if let detail { Text(detail).font(.subheadline).foregroundStyle(.secondary) }
-        }.padding(.top, 8).accessibilityAddTraits(.isHeader)
     }
 }
 
@@ -36,23 +16,17 @@ struct EmptyCard: View {
     let detail: String
     var symbol = "calendar.badge.clock"
     var body: some View {
-        Surface {
-            VStack(alignment: .leading, spacing: 16) {
-                Image(systemName: symbol).font(.system(size: 36, weight: .light)).foregroundStyle(.orange).accessibilityHidden(true)
-                Text(title).font(.title2.bold())
-                Text(detail).font(.body).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            }.padding(.vertical, 12)
-        }
+        ContentUnavailableView(title, systemImage: symbol, description: Text(detail))
     }
 }
 
 struct GradeBadge: View {
     let value: Int
     var body: some View {
-        Text("\(value)").font(.title3.weight(.bold).monospacedDigit())
-            .foregroundStyle(JournalStyle.gradeColor(value))
-            .frame(minWidth: 48, minHeight: 48)
-            .background(JournalStyle.gradeColor(value).opacity(0.12), in: RoundedRectangle(cornerRadius: 16))
+        Text("\(value)").font(.body.bold().monospacedDigit())
+            .foregroundStyle(.primary)
+            .frame(width: 36, height: 36)
+            .background(JournalStyle.gradeColor(value).opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
             .accessibilityLabel("Оценка \(value)")
     }
 }
@@ -121,8 +95,12 @@ struct GroupPicker: View {
     @State private var groups: [String] = []
     @State private var message: String?
     @State private var busy = true
+    var embedded = false
     var body: some View {
-        NavigationStack {
+        if embedded { picker }
+        else { NavigationStack { picker.toolbar { ToolbarItem(placement: .cancellationAction) { Button("Закрыть") { dismiss() } } } } }
+    }
+    private var picker: some View {
             List {
                 if busy { HStack { ProgressView(); Text("Ищем группы на сайте…") } }
                 if let message { Section { Text(message).foregroundStyle(.secondary); Button("Повторить") { Task { await fetch() } }.disabled(busy) } }
@@ -130,7 +108,7 @@ struct GroupPicker: View {
                     ForEach(groups.filter { query.isEmpty || $0.contains(query) }, id: \.self) { group in
                         Button { select(group) } label: {
                             HStack { Text(group).foregroundStyle(.primary); Spacer(); if group == store.data.settings.group { Image(systemName: "checkmark") } }
-                        }.frame(minHeight: 44)
+                        }.frame(minHeight: 44).accessibilityIdentifier("group-option-\(group)")
                     }
                 }
                 if validGroup(query) && !groups.contains(query) { Button("Использовать группу \(query)") { select(query) }.frame(minHeight: 44) }
@@ -139,17 +117,8 @@ struct GroupPicker: View {
             .searchable(text: $query, prompt: "Номер группы")
             .onChange(of: query) { _, value in query = String(value.filter { $0.isASCII && $0.isNumber }.prefix(5)) }
             .navigationTitle("Ваша группа")
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Закрыть") { dismiss() } } }
             .task { await fetch() }
-        }
     }
     private func select(_ group: String) { store.chooseGroup(group); if store.data.settings.group == group { dismiss() } }
     private func fetch() async { busy = true; defer { busy = false }; let result = await store.groups(); groups = result.groups; message = result.message }
-}
-
-extension View {
-    @ViewBuilder func journalGlass() -> some View {
-        if #available(iOS 26.0, *) { self.glassEffect(.regular, in: .capsule) }
-        else { self.background(.regularMaterial, in: Capsule()) }
-    }
 }

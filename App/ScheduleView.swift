@@ -4,7 +4,6 @@ import JournalCore
 struct ScheduleView: View {
     @Environment(JournalStore.self) private var store
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var day = Day()
     @State private var lastToday = Day()
     @State private var datePicker = false
@@ -14,67 +13,69 @@ struct ScheduleView: View {
     @State private var wholeDayReason = false
     @State private var wholeDayConfirmation = false
     private var schedule: Schedule? { store.data.schedule(day) }
-    private var title: String {
-        if day == Day() { return "Сегодня" }
-        if day == Day().adding(1) { return "Завтра" }
-        if day == Day().adding(-1) { return "Вчера" }
-        return day.formatted("EEEE").capitalized
-    }
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 16) {
+        List {
+            Section {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(day.formatted("d MMMM · EEEE")).font(.subheadline).foregroundStyle(.secondary)
+                    Text(day.formatted("EEEE, d MMMM")).font(.subheadline).foregroundStyle(.secondary)
                     Spacer(minLength: 8)
-                    Button { groupPicker = true } label: { Text(store.data.settings.group).font(.subheadline.weight(.semibold)).padding(.horizontal, 14).frame(minHeight: 44).journalGlass() }
+                    Button { groupPicker = true } label: { Text(store.data.settings.group.isEmpty ? "Выбрать группу" : store.data.settings.group).font(.subheadline.weight(.bold)).frame(minHeight: 44) }
                         .accessibilityLabel("Группа \(store.data.settings.group). Сменить группу")
                 }
-                dateStrip
-                if let note = store.data.note(day) { noteCard(note) }
+                dateStrip.listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
                 if let schedule, !schedule.lessons.isEmpty, !day.isSunday, !day.isVacation {
                     summary(schedule)
-                    if day == Day() {
+                }
+            }
+                if let note = store.data.note(day) { Section { noteCard(note) } }
+                if day == Day(), let schedule, !schedule.lessons.isEmpty, !day.isSunday, !day.isVacation {
+                    Section {
                         TimelineView(.periodic(from: .now, by: 30)) { timeline in
-                            if let phase = DayPhase.current(schedule: schedule, profile: store.data.profile(day), minute: Day.minute(at: store.displayTime(timeline.date))) {
-                                NowCard(phase: phase, schedule: schedule)
+                            let minute = Day.minute(at: store.displayTime(timeline.date))
+                            if let phase = DayPhase.current(schedule: schedule, profile: store.data.profile(day), minute: minute) {
+                                NowCard(phase: phase, schedule: schedule, minute: minute)
                             }
                         }
                     }
-                    SectionHeading(title: "Пары", detail: "\(schedule.lessons.count) \(plural(schedule.lessons.count, "пара", "пары", "пар"))")
+                }
+                if let schedule, !schedule.lessons.isEmpty, !day.isSunday, !day.isVacation {
+                    Section("Занятия · \(schedule.lessons.count) \(plural(schedule.lessons.count, "пара", "пары", "пар"))") {
                     ForEach(Array(schedule.lessons.enumerated()), id: \.element.id) { index, lesson in
                         lessonCard(lesson)
                         if index + 1 < schedule.lessons.count { breakLabel(after: lesson, next: schedule.lessons[index + 1]) }
                     }
-                    switch store.state(day) {
+                    }
+                    Section { switch store.state(day) {
                     case .ready(let status): Text(status).font(.footnote).foregroundStyle(.secondary)
                     case .empty(_, let message): Text(message).font(.footnote).foregroundStyle(.secondary)
                     case .loading: ProgressView("Обновляем расписание…")
-                    }
+                    } }.listRowBackground(Color.clear)
                 } else {
-                    switch store.state(day) {
-                    case .loading: Surface { HStack(spacing: 12) { ProgressView(); Text("Загружаем расписание…").foregroundStyle(.secondary) }.padding(.vertical, 24) }
+                    Section { switch store.state(day) {
+                    case .loading: HStack(spacing: 12) { ProgressView(); Text("Загружаем расписание…").foregroundStyle(.secondary) }.padding(.vertical, 12)
                     case .empty(let title, let message):
                         EmptyCard(title: title, detail: message, symbol: day.isSunday || day.isVacation ? "sun.max" : "calendar.badge.clock")
                     case .ready: EmptyCard(title: "Занятий нет", detail: "Для выбранной группы на этот день пар нет.", symbol: "sun.max")
                     }
                     if !day.isSunday && !day.isVacation { Button("Проверить ещё раз", systemImage: "arrow.clockwise") { Task { await store.load(day, force: true) } }.frame(minHeight: 44) }
-                    if day.isSunday { weeklySummary }
+                    }
+                    if day.isSunday { Section { weeklySummary } }
                     if let next = nextSaved {
                         Button { day = next.day } label: {
-                            Surface { HStack { VStack(alignment: .leading, spacing: 4) { Text("Дальше · \(next.day.formatted())").font(.headline); Text("\(next.lessons.count) \(plural(next.lessons.count, "пара", "пары", "пар"))").foregroundStyle(.secondary) }; Spacer(); Image(systemName: "arrow.right") } }
+                            HStack { VStack(alignment: .leading, spacing: 4) { Text("Дальше · \(next.day.formatted())").font(.headline.bold()); Text("\(next.lessons.count) \(plural(next.lessons.count, "пара", "пары", "пар"))").foregroundStyle(.secondary) }; Spacer(); Image(systemName: "arrow.right") }
                         }.foregroundStyle(.primary)
                     }
                 }
-                ForEach(store.data.notes.filter { note in note.day == day && note.lesson > 0 && !(schedule?.lessons.contains { $0.number == note.lesson } ?? false) }) { note in noteCard(note) }
+                Section { ForEach(store.data.notes.filter { note in note.day == day && note.lesson > 0 && !(schedule?.lessons.contains { $0.number == note.lesson } ?? false) }) { note in noteCard(note) }
                 if store.data.note(day) == nil {
                     Button("Пометка на день", systemImage: "note.text.badge.plus") { editor = .note(DayNote(day: day)) }.frame(minHeight: 44)
                 }
-                Text("Время занятий — по Минску").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity).padding(.top, 8)
-            }.padding(.horizontal, 20).padding(.bottom, 24)
+                } footer: { Text("Время занятий — по Минску") }
         }
-        .background(JournalStyle.page)
-        .navigationTitle(title)
+        .listStyle(.insetGrouped)
+        .listSectionSpacing(.compact)
+        .navigationTitle("Расписание")
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if day != Day() { Button("Сегодня") { day = Day() } }
@@ -113,18 +114,19 @@ struct ScheduleView: View {
     private var dateStrip: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal) {
-                LazyHStack(spacing: 6) {
+                LazyHStack(spacing: 2) {
                     ForEach((-120...90).map { Day().adding($0) }) { date in
                         Button { day = date } label: {
-                            VStack(spacing: 8) {
-                                Text(date.formatted("EE").uppercased()).font(.caption2.weight(.semibold))
-                                Text("\(date.number)").font(.title3.weight(.semibold).monospacedDigit())
-                                Circle().fill(store.data.notes.contains { $0.day == date } || store.data.absences.contains { $0.day == date } ? (day == date ? Color(uiColor: .systemBackground) : Color.primary) : Color.clear).frame(width: 4, height: 4)
+                            VStack(spacing: 4) {
+                                Text(date.formatted("EE").uppercased()).font(.caption2.weight(.bold))
+                                Text("\(date.number)").font(.body.bold().monospacedDigit())
+                                    .frame(width: 36, height: 36)
+                                    .foregroundStyle(day == date ? Color.white : Color.primary)
+                                    .background(day == date ? Color.red : Color.clear, in: Circle())
+                                Circle().fill(store.data.notes.contains { $0.day == date } || store.data.absences.contains { $0.day == date } ? Color.primary : Color.clear).frame(width: 4, height: 4)
                             }
-                            .foregroundStyle(day == date ? Color(uiColor: .systemBackground) : date.isSunday ? .secondary : .primary)
-                            .frame(minWidth: 46, minHeight: 82)
-                            .background(day == date ? Color.primary : Color.clear, in: Capsule())
-                            .overlay(Capsule().strokeBorder(date == Day() && date != day ? Color.orange : .clear, lineWidth: 1.5))
+                            .foregroundStyle(date == Day() ? Color.red : Color.secondary)
+                            .frame(minWidth: 44, minHeight: 72)
                         }
                         .buttonStyle(.plain).id(date)
                         .accessibilityLabel(date.formatted("EEEE d MMMM"))
@@ -143,7 +145,7 @@ struct ScheduleView: View {
         return HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 4) {
                 if let first = slots.first, let last = slots.last { Text("\(timeText(first.start)) — \(timeText(last.end))").font(.title2.weight(.bold).monospacedDigit()) }
-                else { Button("Добавить время пар", systemImage: "clock") { bells = true }.font(.headline).frame(minHeight: 44) }
+                else { Button("Добавить время пар", systemImage: "clock") { bells = true }.font(.headline.bold()).frame(minHeight: 44) }
                 if missed > 0 { Text("Пропущено \(missed) \(plural(missed, "час", "часа", "часов"))").font(.subheadline).foregroundStyle(.secondary) }
             }
             Spacer()
@@ -152,29 +154,27 @@ struct ScheduleView: View {
                 Button("Весь день · по уважительной") { requestWholeDay(schedule, excused: true) }
                 Button("Снять все пропуски дня", role: .destructive) { _ = store.change("Пропуски дня сняты") { data in data.absences.removeAll { $0.day == day } } }
                 Button("Сокращённый день", systemImage: "clock.badge.checkmark") { editor = .note(DayNote(day: day, kind: .shortened)) }
-            } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44).journalGlass() }.accessibilityLabel("Действия со всем днём")
+            } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }.accessibilityLabel("Действия со всем днём")
         }.padding(.vertical, 8)
     }
     private func lessonCard(_ lesson: Lesson) -> some View {
         let bell = store.data.profile(day).bell(lesson.number)
         let absence = store.data.absence(day, lesson: lesson.number)
-        return Surface(padding: 16) {
-            let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16)) : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
-            layout {
-                VStack(spacing: 6) {
-                    Text("\(lesson.number)").font(.title2.weight(.semibold).monospacedDigit()).foregroundStyle(.orange)
-                    if let bell { Text(timeText(bell.start)).font(.caption.weight(.medium).monospacedDigit()); Text(timeText(bell.end)).font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
+        return HStack(alignment: .top, spacing: 12) {
+                VStack(spacing: 4) {
+                    Text("\(lesson.number)").font(.headline.bold().monospacedDigit()).foregroundStyle(.secondary)
+                    if let bell { Text(timeText(bell.start)).font(.caption.weight(.regular).monospacedDigit()); Text(timeText(bell.end)).font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
                 }.frame(minWidth: 44).accessibilityHidden(true)
                 Button { editor = .lesson(day, lesson) } label: {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 10) {
                         ForEach(Array(lesson.entries.enumerated()), id: \.offset) { _, entry in
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(store.data.name(for: entry.subject)).font(.headline).foregroundStyle(.primary).fixedSize(horizontal: false, vertical: true)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(store.data.name(for: entry.subject)).font(.headline.bold()).foregroundStyle(.primary).fixedSize(horizontal: false, vertical: true)
                                 if !entry.room.isEmpty { Label(entry.room.contains(where: \.isNumber) ? "ауд. \(entry.room)" : entry.room, systemImage: "door.left.hand.open").font(.subheadline).foregroundStyle(.secondary) }
                                 if !entry.teacher.isEmpty { Text(entry.teacher).font(.subheadline).foregroundStyle(.secondary) }
                             }
                         }
-                        if let note = store.data.note(day, lesson: lesson.number) { Label(note.title, systemImage: "note.text").font(.subheadline.weight(.medium)).foregroundStyle(.orange) }
+                        if let note = store.data.note(day, lesson: lesson.number) { Label(note.title, systemImage: "note.text").font(.subheadline.weight(.regular)).foregroundStyle(JournalStyle.accent) }
                         if let absence { Label("\(absence.hours) ч · \(absence.excused ? "уважительная" : "без уважительной")", systemImage: "person.crop.circle.badge.minus").font(.caption).foregroundStyle(absence.excused ? Color.secondary : Color.red) }
                     }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
                 }.buttonStyle(.plain).accessibilityLabel("\(lesson.number)-я пара. \(lesson.entries.map { store.data.name(for: $0.subject) }.joined(separator: ", ")). \(bell.map { timeText($0.start) + "–" + timeText($0.end) } ?? "Время не задано"). Подробнее")
@@ -192,27 +192,26 @@ struct ScheduleView: View {
                     }
                 } label: { Image(systemName: absence == nil ? "person.crop.circle.badge.minus" : "checkmark.circle.fill").font(.title3).foregroundStyle(absence == nil ? Color.secondary : .orange).frame(width: 44, height: 44) }
                     .accessibilityLabel(absence == nil ? "Отметить пропуск \(lesson.number)-й пары" : "Изменить или снять пропуск \(lesson.number)-й пары")
-            }
-        }
+        }.padding(.vertical, 5)
     }
     @ViewBuilder private func breakLabel(after lesson: Lesson, next: Lesson) -> some View {
         let profile = store.data.profile(day)
         if let a = profile.bell(lesson.number), let b = profile.bell(next.number), b.start > a.end {
             Label("\(next.number - lesson.number > 1 ? "Окно" : profile.lunchAfter == lesson.number ? "Обед" : "Перерыв") · \(durationText(b.start - a.end))", systemImage: next.number - lesson.number > 1 ? "clock" : "cup.and.saucer")
-                .font(.caption).foregroundStyle(.secondary).padding(.leading, 72)
+                .font(.caption).foregroundStyle(.secondary).padding(.leading, 56)
         }
     }
     private func noteCard(_ note: DayNote) -> some View {
         Button { editor = .note(note) } label: {
-            HStack { Label(note.title, systemImage: note.kind == .shortened ? "clock.badge.checkmark" : "note.text").font(.subheadline.weight(.semibold)); Spacer(); Image(systemName: "chevron.right").font(.caption) }
-                .padding(16).frame(maxWidth: .infinity, alignment: .leading).background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 18))
+            HStack { Label(note.title, systemImage: note.kind == .shortened ? "clock.badge.checkmark" : "note.text").font(.subheadline.weight(.bold)); Spacer(); Image(systemName: "chevron.right").font(.caption) }
+                .frame(minHeight: 44)
         }.foregroundStyle(.primary)
     }
     private var nextSaved: Schedule? { store.data.schedules.filter { $0.group == store.data.settings.group && $0.day > day && $0.day <= day.adding(7) && !$0.lessons.isEmpty }.sorted { $0.day < $1.day }.first }
     private var weeklySummary: some View {
         let lessons = store.data.schedules.filter { $0.group == store.data.settings.group && $0.day >= day.adding(-6) && $0.day <= day }.reduce(0) { $0 + $1.lessons.count }
         let hours = store.data.absences.filter { $0.day >= day.adding(-6) && $0.day <= day }.reduce(0) { $0 + $1.hours }
-        return Surface { VStack(alignment: .leading, spacing: 8) { Text("Неделя позади").font(.headline); Text("\(lessons) \(plural(lessons, "пара", "пары", "пар")) в сохранённом расписании · \(hours == 0 ? "без пропусков" : "пропущено \(hours) ч")").foregroundStyle(.secondary) } }
+        return VStack(alignment: .leading, spacing: 8) { Text("Неделя позади").font(.headline.bold()); Text("\(lessons) \(plural(lessons, "пара", "пары", "пар")) в сохранённом расписании · \(hours == 0 ? "без пропусков" : "пропущено \(hours) ч")").foregroundStyle(.secondary) }
     }
     private func quickAbsence(_ lesson: Lesson, entry: LessonEntry, excused: Bool) { _ = store.save(Absence(day: day, lesson: lesson.number, subject: entry.subject, hours: store.data.settings.absenceHours, excused: excused)) }
     private func requestWholeDay(_ schedule: Schedule, excused: Bool) {
@@ -231,33 +230,57 @@ struct ScheduleView: View {
 
 struct NowCard: View {
     @Environment(JournalStore.self) private var store
-    @Environment(\.dynamicTypeSize) private var typeSize
     let phase: DayPhase
     let schedule: Schedule
+    let minute: Int
+    private var bell: Bell? { phase.lesson.flatMap { store.data.profile(schedule.day).bell($0) } }
+    private var lesson: Lesson? { schedule.lessons.first { $0.number == phase.lesson } }
+    private var pause: Int? { bell?.nextBreakStart(at: minute) }
+    private var onInternalBreak: Bool {
+        guard let a = bell?.breakStart, let b = bell?.breakEnd else { return false }
+        return minute >= a && minute < b
+    }
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack { Label(phase.title, systemImage: phase.isFinished ? "checkmark.circle" : "clock").font(.subheadline.weight(.semibold)); Spacer() }
-            if phase.isFinished { Text("Хорошего отдыха.").font(.title3.weight(.semibold)) }
-            else {
-                let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4)) : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 8))
-                layout {
-                    Text(durationText(phase.minutes)).font(.largeTitle.weight(.bold).monospacedDigit())
-                    Text("осталось").font(.subheadline)
-                }
-                if let number = phase.lesson, let entry = schedule.lessons.first(where: { $0.number == number })?.entries.first {
-                    Text(store.data.name(for: entry.subject)).font(.headline).fixedSize(horizontal: false, vertical: true)
-                }
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                Label(phase.title, systemImage: phase.isFinished ? "checkmark.circle.fill" : onInternalBreak ? "cup.and.saucer.fill" : "clock.fill")
+                    .font(.body.bold()).foregroundStyle(JournalStyle.accent)
+                Spacer(minLength: 8)
+                Text(timeText(minute)).font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
             }
-            if !phase.isFinished { Text(phase.detail).font(.subheadline) }
-            if !phase.isFinished { ProgressView(value: phase.progress).tint(.primary).accessibilityLabel("Прогресс текущего периода") }
-        }
-        .foregroundStyle(Color(uiColor: .label))
-        .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemGroupedBackground))
-                .overlay { RoundedRectangle(cornerRadius: 28).fill(LinearGradient(colors: [.orange.opacity(0.34), .yellow.opacity(0.15), .orange.opacity(0.08)], startPoint: .topLeading, endPoint: .bottomTrailing)) }
-        }
-        .accessibilityElement(children: .combine)
+            if !phase.isFinished {
+                HStack(alignment: .top, spacing: 16) {
+                    if let pause, let bell {
+                        metric("До перерыва", durationText(pause - minute))
+                        if pause < bell.end { metric("До конца пары", durationText(bell.end - minute)) }
+                        else { metric("Конец пары", timeText(bell.end)) }
+                    } else {
+                        metric(onInternalBreak ? "До продолжения" : "До начала пары", durationText(phase.minutes))
+                        if let bell { metric(onInternalBreak ? "Продолжение" : "Начало", timeText(onInternalBreak ? bell.breakEnd ?? bell.start : bell.start)) }
+                    }
+                }
+                if let lesson {
+                    ForEach(Array(lesson.entries.enumerated()), id: \.offset) { index, entry in
+                        VStack(alignment: .leading, spacing: 4) {
+                            if lesson.entries.count > 1 { Text("Вариант \(index + 1)").font(.caption).foregroundStyle(.secondary) }
+                            Text(store.data.name(for: entry.subject)).font(.body.bold()).fixedSize(horizontal: false, vertical: true)
+                            if !entry.room.isEmpty { Label(entry.room.contains(where: \.isNumber) ? "Аудитория \(entry.room)" : entry.room, systemImage: "door.left.hand.open").font(.subheadline).foregroundStyle(.secondary) }
+                            if !entry.teacher.isEmpty { Label(entry.teacher, systemImage: "person").font(.subheadline).foregroundStyle(.secondary) }
+                        }
+                    }
+                }
+                if let bell {
+                    Text("Пара \(timeText(bell.start))–\(timeText(bell.end))\(bell.breakStart.flatMap { a in bell.breakEnd.map { " · Перерыв \(timeText(a))–\(timeText($0))" } } ?? "")")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+                ProgressView(value: phase.progress).tint(JournalStyle.accent).accessibilityLabel("Прогресс текущего периода")
+            } else { Text(phase.detail).font(.subheadline).foregroundStyle(.secondary) }
+        }.padding(.vertical, 8).accessibilityElement(children: .contain).accessibilityIdentifier("current-status")
+    }
+    private func metric(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.title2.bold().monospacedDigit())
+        }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }

@@ -31,7 +31,14 @@ final class JournalStore {
         #else
         demo = false
         #endif
-        if demo { data = Self.demoData(); return }
+        if demo {
+            data = Self.demoData()
+            if ProcessInfo.processInfo.arguments.contains("--welcome") {
+                data.settings.onboarded = false
+                data.settings.group = ""
+            }
+            return
+        }
         do {
             let directory = try directory ?? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("Journal", isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

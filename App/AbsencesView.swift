@@ -3,7 +3,6 @@ import JournalCore
 
 struct AbsencesView: View {
     @Environment(JournalStore.self) private var store
-    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var mode = 0
     @State private var filter = 0
     @State private var editor: EditorRoute?
@@ -33,23 +32,16 @@ struct AbsencesView: View {
                     }
                 }
             }
-            Section {
+            Section("За всё время") {
                 let total = store.data.absences.reduce(0) { $0 + $1.hours }
                 let excused = store.data.absences.filter(\.excused).reduce(0) { $0 + $1.hours }
-                VStack(alignment: .leading, spacing: 14) {
-                    Text("Всего за всё время").font(.subheadline).foregroundStyle(.secondary)
-                    HStack(alignment: .firstTextBaseline) {
-                        Text("\(total)").font(.system(.largeTitle, design: .rounded, weight: .bold)).monospacedDigit()
-                        Text(plural(total, "час", "часа", "часов")).foregroundStyle(.secondary)
-                    }
-                    LabeledContent("По уважительной", value: "\(excused) ч")
-                    LabeledContent("Без уважительной", value: "\(total - excused) ч")
-                    Text("≈ \(String(format: "%g", locale: Locale(identifier: "ru_RU"), Double(total) / 2)) пары").font(.subheadline).foregroundStyle(.secondary)
-                }.padding(.vertical, 8)
+                LabeledContent("Всего пропущено", value: "\(total) \(plural(total, "час", "часа", "часов"))")
+                LabeledContent("По уважительной", value: "\(excused) ч")
+                LabeledContent("Без уважительной", value: "\(total - excused) ч")
             }
             Section {
                 Picker("Вид списка", selection: $mode) { Text("Предметы").tag(0); Text("Журнал").tag(1) }.pickerStyle(.segmented)
-                Picker("Причина", selection: $filter) { Text("Все").tag(0); Text("Без уважительной").tag(1); Text("По уважительной").tag(2) }
+                    .listRowInsets(EdgeInsets()).listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
             if absences.isEmpty {
                 ContentUnavailableView("Записей нет", systemImage: "checkmark.circle", description: Text(store.data.absences.isEmpty ? "Пропуски можно отмечать прямо в расписании или добавлять вручную." : "По выбранному фильтру пропусков нет."))
@@ -58,16 +50,15 @@ struct AbsencesView: View {
                     ForEach(subjects, id: \.self) { subject in
                         Button { selectedSubject = subject } label: {
                             let values = absences.filter { $0.subject == subject }
-                            let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout())
-                            layout {
+                            HStack {
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text(subject.isEmpty ? "Без предмета" : store.data.name(for: subject)).font(.headline)
+                                    Text(subject.isEmpty ? "Без предмета" : store.data.name(for: subject)).font(.headline.bold())
                                     Text("\(values.count) \(plural(values.count, "запись", "записи", "записей")) · \(values.first?.day.formatted() ?? "")").font(.subheadline).foregroundStyle(.secondary)
                                 }
-                                if !typeSize.isAccessibilitySize { Spacer() }
+                                Spacer()
                                 Text("\(values.reduce(0) { $0 + $1.hours }) ч").font(.title3.weight(.bold).monospacedDigit())
                                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
-                            }.padding(.vertical, 8)
+                            }.padding(.vertical, 3)
                         }.buttonStyle(.plain)
                     }
                 }
@@ -76,7 +67,15 @@ struct AbsencesView: View {
             }
         }
         .navigationTitle("Пропуски")
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Добавить пропуск", systemImage: "plus") { editor = .absence(Absence(hours: store.data.settings.absenceHours)) } } }
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                Menu {
+                    Picker("Причина", selection: $filter) { Text("Все").tag(0); Text("Без уважительной").tag(1); Text("По уважительной").tag(2) }
+                } label: { Image(systemName: filter == 0 ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill") }
+                    .accessibilityLabel("Причина пропуска: \(filter == 0 ? "все" : filter == 1 ? "без уважительной" : "по уважительной")")
+                Button("Добавить пропуск", systemImage: "plus") { editor = .absence(Absence(hours: store.data.settings.absenceHours)) }
+            }
+        }
         .sheet(item: $editor) { EditorSheet(route: $0) }
         .sheet(isPresented: $semesterSettings) { NavigationStack { SemesterSettingsView() } }
         .sheet(isPresented: Binding(get: { selectedSubject != nil }, set: { if !$0 { selectedSubject = nil } })) {
@@ -91,16 +90,15 @@ struct AbsencesView: View {
     }
     private func absenceRow(_ item: Absence, nested: Bool = false) -> some View {
         Button { if nested { subjectEditor = .absence(item) } else { editor = .absence(item) } } label: {
-            let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout(spacing: 14))
-            layout {
+            HStack(spacing: 12) {
                 Image(systemName: item.excused ? "checkmark.shield" : "person.crop.circle.badge.minus").font(.title2).foregroundStyle(item.excused ? Color.blue : .orange).frame(width: 40).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(item.subject.isEmpty ? "Без предмета" : store.data.name(for: item.subject)).font(.headline)
+                    Text(item.subject.isEmpty ? "Без предмета" : store.data.name(for: item.subject)).font(.headline.bold())
                     Text("\(item.day.formatted())\(item.lesson > 0 ? " · \(item.lesson)-я пара" : "")").font(.subheadline).foregroundStyle(.secondary)
                     Text(item.excused ? "По уважительной" : "Без уважительной").font(.caption).foregroundStyle(.secondary)
                     if !item.note.isEmpty { Text(item.note).font(.subheadline).foregroundStyle(.secondary) }
                 }
-                if !typeSize.isAccessibilitySize { Spacer(minLength: 4) }
+                Spacer(minLength: 4)
                 Text("\(item.hours) ч").font(.headline.monospacedDigit())
             }.padding(.vertical, 6)
         }.buttonStyle(.plain).accessibilityElement(children: .combine)
@@ -116,26 +114,23 @@ struct AbsencesView: View {
 }
 
 struct LimitCard: View {
-    @Environment(\.dynamicTypeSize) private var typeSize
-    @ScaledMetric(relativeTo: .title2) private var ringSize: CGFloat = 64
     let title: String
     let subtitle: String
     let status: LimitStatus
     private var color: Color { status.level == 2 ? .red : status.level == 1 ? .orange : .blue }
     var body: some View {
-        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16)) : AnyLayout(HStackLayout(spacing: 18))
-        layout {
-            ZStack {
-                Circle().stroke(color.opacity(0.12), lineWidth: 7)
-                Circle().trim(from: 0, to: status.progress).stroke(color, style: StrokeStyle(lineWidth: 7, lineCap: .round)).rotationEffect(.degrees(-90))
-                Text("\(status.hours)").font(.title2.weight(.bold).monospacedDigit()).lineLimit(1).minimumScaleFactor(0.7).frame(maxWidth: ringSize - 20)
-            }.frame(width: ringSize, height: ringSize).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 6) {
-                Text(title).font(.headline)
-                Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
-                Text(status.hours > status.limit ? "Превышено на \(status.hours - status.limit) ч" : status.hours == status.limit ? "Лимит достигнут" : "Осталось \(status.remaining) из \(status.limit) ч").font(.subheadline.weight(.medium)).foregroundStyle(color)
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .firstTextBaseline) {
+                Label(title, systemImage: status.key.hasPrefix("m:") ? "calendar" : "graduationcap.fill")
+                    .font(.headline.bold())
+                Spacer(minLength: 8)
+                Text("\(status.hours) / \(status.limit) ч").font(.body.bold().monospacedDigit())
             }
-        }.padding(.vertical, 12).accessibilityElement(children: .combine)
+            Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
+            ProgressView(value: status.progress).tint(color).accessibilityHidden(true)
+            Text(status.hours > status.limit ? "Превышено на \(status.hours - status.limit) ч" : status.hours == status.limit ? "Лимит достигнут" : "До лимита осталось \(status.remaining) ч")
+                .font(.subheadline).foregroundStyle(status.level > 0 ? color : .secondary)
+        }.padding(.vertical, 7).accessibilityElement(children: .combine)
             .accessibilityLabel("\(title), \(subtitle). \(status.hours) часов из \(status.limit). Осталось \(status.remaining) часов.")
             .accessibilityIdentifier(status.key.hasPrefix("m:") ? "month-limit" : "semester-limit")
     }

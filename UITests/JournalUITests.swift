@@ -7,6 +7,12 @@ final class JournalUITests: XCTestCase {
         app.launchArguments = ["--demo"]
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["Расписание"].waitForExistence(timeout: 15))
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Minsk")!
+        let date = calendar.dateComponents([.weekday, .month, .day], from: Date())
+        if date.weekday != 1 && !(date.month == 8 && (date.day ?? 0) >= 2) {
+            XCTAssertTrue(app.staticTexts["До перерыва"].waitForExistence(timeout: 5))
+        }
         capture("01-schedule", app)
         app.tabBars.buttons["Оценки"].tap()
         XCTAssertTrue(app.buttons["add-grade"].waitForExistence(timeout: 5))
@@ -29,19 +35,53 @@ final class JournalUITests: XCTestCase {
         app.buttons["Готово"].tap()
     }
 
-    func testLargeTextAndLandscape() throws {
+    func testStandardTextIgnoresSystemEnlargementAndRotates() throws {
+        let baseline = XCUIApplication()
+        baseline.launchArguments = ["--demo"]
+        baseline.launch()
+        XCTAssertTrue(baseline.tabBars.buttons["Оценки"].waitForExistence(timeout: 15))
+        baseline.tabBars.buttons["Оценки"].tap()
+        XCTAssertTrue(baseline.staticTexts["8,83"].firstMatch.waitForExistence(timeout: 5))
+        let normalHeight = baseline.staticTexts["8,83"].firstMatch.frame.height
+        baseline.terminate()
         let app = XCUIApplication()
         app.launchArguments = ["--demo", "--dark", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["Оценки"].waitForExistence(timeout: 15))
         app.tabBars.buttons["Оценки"].tap()
-        capture("dark-large-text", app)
+        XCTAssertTrue(app.staticTexts["8,83"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["8,83"].firstMatch.frame.height, normalHeight, accuracy: 1)
+        capture("dark-standard-text", app)
         app.buttons["add-grade"].tap()
         XCTAssertTrue(app.buttons["grade-save"].waitForExistence(timeout: 5))
         app.buttons["Отмена"].tap()
         XCUIDevice.shared.orientation = .landscapeLeft
         XCTAssertTrue(app.tabBars.buttons["Расписание"].exists)
         XCUIDevice.shared.orientation = .portrait
+    }
+
+    func testWelcomeSheetAndGroupSelection() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo", "--welcome"]
+        app.launch()
+        let next = app.buttons["welcome-continue"]
+        XCTAssertTrue(next.waitForExistence(timeout: 15))
+        capture("04-welcome", app)
+        next.tap()
+        let chooseGroup = app.buttons["onboarding-group"]
+        XCTAssertTrue(chooseGroup.waitForExistence(timeout: 5))
+        XCTAssertTrue(chooseGroup.isHittable)
+        chooseGroup.tap()
+        XCTAssertTrue(app.navigationBars["Ваша группа"].waitForExistence(timeout: 5))
+        let group = app.descendants(matching: .any).matching(identifier: "group-option-1234").firstMatch
+        XCTAssertTrue(group.waitForExistence(timeout: 5))
+        group.tap()
+        let start = app.buttons["setup-start"]
+        XCTAssertTrue(start.waitForExistence(timeout: 5))
+        XCTAssertTrue(start.isEnabled)
+        start.tap()
+        XCTAssertTrue(app.tabBars.buttons["Расписание"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["welcome-continue"].exists)
     }
 
     private func capture(_ name: String, _ app: XCUIApplication) {

@@ -52,13 +52,16 @@ public actor ScheduleClient {
             request.httpShouldHandleCookies = false
             do {
                 let (bytes, code) = try await transport(request)
-                if code == 403 || code == 404 { return .unpublished }
+                if code == 404 { return .unpublished }
+                if code == 403 { return .failure("Сайт колледжа ограничил доступ. Попробуйте обновить расписание позже.") }
                 guard code == 200 else { return .failure("Ошибка сайта (\(code)).") }
                 guard !bytes.isEmpty else { return .unpublished }
                 guard bytes.count <= 8 * 1024 * 1024 else { return .failure("Страница сайта слишком большая.") }
                 let html = try ScheduleParser.decode(bytes)
                 let page = ScheduleParser.parse(html)
-                guard page.hasText, !page.rows.isEmpty, page.matches(day) else { return .unpublished }
+                guard page.hasText else { return .unpublished }
+                guard !page.rows.isEmpty else { return .failure("Не удалось прочитать расписание на сайте колледжа. Попробуйте обновить его позже.") }
+                guard page.matches(day) else { return .unpublished }
                 return .page(page)
             } catch let error as URLError {
                 if error.code == .cancelled { return .failure("Загрузка отменена.") }

@@ -18,6 +18,16 @@ public struct Bell: Codable, Equatable, Sendable, Identifiable {
         self.number = number; self.start = start; self.end = end
         self.breakStart = breakStart; self.breakEnd = breakEnd
     }
+    /// The next pause during study: internal break first, then the end of the pair.
+    /// No countdown is returned before the pair or while already on a break.
+    public func nextBreakStart(at minute: Int) -> Int? {
+        guard minute >= start, minute < end else { return nil }
+        if let a = breakStart, let b = breakEnd {
+            if minute >= a && minute < b { return nil }
+            if minute < a { return a }
+        }
+        return end
+    }
 }
 
 public struct BellProfile: Codable, Equatable, Sendable {
