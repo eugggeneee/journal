@@ -1,0 +1,67 @@
+name: iOS
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'design/**', 'LICENSE', '.github/ISSUE_TEMPLATE/**']
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify-and-build:
+    runs-on: macos-15
+    timeout-minutes: 55
+    permissions:
+      contents: write
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Verify project and core rules
+        run: |
+          set -euo pipefail
+          python3 scripts/generate_project.py
+          git diff --exit-code -- Journal.xcodeproj
+          xcodebuild -version
+          swift test --parallel
+      - name: Build and test on iPhone simulator
+        run: bash scripts/test-ios.sh
+      - name: Package unsigned IPA for AltStore
+        if: github.event_name != 'pull_request'
+        run: bash scripts/package-ipa.sh
+      - name: Save test results and IPA
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Journal-${{ github.run_number }}
+          path: |
+            build/*.ipa
+            build/SHA256SUMS
+            build/*.xcresult
+            build/*.log
+            build/screenshots/
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Publish tagged release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          python3 scripts/check-release.py "$RELEASE_TAG"
+          args=()
+          if [[ "$RELEASE_TAG" == *-* ]]; then args+=(--prerelease); fi
+          gh release create "$RELEASE_TAG" build/Journal.ipa build/SHA256SUMS \
+            --verify-tag --title "Journal ${RELEASE_TAG#v}" \
+            --notes-file "docs/releases/${RELEASE_TAG}.md" "${args[@]}"
