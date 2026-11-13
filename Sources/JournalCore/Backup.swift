@@ -52,14 +52,28 @@ public enum BackupCodec {
             throw JournalError("Проверьте введённые данные и настройки.")
         }
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        encoder.dateEncodingStrategy = .custom { date, encoder in
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            var value = encoder.singleValueContainer()
+            try value.encode(formatter.string(from: date))
+        }
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         return try encoder.encode(Outgoing(settings: data.settings, grades: data.grades, absences: data.absences, notes: data.notes, schedules: data.schedules))
     }
     public static func decode(_ bytes: Data) throws -> BackupReport {
         guard bytes.count <= 64 * 1024 * 1024 else { throw JournalError("Файл слишком большой. Максимум — 64 МБ.") }
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let value = try decoder.singleValueContainer()
+            let text = try value.decode(String.self)
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let date = formatter.date(from: text) { return date }
+            formatter.formatOptions = [.withInternetDateTime]
+            if let date = formatter.date(from: text) { return date }
+            throw DecodingError.dataCorruptedError(in: value, debugDescription: "Некорректное время записи")
+        }
         // Check identity and version first, so older or newer formats get a useful error.
         struct Header: Decodable { var app: String; var version: Int }
         guard let header = try? decoder.decode(Header.self, from: bytes), header.app == "journal" else {
@@ -81,19 +95,19 @@ public enum BackupCodec {
             guard absence.isValid else { discarded += 1; continue }
             let oldCount = result.absences.count
             result.save(absence)
-            if result.absences.count == oldCount { discarded += 1 }
+            discarded += max(0, oldCount + 1 - result.absences.count)
         }
         for note in incoming.notes.values {
             guard note.isValid else { discarded += 1; continue }
             let oldCount = result.notes.count
             result.save(note)
-            if result.notes.count == oldCount { discarded += 1 }
+            discarded += max(0, oldCount + 1 - result.notes.count)
         }
         for schedule in incoming.schedules.values.sorted(by: { $0.fetchedAt < $1.fetchedAt }) {
             guard schedule.isValid else { discarded += 1; continue }
             let oldCount = result.schedules.count
             result.cache(schedule)
-            if result.schedules.count == oldCount { discarded += 1 }
+            discarded += max(0, oldCount + 1 - result.schedules.count)
         }
         return BackupReport(data: result, discarded: discarded)
     }

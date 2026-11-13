@@ -10,6 +10,8 @@ struct ScheduleView: View {
     @State private var groupPicker = false
     @State private var bells = false
     @State private var editor: EditorRoute?
+    @State private var wholeDayReason = false
+    @State private var wholeDayConfirmation = false
     private var schedule: Schedule? { store.data.schedule(day) }
     private var title: String {
         if day == Day() { return "Сегодня" }
@@ -97,6 +99,9 @@ struct ScheduleView: View {
         .sheet(isPresented: $groupPicker) { GroupPicker() }
         .sheet(isPresented: $bells) { NavigationStack { BellsView(initial: store.data.bellKind(day)) } }
         .sheet(item: $editor) { EditorSheet(route: $0) }
+        .confirmationDialog("Заменить отметки пропусков на весь день?", isPresented: $wholeDayConfirmation, titleVisibility: .visible) {
+            Button("Отметить весь день") { if let schedule { markWholeDay(schedule, excused: wholeDayReason) } }
+        } message: { Text("Уже отмеченные пары получат выбранную причину и количество часов. Действие можно отменить.") }
         .refreshable { await store.load(day, force: true) }
         .task(id: "\(day.rawValue)|\(store.data.settings.group)") { await store.load(day) }
         .onChange(of: scenePhase) { _, phase in
@@ -113,7 +118,7 @@ struct ScheduleView: View {
                             VStack(spacing: 8) {
                                 Text(date.formatted("EE").uppercased()).font(.caption2.weight(.semibold))
                                 Text("\(date.number)").font(.title3.weight(.semibold).monospacedDigit())
-                                Circle().fill(store.data.notes.contains { $0.day == date } || store.data.absences.contains { $0.day == date } ? Color.primary : Color.clear).frame(width: 4, height: 4)
+                                Circle().fill(store.data.notes.contains { $0.day == date } || store.data.absences.contains { $0.day == date } ? (day == date ? Color(uiColor: .systemBackground) : Color.primary) : Color.clear).frame(width: 4, height: 4)
                             }
                             .foregroundStyle(day == date ? Color(uiColor: .systemBackground) : date.isSunday ? .secondary : .primary)
                             .frame(minWidth: 46, minHeight: 82)
@@ -142,8 +147,8 @@ struct ScheduleView: View {
             }
             Spacer()
             Menu {
-                Button("Весь день · без уважительной") { markWholeDay(schedule, excused: false) }
-                Button("Весь день · по уважительной") { markWholeDay(schedule, excused: true) }
+                Button("Весь день · без уважительной") { requestWholeDay(schedule, excused: false) }
+                Button("Весь день · по уважительной") { requestWholeDay(schedule, excused: true) }
                 Button("Снять все пропуски дня", role: .destructive) { _ = store.change("Пропуски дня сняты") { data in data.absences.removeAll { $0.day == day } } }
                 Button("Сокращённый день", systemImage: "clock.badge.checkmark") { editor = .note(DayNote(day: day, kind: .shortened)) }
             } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44).journalGlass() }.accessibilityLabel("Действия со всем днём")
@@ -208,6 +213,11 @@ struct ScheduleView: View {
         return Surface { VStack(alignment: .leading, spacing: 8) { Text("Неделя позади").font(.headline); Text("\(lessons) \(plural(lessons, "пара", "пары", "пар")) в сохранённом расписании · \(hours == 0 ? "без пропусков" : "пропущено \(hours) ч")").foregroundStyle(.secondary) } }
     }
     private func quickAbsence(_ lesson: Lesson, entry: LessonEntry, excused: Bool) { _ = store.save(Absence(day: day, lesson: lesson.number, subject: entry.subject, hours: store.data.settings.absenceHours, excused: excused)) }
+    private func requestWholeDay(_ schedule: Schedule, excused: Bool) {
+        if store.data.absences.contains(where: { $0.day == day && $0.lesson > 0 }) {
+            wholeDayReason = excused; wholeDayConfirmation = true
+        } else { markWholeDay(schedule, excused: excused) }
+    }
     private func markWholeDay(_ schedule: Schedule, excused: Bool) {
         _ = store.change("Пропуски дня сохранены") { data in
             for lesson in schedule.lessons {

@@ -135,6 +135,14 @@ struct ParserAndBackupTests {
         raw["version"] = 999
         #expect(throws: JournalError.self) { try BackupCodec.decode(JSONSerialization.data(withJSONObject: raw)) }
     }
+    @Test func backupPreservesOrderWithinTheSameSecond() throws {
+        var data = JournalData()
+        data.save(Grade(subject: "Тест", value: 5, createdAt: Date(timeIntervalSince1970: 1_700_000_000.125)))
+        data.save(Grade(subject: "Тест", value: 10, createdAt: Date(timeIntervalSince1970: 1_700_000_000.875)))
+        let restored = try BackupCodec.decode(BackupCodec.encode(data)).data
+        #expect(GradeMath.ordered(restored.grades).last?.value == 10)
+        #expect(restored.grades.first?.createdAt == data.grades.first?.createdAt)
+    }
 }
 
 private actor RequestCounter {

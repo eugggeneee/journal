@@ -23,7 +23,7 @@ final class JournalStore {
     @ObservationIgnored private var folder: URL?
     @ObservationIgnored let demo: Bool
 
-    init() {
+    init(directory: URL? = nil) {
         #if DEBUG
         demo = ProcessInfo.processInfo.arguments.contains("--demo")
         #else
@@ -31,7 +31,7 @@ final class JournalStore {
         #endif
         if demo { data = Self.demoData(); return }
         do {
-            let directory = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("Journal", isDirectory: true)
+            let directory = try directory ?? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("Journal", isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             folder = directory
             let file = directory.appendingPathComponent("journal.json")
