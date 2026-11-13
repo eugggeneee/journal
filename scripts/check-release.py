@@ -9,5 +9,7 @@ expected = 'v' + release['release']
 assert sys.argv[1] == expected, f'Tag must match version.json: {expected}'
 assert re.fullmatch(r'v\d+\.\d+\.\d+(?:-beta\.\d+)?', expected), 'Unexpected release tag'
 assert release['marketing'] == release['release'].split('-')[0]
+if '-beta.' not in release['release']:
+    assert release.get('hardwareVerified') is True, 'Stable release requires documented owner verification on a real iPhone'
 assert (root / f'docs/releases/{expected}.md').is_file(), 'Release notes are required'
 print('Release metadata verified:', expected)

@@ -18,14 +18,18 @@ jobs:
   verify-and-build:
     runs-on: macos-15
     timeout-minutes: 55
-    permissions:
-      contents: write
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+      - name: Choose verification scope
+        id: scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python3 scripts/validation-scope.py
       - name: Verify project and core rules
         run: |
           set -euo pipefail
@@ -33,24 +37,57 @@ jobs:
           git diff --exit-code -- Journal.xcodeproj
           xcodebuild -version
           swift test --parallel
+      - name: Check release tag before building
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          python3 scripts/check-release.py "$GITHUB_REF_NAME"
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
       - name: Build and test on iPhone simulator
+        if: steps.scope.outputs.full == 'true'
         run: bash scripts/test-ios.sh
       - name: Package unsigned IPA for AltStore
-        if: github.event_name != 'pull_request'
+        if: steps.scope.outputs.full == 'true'
         run: bash scripts/package-ipa.sh
-      - name: Save test results and IPA
-        if: always()
+      - name: Save test results
+        if: ${{ !cancelled() && steps.scope.outputs.full == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Journal-checks-${{ github.run_number }}
+          path: |
+            build/*.xcresult
+            build/*.log
+            build/screenshots/
+            build/ios18-screenshots/
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Save installable IPA
+        if: success() && github.event_name != 'pull_request'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: Journal-${{ github.run_number }}
           path: |
-            build/*.ipa
+            build/Journal.ipa
             build/SHA256SUMS
-            build/*.xcresult
-            build/*.log
-            build/screenshots/
           retention-days: 7
-          if-no-files-found: warn
+          if-no-files-found: error
+
+  publish:
+    needs: verify-and-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Download verified IPA
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: Journal-${{ github.run_number }}
+          path: build
       - name: Publish tagged release
         if: startsWith(github.ref, 'refs/tags/')
         env:

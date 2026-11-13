@@ -1,5 +1,6 @@
 {
   "release": "1.0.0-beta.1",
   "marketing": "1.0.0",
-  "build": 1
+  "build": 1,
+  "hardwareVerified": false
 }

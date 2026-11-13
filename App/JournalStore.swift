@@ -16,14 +16,16 @@ final class JournalStore {
     var recoveryMessage: String?
     private(set) var undoTitle: String?
     @ObservationIgnored private var history: [(String, JournalData)] = []
-    @ObservationIgnored private let client = ScheduleClient()
+    @ObservationIgnored private let client: ScheduleClient
     @ObservationIgnored private var loading: Set<String> = []
     @ObservationIgnored private var prefetching = false
+    @ObservationIgnored private var pendingForcedPrefetch = false
     @ObservationIgnored private var lastGood: Data?
     @ObservationIgnored private var folder: URL?
     @ObservationIgnored let demo: Bool
 
-    init() {
+    init(directory: URL? = nil, client: ScheduleClient = ScheduleClient()) {
+        self.client = client
         #if DEBUG
         demo = ProcessInfo.processInfo.arguments.contains("--demo")
         #else
@@ -31,7 +33,7 @@ final class JournalStore {
         #endif
         if demo { data = Self.demoData(); return }
         do {
-            let directory = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("Journal", isDirectory: true)
+            let directory = try directory ?? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("Journal", isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             folder = directory
             let file = directory.appendingPathComponent("journal.json")
@@ -56,6 +58,7 @@ final class JournalStore {
                 }
             }
         } catch {
+            folder = nil
             errorMessage = "Не удалось открыть хранилище: \(error.localizedDescription)"
         }
     }
@@ -109,6 +112,11 @@ final class JournalStore {
 
     func undoTitleDismiss() { undoTitle = nil }
 
+    func displayTime(_ actual: Date) -> Date {
+        guard demo else { return actual }
+        return Day.calendar.date(bySettingHour: 9, minute: 41, second: 0, of: Day().date)!
+    }
+
     var recoveryFiles: [URL] {
         guard let folder else { return [] }
         return ((try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []).filter { $0.lastPathComponent.hasPrefix("damaged-") }
@@ -141,7 +149,11 @@ final class JournalStore {
         case .page(let page):
             let schedule = Schedule(day: day, group: group, lessons: page.lessons(for: group))
             let stored = change("Расписание обновлено", undoable: false) { $0.cache(schedule) }
-            states[key] = schedule.lessons.isEmpty ? .empty("Занятий нет", "На опубликованной странице для группы \(group) пар нет.") : .ready(stored ? "Обновлено · \(Date().formatted(date: .omitted, time: .shortened))" : "Не удалось сохранить обновление")
+            guard stored else {
+                states[key] = saved == nil ? .empty("Не удалось сохранить расписание", "Проверьте свободное место на iPhone и попробуйте снова.") : .ready("Не удалось записать обновление — показано сохранённое расписание.")
+                return
+            }
+            states[key] = schedule.lessons.isEmpty ? .empty("Занятий нет", "На опубликованной странице для группы \(group) пар нет.") : .ready("Обновлено · \(Date().formatted(date: .omitted, time: .shortened))")
         case .rest: states[key] = .empty("Выходной", "В этот день занятий нет.")
         case .unpublished:
             states[key] = saved != nil ? .ready("На сайте нет актуальной страницы — показано сохранённое") : .empty("Расписание пока отсутствует", day < Day() ? "Этот день не был сохранён. Колледж удаляет старые расписания с сайта." : "Колледж публикует ближайшие дни постепенно. Потяните вниз, чтобы проверить ещё раз.")
@@ -150,15 +162,23 @@ final class JournalStore {
         }
     }
 
-    func prefetch(force: Bool = false) async {
-        guard !prefetching, data.settings.onboarded, force || data.settings.autoRefresh else { return }
+    func prefetch(force: Bool = false, today: Day = Day()) async {
+        if prefetching { pendingForcedPrefetch = pendingForcedPrefetch || force; return }
+        guard data.settings.onboarded, force || data.settings.autoRefresh else { return }
         prefetching = true
         defer { prefetching = false }
-        // Sequential requests limit pressure on the college site; include yesterday to preserve history.
-        for offset in -1...4 {
-            if Task.isCancelled { return }
-            await load(Day().adding(offset), force: force)
-        }
+        var reload = force
+        repeat {
+            pendingForcedPrefetch = false
+            let group = data.settings.group
+            // Sequential requests limit pressure on the college site; include yesterday to preserve history.
+            for offset in -1...4 {
+                if Task.isCancelled { return }
+                if data.settings.group != group { pendingForcedPrefetch = true; break }
+                await load(today.adding(offset), force: reload)
+            }
+            reload = pendingForcedPrefetch
+        } while pendingForcedPrefetch
     }
     func groups() async -> (groups: [String], message: String?) {
         if demo { return (["1234", "2345", "3456"], nil) }

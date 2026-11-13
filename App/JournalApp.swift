@@ -12,7 +12,15 @@ struct JournalApp: App {
                 .environment(\.calendar, Day.calendar)
                 .environment(\.timeZone, Day.calendar.timeZone)
                 .tint(.orange)
+                .preferredColorScheme(previewScheme)
         }
+    }
+    private var previewScheme: ColorScheme? {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("--dark") ? .dark : nil
+        #else
+        nil
+        #endif
     }
 }
 
@@ -22,35 +30,22 @@ struct RootView: View {
     @State private var tab = 0
     @State private var settings = false
     var body: some View {
-        @Bindable var store = store
         Group {
             if !store.data.settings.onboarded || !validGroup(store.data.settings.group) {
                 OnboardingView()
             } else {
                 TabView(selection: $tab) {
                     Tab("Расписание", systemImage: "calendar", value: 0) {
-                        NavigationStack { ScheduleView().toolbar { settingsButton } }
+                        NavigationStack { ScheduleView().modifier(UndoBanner()).toolbar { settingsButton } }
                     }
                     Tab("Оценки", systemImage: "chart.bar.xaxis", value: 1) {
-                        NavigationStack { GradesView().toolbar { settingsButton } }
+                        NavigationStack { GradesView().modifier(UndoBanner()).toolbar { settingsButton } }
                     }
                     Tab("Пропуски", systemImage: "person.crop.circle.badge.clock", value: 2) {
-                        NavigationStack { AbsencesView().toolbar { settingsButton } }
+                        NavigationStack { AbsencesView().modifier(UndoBanner()).toolbar { settingsButton } }
                     }
                 }
                 .accessibilityIdentifier("main-tabs")
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    if let title = store.undoTitle {
-                        HStack(spacing: 16) {
-                            Text(title).font(.subheadline).lineLimit(2)
-                            Spacer(minLength: 0)
-                            Button("Отменить") { store.undo() }.font(.subheadline.weight(.semibold)).frame(minHeight: 44)
-                            Button { store.undoTitleDismiss() } label: { Image(systemName: "xmark").frame(width: 44, height: 44) }
-                                .accessibilityLabel("Скрыть уведомление")
-                        }
-                        .padding(.horizontal, 16).background(.regularMaterial)
-                    }
-                }
             }
         }
         .sheet(isPresented: $settings) { NavigationStack { SettingsView() } }
@@ -68,6 +63,25 @@ struct RootView: View {
         ToolbarItem(placement: .topBarLeading) {
             Button("Настройки", systemImage: "gearshape") { settings = true }
                 .accessibilityIdentifier("settings-button")
+        }
+    }
+}
+
+/// Insets belong to each tab's content, so UIKit's tab bar keeps a stable frame on iOS 18.
+struct UndoBanner: ViewModifier {
+    @Environment(JournalStore.self) private var store
+    func body(content: Content) -> some View {
+        content.safeAreaInset(edge: .bottom, spacing: 0) {
+            if let title = store.undoTitle {
+                HStack(spacing: 12) {
+                    Text(title).font(.subheadline).lineLimit(2)
+                    Spacer(minLength: 0)
+                    Button("Отменить") { store.undo() }.font(.subheadline.weight(.semibold)).frame(minHeight: 44)
+                    Button { store.undoTitleDismiss() } label: { Image(systemName: "xmark").frame(width: 44, height: 44) }
+                        .accessibilityLabel("Скрыть уведомление")
+                }
+                .padding(.horizontal, 16).background(.regularMaterial)
+            }
         }
     }
 }

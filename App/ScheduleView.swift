@@ -4,12 +4,15 @@ import JournalCore
 struct ScheduleView: View {
     @Environment(JournalStore.self) private var store
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var day = Day()
     @State private var lastToday = Day()
     @State private var datePicker = false
     @State private var groupPicker = false
     @State private var bells = false
     @State private var editor: EditorRoute?
+    @State private var wholeDayReason = false
+    @State private var wholeDayConfirmation = false
     private var schedule: Schedule? { store.data.schedule(day) }
     private var title: String {
         if day == Day() { return "Сегодня" }
@@ -33,7 +36,7 @@ struct ScheduleView: View {
                     summary(schedule)
                     if day == Day() {
                         TimelineView(.periodic(from: .now, by: 30)) { timeline in
-                            if let phase = DayPhase.current(schedule: schedule, profile: store.data.profile(day), minute: Day.minute(at: timeline.date)) {
+                            if let phase = DayPhase.current(schedule: schedule, profile: store.data.profile(day), minute: Day.minute(at: store.displayTime(timeline.date))) {
                                 NowCard(phase: phase, schedule: schedule)
                             }
                         }
@@ -97,6 +100,9 @@ struct ScheduleView: View {
         .sheet(isPresented: $groupPicker) { GroupPicker() }
         .sheet(isPresented: $bells) { NavigationStack { BellsView(initial: store.data.bellKind(day)) } }
         .sheet(item: $editor) { EditorSheet(route: $0) }
+        .confirmationDialog("Заменить отметки пропусков на весь день?", isPresented: $wholeDayConfirmation, titleVisibility: .visible) {
+            Button("Отметить весь день") { if let schedule { markWholeDay(schedule, excused: wholeDayReason) } }
+        } message: { Text("Уже отмеченные пары получат выбранную причину и количество часов. Действие можно отменить.") }
         .refreshable { await store.load(day, force: true) }
         .task(id: "\(day.rawValue)|\(store.data.settings.group)") { await store.load(day) }
         .onChange(of: scenePhase) { _, phase in
@@ -113,7 +119,7 @@ struct ScheduleView: View {
                             VStack(spacing: 8) {
                                 Text(date.formatted("EE").uppercased()).font(.caption2.weight(.semibold))
                                 Text("\(date.number)").font(.title3.weight(.semibold).monospacedDigit())
-                                Circle().fill(store.data.notes.contains { $0.day == date } || store.data.absences.contains { $0.day == date } ? Color.primary : Color.clear).frame(width: 4, height: 4)
+                                Circle().fill(store.data.notes.contains { $0.day == date } || store.data.absences.contains { $0.day == date } ? (day == date ? Color(uiColor: .systemBackground) : Color.primary) : Color.clear).frame(width: 4, height: 4)
                             }
                             .foregroundStyle(day == date ? Color(uiColor: .systemBackground) : date.isSunday ? .secondary : .primary)
                             .frame(minWidth: 46, minHeight: 82)
@@ -142,8 +148,8 @@ struct ScheduleView: View {
             }
             Spacer()
             Menu {
-                Button("Весь день · без уважительной") { markWholeDay(schedule, excused: false) }
-                Button("Весь день · по уважительной") { markWholeDay(schedule, excused: true) }
+                Button("Весь день · без уважительной") { requestWholeDay(schedule, excused: false) }
+                Button("Весь день · по уважительной") { requestWholeDay(schedule, excused: true) }
                 Button("Снять все пропуски дня", role: .destructive) { _ = store.change("Пропуски дня сняты") { data in data.absences.removeAll { $0.day == day } } }
                 Button("Сокращённый день", systemImage: "clock.badge.checkmark") { editor = .note(DayNote(day: day, kind: .shortened)) }
             } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44).journalGlass() }.accessibilityLabel("Действия со всем днём")
@@ -153,7 +159,8 @@ struct ScheduleView: View {
         let bell = store.data.profile(day).bell(lesson.number)
         let absence = store.data.absence(day, lesson: lesson.number)
         return Surface(padding: 16) {
-            HStack(alignment: .top, spacing: 12) {
+            let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16)) : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+            layout {
                 VStack(spacing: 6) {
                     Text("\(lesson.number)").font(.title2.weight(.semibold).monospacedDigit()).foregroundStyle(.orange)
                     if let bell { Text(timeText(bell.start)).font(.caption.weight(.medium).monospacedDigit()); Text(timeText(bell.end)).font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
@@ -208,6 +215,11 @@ struct ScheduleView: View {
         return Surface { VStack(alignment: .leading, spacing: 8) { Text("Неделя позади").font(.headline); Text("\(lessons) \(plural(lessons, "пара", "пары", "пар")) в сохранённом расписании · \(hours == 0 ? "без пропусков" : "пропущено \(hours) ч")").foregroundStyle(.secondary) } }
     }
     private func quickAbsence(_ lesson: Lesson, entry: LessonEntry, excused: Bool) { _ = store.save(Absence(day: day, lesson: lesson.number, subject: entry.subject, hours: store.data.settings.absenceHours, excused: excused)) }
+    private func requestWholeDay(_ schedule: Schedule, excused: Bool) {
+        if store.data.absences.contains(where: { $0.day == day && $0.lesson > 0 }) {
+            wholeDayReason = excused; wholeDayConfirmation = true
+        } else { markWholeDay(schedule, excused: excused) }
+    }
     private func markWholeDay(_ schedule: Schedule, excused: Bool) {
         _ = store.change("Пропуски дня сохранены") { data in
             for lesson in schedule.lessons {
@@ -219,14 +231,16 @@ struct ScheduleView: View {
 
 struct NowCard: View {
     @Environment(JournalStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var typeSize
     let phase: DayPhase
     let schedule: Schedule
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack { Label(phase.title, systemImage: phase.isFinished ? "checkmark.circle" : "clock").font(.subheadline.weight(.semibold)); Spacer() }
-            if phase.isFinished { Text("Хорошего отдыха.").font(.largeTitle.weight(.bold)) }
+            if phase.isFinished { Text("Хорошего отдыха.").font(.title3.weight(.semibold)) }
             else {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4)) : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 8))
+                layout {
                     Text(durationText(phase.minutes)).font(.largeTitle.weight(.bold).monospacedDigit())
                     Text("осталось").font(.subheadline)
                 }
@@ -234,11 +248,11 @@ struct NowCard: View {
                     Text(store.data.name(for: entry.subject)).font(.headline).fixedSize(horizontal: false, vertical: true)
                 }
             }
-            Text(phase.detail).font(.subheadline)
+            if !phase.isFinished { Text(phase.detail).font(.subheadline) }
             if !phase.isFinished { ProgressView(value: phase.progress).tint(.primary).accessibilityLabel("Прогресс текущего периода") }
         }
         .foregroundStyle(Color(uiColor: .label))
-        .padding(24).frame(maxWidth: .infinity, alignment: .leading)
+        .padding(20).frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(Color(uiColor: .secondarySystemGroupedBackground))

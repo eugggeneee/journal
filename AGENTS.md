@@ -9,7 +9,7 @@ Read `docs/PRODUCT.md` before changing product behavior. Current user instructio
 - All subgroups remain visible. No widgets, Live Activities, notifications, analytics, accounts or cloud sync in this scope.
 - UI copy and user documentation are Russian and use plain language. Do not expose technical details in normal flows.
 - Use semantic colors, SF Symbols, Dynamic Type and system navigation. Guard iOS 26 APIs and retain iOS 18 behavior.
-- After changing app/test file membership or version.json, run `python3 scripts/generate_project.py` and commit generated project files.
+- After changing App/AppTests/UITests file membership or version.json, run `python3 scripts/generate_project.py` and commit generated project files.
 - Use focused behavioral tests. Run `swift test --parallel` and the iOS workflow for affected behavior. Never call an unexecuted check passed.
 - GitHub work: short branch, PR, checks, squash. Do not force push main or replace published tags/assets. Minimize Actions; no scheduled polling workflow.
 - Release metadata lives in version.json. A stable release requires the owner's device check; prereleases must state what remains unverified.
