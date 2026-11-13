@@ -50,7 +50,7 @@ jobs:
         if: steps.scope.outputs.full == 'true'
         run: bash scripts/package-ipa.sh
       - name: Save test results
-        if: always() && steps.scope.outputs.full == 'true'
+        if: ${{ !cancelled() && steps.scope.outputs.full == 'true' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: Journal-checks-${{ github.run_number }}

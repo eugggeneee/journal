@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 mkdir -p build
-trap 'if [[ -d build/Journal-iOS18.xcresult ]]; then mkdir -p build/ios18-screenshots; xcrun xcresulttool export attachments --path build/Journal-iOS18.xcresult --output-path build/ios18-screenshots || true; fi' EXIT
+trap 'result=$?; if [[ $result -ne 130 && $result -ne 143 && -d build/Journal-iOS18.xcresult ]]; then mkdir -p build/ios18-screenshots; xcrun xcresulttool export attachments --path build/Journal-iOS18.xcresult --output-path build/ios18-screenshots || true; fi' EXIT
 
 # Select a real installed iPhone, preferring the newest stable iOS runtime.
 SIMULATOR_ID=$(xcrun simctl list devices available --json | python3 -c '
