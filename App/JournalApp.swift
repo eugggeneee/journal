@@ -11,7 +11,8 @@ struct JournalApp: App {
                 .environment(\.locale, Locale(identifier: "ru_RU"))
                 .environment(\.calendar, Day.calendar)
                 .environment(\.timeZone, Day.calendar.timeZone)
-                .tint(.orange)
+                .dynamicTypeSize(.large)
+                .tint(JournalStyle.accent)
                 .preferredColorScheme(previewScheme)
         }
     }
@@ -29,11 +30,16 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var tab = 0
     @State private var settings = false
+    @State private var welcome = false
+    @AppStorage("lastWelcomeBuild") private var lastWelcomeBuild = 0
+    private var currentBuild: Int { Int(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "2") ?? 2 }
+    private var needsWelcome: Bool {
+        #if DEBUG
+        if store.demo { return ProcessInfo.processInfo.arguments.contains("--welcome") }
+        #endif
+        return !store.data.settings.onboarded || lastWelcomeBuild < currentBuild
+    }
     var body: some View {
-        Group {
-            if !store.data.settings.onboarded || !validGroup(store.data.settings.group) {
-                OnboardingView()
-            } else {
                 TabView(selection: $tab) {
                     Tab("Расписание", systemImage: "calendar", value: 0) {
                         NavigationStack { ScheduleView().modifier(UndoBanner()).toolbar { settingsButton } }
@@ -46,16 +52,23 @@ struct RootView: View {
                     }
                 }
                 .accessibilityIdentifier("main-tabs")
-            }
-        }
         .sheet(isPresented: $settings) { NavigationStack { SettingsView() } }
+        .sheet(isPresented: $welcome) {
+            OnboardingView(firstRun: !store.data.settings.onboarded) {
+                lastWelcomeBuild = currentBuild
+                welcome = false
+            }.presentationDetents([.large]).presentationDragIndicator(.visible).interactiveDismissDisabled()
+        }
         .alert("Не удалось выполнить действие", isPresented: Binding(get: { store.errorMessage != nil }, set: { if !$0 { store.errorMessage = nil } })) {
             Button("Понятно") { store.errorMessage = nil }
         } message: { Text(store.errorMessage ?? "") }
         .alert("Восстановление данных", isPresented: Binding(get: { store.recoveryMessage != nil }, set: { if !$0 { store.recoveryMessage = nil } })) {
             Button("Понятно") { store.recoveryMessage = nil }
         } message: { Text(store.recoveryMessage ?? "") }
-        .task { await store.prefetch() }
+        .task {
+            welcome = needsWelcome
+            await store.prefetch()
+        }
         .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await store.prefetch() } } }
         .sensoryFeedback(.success, trigger: store.undoTitle) { _, _ in store.data.settings.haptics }
     }
@@ -76,7 +89,7 @@ struct UndoBanner: ViewModifier {
                 HStack(spacing: 12) {
                     Text(title).font(.subheadline).lineLimit(2)
                     Spacer(minLength: 0)
-                    Button("Отменить") { store.undo() }.font(.subheadline.weight(.semibold)).frame(minHeight: 44)
+                    Button("Отменить") { store.undo() }.font(.subheadline.weight(.bold)).frame(minHeight: 44)
                     Button { store.undoTitleDismiss() } label: { Image(systemName: "xmark").frame(width: 44, height: 44) }
                         .accessibilityLabel("Скрыть уведомление")
                 }

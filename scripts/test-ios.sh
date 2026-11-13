@@ -15,7 +15,7 @@ for runtime, rows in devices.items():
     if version[0] < 26: continue
     for d in rows:
         if d.get("isAvailable") and "iPhone" in d["name"]:
-            candidates.append((version, "Pro" not in d["name"],d["udid"]))
+            candidates.append((version, "Pro Max" in d["name"],d["udid"]))
 if not candidates: sys.exit("No iOS 26+ iPhone simulator installed")
 print(sorted(candidates,reverse=True)[0][2])')
 
@@ -41,7 +41,7 @@ IOS18_ID=$(xcrun simctl list devices available --json | python3 -c '
 import json,sys
 for runtime,devices in json.load(sys.stdin)["devices"].items():
     if "iOS-18-" in runtime:
-        for d in devices:
+        for d in sorted(devices, key=lambda d: ("SE" not in d["name"],d["name"])):
             if d.get("isAvailable") and "iPhone" in d["name"]:
                 print(d["udid"]);sys.exit(0)
 print("")')

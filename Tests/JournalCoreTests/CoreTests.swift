@@ -97,6 +97,25 @@ struct BellsTests {
 }
 
 struct ParserAndBackupTests {
+    @Test func wordSourceNewlinesAreNotRowBoundaries() throws {
+        let html = """
+        <html><head><meta content="text/html; charset=windows-1251"></head><body>
+        <p>Расписание на пятницу <span>13.11.26</span>г.</p>
+        <p><span>&#9474;1234&#9474;\r\n1&#9474;Математика</span>\r\n<span>&#9474;101&#9474;Преподаватель\r\nА.Б.&#9474;</span></p>
+        <p>&#9474;    &#9474; 2&#9474;Информатика&#9474;102&#9474;Тест В.Г.&#9474;</p>
+        <p>&#9474;    &#9474;  &#9474;Информатика&#9474;103&#9474;Тест Д.Е.&#9474;</p>
+        <p>&#9474;2345&#9474;\r\n1&#9474;Физика\r\n&#9474;104&#9474;Тест&#9474;</p>
+        </body></html>
+        """
+        let encoded = try #require(html.data(using: .windowsCP1251))
+        let page = ScheduleParser.parse(try ScheduleParser.decode(encoded))
+        #expect(page.groups == ["1234", "2345"])
+        #expect(page.matches(Day("2026-11-13")!))
+        let lessons = page.lessons(for: "1234")
+        #expect(lessons.map(\.number) == [1, 2])
+        #expect(lessons[0].entries[0].teacher == "Преподаватель А.Б.")
+        #expect(lessons[1].entries.count == 2)
+    }
     @Test func collegeFixture() throws {
         let url = try #require(Bundle.module.url(forResource: "college", withExtension: "htm", subdirectory: "Fixtures"))
         let page = ScheduleParser.parse(try ScheduleParser.decode(Data(contentsOf: url)))
@@ -150,6 +169,23 @@ private actor RequestCounter {
     func increment() { count += 1 }
 }
 struct NetworkTests {
+    @Test func discoveryUsesMultilineWordParagraphs() async {
+        let client = ScheduleClient { _ in
+            (Data("<p>13.11.26</p><p>│1234│\r\n1│Математика\r\n│101│Тест│</p>".utf8), 200)
+        }
+        let result = await client.discoverGroups(today: Day("2026-11-13")!)
+        #expect(result.groups == ["1234"])
+        #expect(result.message == nil)
+        if case .page(let page) = await client.page(Day("2026-11-13")!) {
+            #expect(page.lessons(for: "1234").count == 1)
+        } else { Issue.record("Manual group selection must use the same parsed page") }
+    }
+    @Test func deniedOrChangedPagesAreNotReportedAsMissing() async {
+        for (code, body) in [(403, "Forbidden"), (200, "<p>Service temporarily unavailable</p>")] {
+            let client = ScheduleClient { _ in (Data(body.utf8), code) }
+            if case .failure = await client.page(Day("2026-11-13")!) {} else { Issue.record("A site failure is not an unpublished day") }
+        }
+    }
     @Test func sundayMakesNoRequestAndConcurrentRequestsDeduplicate() async {
         let counter = RequestCounter()
         let client = ScheduleClient { request in

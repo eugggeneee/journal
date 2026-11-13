@@ -1,58 +1,84 @@
 import SwiftUI
 import JournalCore
 
+/// System sheet with the familiar welcome / What's New structure.
 struct OnboardingView: View {
     @Environment(JournalStore.self) private var store
+    let firstRun: Bool
+    var completed: () -> Void
     @State private var groupPicker = false
     @State private var bells = false
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    Image("AppArtwork").resizable().scaledToFit().frame(width: 112, height: 112)
-                        .clipShape(RoundedRectangle(cornerRadius: 26)).accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Учёба.\nВ своём ритме.").font(.largeTitle.weight(.bold)).fixedSize(horizontal: false, vertical: true)
-                        Text("Journal объединяет расписание, оценки и пропуски. Всё нужное — под рукой.")
-                            .font(.title3).foregroundStyle(.secondary)
+                VStack(spacing: 28) {
+                    VStack(spacing: 16) {
+                        Image("AppArtwork").resizable().frame(width: 76, height: 76)
+                            .clipShape(RoundedRectangle(cornerRadius: 17)).accessibilityHidden(true)
+                        Text(firstRun ? "Добро пожаловать\nв Journal" : "Новое в Journal")
+                            .font(.largeTitle.bold()).multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(firstRun ? "Ваше расписание, оценки и пропуски — в одном месте." : "Больше ясности. Меньше лишнего.")
+                            .font(.body).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    }.frame(maxWidth: .infinity).padding(.top, 16)
+                    VStack(alignment: .leading, spacing: 24) {
+                        feature("calendar", "Расписание под рукой", firstRun ? "Выберите группу. Пары, кабинеты и преподаватели появятся автоматически." : "Исправлена загрузка групп и занятий со страниц колледжа.")
+                        feature("chart.bar.fill", "Всё по порядку", "Плотное расписание, понятные показатели и привычные элементы iOS.")
+                        feature("externaldrive.fill", "Ваши записи с вами", "Оценки и пропуски хранятся на iPhone. Полную копию можно сохранить в «Файлы».")
                     }
-                    Surface {
-                        VStack(alignment: .leading, spacing: 22) {
-                            feature("calendar", "План на день", "Пары, кабинеты и время до следующего занятия.")
-                            feature("chart.bar.xaxis", "Видимый прогресс", "Оценки и средний балл по каждому предмету.")
-                            feature("checkmark.shield", "Спокойствие за данные", "Без аккаунтов и рекламы. Данные на вашем iPhone.")
-                        }
+                    if firstRun || !validGroup(store.data.settings.group) {
+                        VStack(spacing: 0) {
+                            Button { groupPicker = true } label: {
+                                HStack {
+                                    Label(validGroup(store.data.settings.group) ? "Группа выбрана" : "Выбрать группу", systemImage: "person.2.fill")
+                                    Spacer()
+                                    Image(systemName: validGroup(store.data.settings.group) ? "checkmark" : "chevron.right")
+                                }.frame(minHeight: 50).contentShape(Rectangle())
+                            }.accessibilityIdentifier("onboarding-group")
+                            Divider()
+                            Button { bells = true } label: {
+                                HStack { Label("Настроить звонки", systemImage: "clock.fill"); Spacer(); Image(systemName: "chevron.right") }
+                                    .frame(minHeight: 50).contentShape(Rectangle())
+                            }
+                        }.padding(.horizontal, 16)
+                            .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12))
                     }
-                    VStack(spacing: 12) {
-                        Button { groupPicker = true } label: {
-                            HStack { Label(store.data.settings.group.isEmpty ? "Выбрать группу" : "Группа \(store.data.settings.group)", systemImage: "person.2"); Spacer(); Image(systemName: "chevron.right") }
-                                .padding(18).frame(maxWidth: .infinity).background(JournalStyle.surface, in: RoundedRectangle(cornerRadius: 20))
-                        }.foregroundStyle(.primary).accessibilityIdentifier("onboarding-group")
-                        Button("Настроить время пар", systemImage: "clock") { bells = true }.frame(minHeight: 44)
-                    }
-                    Text("Неофициальное приложение МГТЭК. Расписание загружается с bseumtc.by и может отличаться от актуального. Уже загруженные дни доступны без интернета.")
-                        .font(.footnote).foregroundStyle(.secondary)
-                }.padding(24)
+                    Text("Неофициальное приложение МГТЭК. Источник расписания — сайт колледжа. Личные записи остаются на вашем устройстве.")
+                        .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                }.padding(.horizontal, 28).padding(.bottom, 20)
             }
-            .background(JournalStyle.page)
-            .navigationTitle("Journal").navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
-                Button {
-                    if store.change("Начальная настройка завершена", undoable: false, { $0.settings.onboarded = true }) {
-                        Task { await store.prefetch(force: true) }
+                VStack(spacing: 4) {
+                    Button { finish() } label: {
+                        Text(firstRun ? "Начать" : "Продолжить").font(.body.bold()).frame(maxWidth: .infinity).frame(minHeight: 44)
+                    }.buttonStyle(.borderedProminent).controlSize(.large)
+                        .disabled(firstRun && !validGroup(store.data.settings.group))
+                        .accessibilityIdentifier("welcome-continue")
+                    if firstRun {
+                        Button("Настроить позже") { finish() }.frame(minHeight: 44)
+                            .accessibilityIdentifier("welcome-later")
                     }
-                } label: { Text("Начать").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 10) }
-                    .buttonStyle(.borderedProminent).controlSize(.large).disabled(!validGroup(store.data.settings.group))
-                    .padding(.horizontal, 24).padding(.vertical, 12).background(.regularMaterial)
+                }.padding(.horizontal, 28).padding(.top, 12).padding(.bottom, 12)
+                    .background(Color(uiColor: .systemBackground))
             }
+            .background(Color(uiColor: .systemBackground))
             .sheet(isPresented: $groupPicker) { GroupPicker() }
             .sheet(isPresented: $bells) { NavigationStack { BellsView() } }
         }
     }
+    private func finish() {
+        if store.change("Начальная настройка завершена", undoable: false, { $0.settings.onboarded = true }) {
+            completed()
+            Task { await store.prefetch(force: true) }
+        }
+    }
     private func feature(_ symbol: String, _ title: String, _ detail: String) -> some View {
         HStack(alignment: .top, spacing: 16) {
-            Image(systemName: symbol).font(.title2).foregroundStyle(.orange).frame(width: 32).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 4) { Text(title).font(.headline); Text(detail).font(.subheadline).foregroundStyle(.secondary) }
+            Image(systemName: symbol).font(.title.bold()).foregroundStyle(JournalStyle.accent).frame(width: 36).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.body.bold())
+                Text(detail).font(.subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }

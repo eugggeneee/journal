@@ -66,7 +66,7 @@ struct SemesterSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Text(semester.notStarted ? "Каникулы · с 1 сентября" : semester.title).font(.headline)
+                Text(semester.notStarted ? "Каникулы · с 1 сентября" : semester.title).font(.headline.bold())
                 Text("\(semester.start.formatted("d MMMM yyyy")) — \(semester.end.formatted("d MMMM yyyy"))").foregroundStyle(.secondary)
                 Button(semester.number == 2 ? "Вернуть первый семестр" : "Завершить первый семестр") { confirmation = true }
                     .disabled(semester.number != 2 && !canSplit)
@@ -148,7 +148,7 @@ struct BackupView: View {
     var body: some View {
         Form {
             Section {
-                Label("Всё важное в одном файле", systemImage: "externaldrive.badge.checkmark").font(.headline)
+                Label("Всё важное в одном файле", systemImage: "externaldrive.badge.checkmark").font(.headline.bold())
                 Text("Оценки, пропуски, пометки, звонки, настройки и вся сохранённая история расписания.").foregroundStyle(.secondary)
                 Button("Сохранить копию в «Файлы»", systemImage: "square.and.arrow.up") {
                     do { document = BackupFile(bytes: try BackupCodec.encode(store.data)); exporting = true }

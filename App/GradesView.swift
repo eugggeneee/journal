@@ -4,7 +4,6 @@ import JournalCore
 
 struct GradesView: View {
     @Environment(JournalStore.self) private var store
-    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var mode = 0
     @State private var period = 0
     @State private var search = ""
@@ -16,41 +15,29 @@ struct GradesView: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 16) {
-                    if typeSize.isAccessibilitySize {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Средний балл").font(.subheadline).foregroundStyle(.secondary)
-                            periodMenu
-                        }
-                    } else {
-                        HStack { Text("Средний балл").font(.subheadline).foregroundStyle(.secondary); Spacer(); periodMenu }
-                    }
-                    let metricLayout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4)) : AnyLayout(HStackLayout(alignment: .firstTextBaseline))
-                    metricLayout {
-                        Text(GradeMath.formatted(GradeMath.average(grades))).font(.system(.largeTitle, design: .rounded, weight: .bold)).monospacedDigit()
-                        Text("из 10").foregroundStyle(.secondary)
-                        if !typeSize.isAccessibilitySize {
-                            Spacer()
-                            Image(systemName: "chart.bar.xaxis").font(.largeTitle).foregroundStyle(.orange).accessibilityHidden(true)
-                        }
-                    }
-                    if typeSize.isAccessibilitySize {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("\(grades.count) \(plural(grades.count, "оценка", "оценки", "оценок"))")
-                            Text("\(Set(grades.map(\.subject)).count) \(plural(Set(grades.map(\.subject)).count, "предмет", "предмета", "предметов"))")
-                        }.font(.subheadline).foregroundStyle(.secondary)
-                    } else {
-                        Text("\(grades.count) \(plural(grades.count, "оценка", "оценки", "оценок")) · \(Set(grades.map(\.subject)).count) \(plural(Set(grades.map(\.subject)).count, "предмет", "предмета", "предметов"))").font(.subheadline).foregroundStyle(.secondary)
-                    }
-                    if !grades.isEmpty {
-                        Chart(1...10, id: \.self) { value in
-                            BarMark(x: .value("Оценка", String(value)), y: .value("Количество", grades.filter { $0.value == value }.count))
-                                .foregroundStyle(JournalStyle.gradeColor(value).gradient).cornerRadius(4)
-                        }.frame(height: 72).chartYAxis(.hidden)
-                            .accessibilityLabel("Распределение оценок от 1 до 10")
-                    }
-                }.padding(.vertical, 8)
-            }
+                HStack(alignment: .firstTextBaseline) {
+                    Label("Средний балл", systemImage: "chart.bar.fill").font(.headline.bold()).foregroundStyle(JournalStyle.accent)
+                    Spacer()
+                    periodMenu
+                }
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(GradeMath.formatted(GradeMath.average(grades))).font(.largeTitle.bold()).monospacedDigit()
+                    Text("из 10").foregroundStyle(.secondary)
+                    Spacer()
+                }.accessibilityIdentifier("grade-average")
+                HStack {
+                    Text("\(grades.count) \(plural(grades.count, "оценка", "оценки", "оценок"))")
+                    Spacer()
+                    Text("\(Set(grades.map(\.subject)).count) \(plural(Set(grades.map(\.subject)).count, "предмет", "предмета", "предметов"))")
+                }.font(.subheadline).foregroundStyle(.secondary)
+                if !grades.isEmpty {
+                    Chart(1...10, id: \.self) { value in
+                        BarMark(x: .value("Оценка", String(value)), y: .value("Количество", grades.filter { $0.value == value }.count))
+                            .foregroundStyle(Color.orange).cornerRadius(3)
+                    }.frame(height: 82).chartYAxis(.hidden)
+                        .accessibilityLabel("Распределение оценок от 1 до 10")
+                }
+            } header: { Text("Сводка") }
             Section {
                 Picker("Вид списка", selection: $mode) { Text("Предметы").tag(0); Text("Журнал").tag(1) }.pickerStyle(.segmented)
             }
@@ -62,15 +49,14 @@ struct GradesView: View {
                     ForEach(subjects, id: \.self) { subject in
                         NavigationLink(value: subject) {
                             let values = grades.filter { $0.subject == subject }
-                            let rowLayout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout(spacing: 16))
-                            rowLayout {
+                            HStack(spacing: 16) {
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text(store.data.name(for: subject)).font(.headline)
+                                    Text(store.data.name(for: subject)).font(.headline.bold())
                                     Text("\(values.count) \(plural(values.count, "оценка", "оценки", "оценок")) · последняя \(GradeMath.ordered(values).last?.value ?? 0)").font(.subheadline).foregroundStyle(.secondary)
                                 }
-                                if !typeSize.isAccessibilitySize { Spacer(minLength: 4) }
+                                Spacer(minLength: 4)
                                 Text(GradeMath.formatted(GradeMath.average(values))).font(.title3.weight(.bold).monospacedDigit())
-                            }.padding(.vertical, 8)
+                            }.padding(.vertical, 3)
                         }
                     }
                 }
@@ -94,7 +80,7 @@ struct GradesView: View {
             Button("Этот семестр") { period = 1 }
         } label: {
             Label(period == 0 ? "Всё время" : "Этот семестр", systemImage: "chevron.down")
-                .font(.caption.weight(.medium)).fixedSize(horizontal: false, vertical: true).frame(minHeight: 44)
+                .font(.caption.weight(.regular)).fixedSize(horizontal: false, vertical: true).frame(minHeight: 44)
         }
     }
     private func add() { editor = .grade(Grade(subject: GradeMath.ordered(store.data.grades).last?.subject ?? "")) }
@@ -102,14 +88,12 @@ struct GradesView: View {
 
 struct GradeRow: View {
     @Environment(JournalStore.self) private var store
-    @Environment(\.dynamicTypeSize) private var typeSize
     let grade: Grade
     var body: some View {
-        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout(spacing: 14))
-        layout {
+        HStack(spacing: 12) {
             GradeBadge(value: grade.value)
             VStack(alignment: .leading, spacing: 4) {
-                Text(store.data.name(for: grade.subject)).font(.headline)
+                Text(store.data.name(for: grade.subject)).font(.headline.bold())
                 Text([grade.day.formatted(), grade.kind].filter { !$0.isEmpty }.joined(separator: " · ")).font(.subheadline).foregroundStyle(.secondary)
                 if !grade.note.isEmpty { Text(grade.note).font(.subheadline).foregroundStyle(.secondary) }
             }
@@ -125,11 +109,11 @@ struct SubjectDetail: View {
     var body: some View {
         List {
             Section {
-                Text(GradeMath.formatted(GradeMath.average(grades))).font(.system(.largeTitle, design: .rounded, weight: .bold)).monospacedDigit()
+                Text(GradeMath.formatted(GradeMath.average(grades))).font(.largeTitle.bold()).monospacedDigit()
                 if let change = GradeMath.change(grades) { Text(String(format: "%+.2f после последней оценки", locale: Locale(identifier: "ru_RU"), change)).foregroundStyle(change >= 0 ? .green : .orange) }
                 if !grades.isEmpty {
                     Chart(Array(grades.enumerated()), id: \.element.id) { index, grade in
-                        LineMark(x: .value("По порядку", index + 1), y: .value("Оценка", grade.value)).foregroundStyle(.orange)
+                        LineMark(x: .value("По порядку", index + 1), y: .value("Оценка", grade.value)).foregroundStyle(JournalStyle.accent)
                         PointMark(x: .value("По порядку", index + 1), y: .value("Оценка", grade.value)).foregroundStyle(JournalStyle.gradeColor(grade.value))
                     }.chartYScale(domain: 1...10).frame(height: 180)
                 }

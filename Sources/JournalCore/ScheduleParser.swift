@@ -38,11 +38,17 @@ public enum ScheduleParser {
         if let body = text.range(of: #"<body\b[^>]*>"#, options: [.regularExpression, .caseInsensitive]) {
             text = String(text[body.upperBound...])
         }
-        text = replace(text, #"</p\s*>|<br\s*/?>|</tr\s*>"#, "\n")
+        // Word inserts physical CR/LF inside spans and cells. Only markup defines
+        // a record boundary; splitting by source lines loses the group column.
+        let boundary = "\u{001e}"
+        let hasParagraphs = text.range(of: #"<p\b|<tr\b"#, options: [.regularExpression, .caseInsensitive]) != nil
+        text = replace(text, #"</p\s*>|</tr\s*>"#, boundary)
+        text = replace(text, #"<br\s*/?>"#, " ")
         text = replace(text, #"<[^>]+>"#, "")
         text = entities(text)
-        let lines = text.components(separatedBy: .newlines).map {
-            replace($0.replacingOccurrences(of: "\u{00a0}", with: " "), #"[\t ]+"#, " ").trimmingCharacters(in: .whitespacesAndNewlines)
+        let chunks = hasParagraphs ? text.components(separatedBy: boundary) : text.components(separatedBy: .newlines)
+        let lines = chunks.map {
+            replace($0.replacingOccurrences(of: "\u{00a0}", with: " "), #"\s+"#, " ").trimmingCharacters(in: .whitespacesAndNewlines)
         }.filter { !$0.isEmpty }
         var group: String?
         var number: Int?
@@ -57,7 +63,7 @@ public enum ScheduleParser {
             guard cells[0].isEmpty || validGroup(cells[0]),
                   cells[1].isEmpty || (cells[1].count <= 2 && cells[1].utf8.allSatisfy { (48...57).contains($0) }) else { continue }
             if !cells[0].isEmpty {
-                if cells[0] != group { number = nil }
+                number = nil
                 group = cells[0]
             }
             if !cells[1].isEmpty { number = Int(cells[1]) }
