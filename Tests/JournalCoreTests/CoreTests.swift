@@ -67,6 +67,18 @@ struct CalendarAndRulesTests {
 }
 
 struct BellsTests {
+    @Test func breakCountdownBeforeDuringAndAfterInternalPause() throws {
+        let bell = try #require(BellProfile.weekdayOne.bell(1))
+        #expect(bell.nextBreakStart(at: 499) == nil)
+        #expect(bell.nextBreakStart(at: 500) == 545)
+        #expect(bell.nextBreakStart(at: 544) == 545)
+        #expect(bell.nextBreakStart(at: 545) == nil)
+        #expect(bell.nextBreakStart(at: 554) == nil)
+        #expect(bell.nextBreakStart(at: 555) == 600)
+        #expect(bell.nextBreakStart(at: 600) == nil)
+        let shortened = try #require(BellProfile.shortened.bell(1))
+        #expect(shortened.nextBreakStart(at: 500) == 560)
+    }
     @Test func allPresetsAreValid() {
         for preset in [BellProfile.weekdayOne, .weekdayTwo, .saturday, .shortened] { #expect(preset.validationError == nil) }
         #expect(BellProfile.shortened.bell(1)?.start == 500)

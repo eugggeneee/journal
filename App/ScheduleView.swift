@@ -26,16 +26,19 @@ struct ScheduleView: View {
                 dateStrip.listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
                 if let schedule, !schedule.lessons.isEmpty, !day.isSunday, !day.isVacation {
                     summary(schedule)
-                    if day == Day() {
+                }
+            }
+                if let note = store.data.note(day) { Section { noteCard(note) } }
+                if day == Day(), let schedule, !schedule.lessons.isEmpty, !day.isSunday, !day.isVacation {
+                    Section {
                         TimelineView(.periodic(from: .now, by: 30)) { timeline in
-                            if let phase = DayPhase.current(schedule: schedule, profile: store.data.profile(day), minute: Day.minute(at: store.displayTime(timeline.date))) {
-                                NowCard(phase: phase, schedule: schedule)
+                            let minute = Day.minute(at: store.displayTime(timeline.date))
+                            if let phase = DayPhase.current(schedule: schedule, profile: store.data.profile(day), minute: minute) {
+                                NowCard(phase: phase, schedule: schedule, minute: minute)
                             }
                         }
                     }
                 }
-            }
-                if let note = store.data.note(day) { Section { noteCard(note) } }
                 if let schedule, !schedule.lessons.isEmpty, !day.isSunday, !day.isVacation {
                     Section("Занятия · \(schedule.lessons.count) \(plural(schedule.lessons.count, "пара", "пары", "пар"))") {
                     ForEach(Array(schedule.lessons.enumerated()), id: \.element.id) { index, lesson in
@@ -229,20 +232,55 @@ struct NowCard: View {
     @Environment(JournalStore.self) private var store
     let phase: DayPhase
     let schedule: Schedule
+    let minute: Int
+    private var bell: Bell? { phase.lesson.flatMap { store.data.profile(schedule.day).bell($0) } }
+    private var lesson: Lesson? { schedule.lessons.first { $0.number == phase.lesson } }
+    private var pause: Int? { bell?.nextBreakStart(at: minute) }
+    private var onInternalBreak: Bool {
+        guard let a = bell?.breakStart, let b = bell?.breakEnd else { return false }
+        return minute >= a && minute < b
+    }
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
-                Label(phase.title, systemImage: phase.isFinished ? "checkmark.circle.fill" : "clock.fill")
-                    .font(.subheadline.bold()).foregroundStyle(JournalStyle.accent)
+                Label(phase.title, systemImage: phase.isFinished ? "checkmark.circle.fill" : onInternalBreak ? "cup.and.saucer.fill" : "clock.fill")
+                    .font(.body.bold()).foregroundStyle(JournalStyle.accent)
                 Spacer(minLength: 8)
-                if !phase.isFinished { Text(durationText(phase.minutes)).font(.title3.bold().monospacedDigit()) }
+                Text(timeText(minute)).font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
             }
-            if let number = phase.lesson, let lesson = schedule.lessons.first(where: { $0.number == number }) {
-                Text(lesson.entries.map { store.data.name(for: $0.subject) }.joined(separator: " / "))
-                    .font(.headline.bold()).fixedSize(horizontal: false, vertical: true)
-            }
-            Text(phase.isFinished ? "Все занятия на сегодня закончились." : phase.detail).font(.subheadline).foregroundStyle(.secondary)
-            if !phase.isFinished { ProgressView(value: phase.progress).tint(JournalStyle.accent).accessibilityLabel("Прогресс текущего периода") }
-        }.padding(.vertical, 6).accessibilityElement(children: .combine)
+            if !phase.isFinished {
+                HStack(alignment: .top, spacing: 16) {
+                    if let pause, let bell {
+                        metric("До перерыва", durationText(pause - minute))
+                        if pause < bell.end { metric("До конца пары", durationText(bell.end - minute)) }
+                        else { metric("Конец пары", timeText(bell.end)) }
+                    } else {
+                        metric(onInternalBreak ? "До продолжения" : "До начала пары", durationText(phase.minutes))
+                        if let bell { metric(onInternalBreak ? "Продолжение" : "Начало", timeText(onInternalBreak ? bell.breakEnd ?? bell.start : bell.start)) }
+                    }
+                }
+                if let lesson {
+                    ForEach(Array(lesson.entries.enumerated()), id: \.offset) { index, entry in
+                        VStack(alignment: .leading, spacing: 4) {
+                            if lesson.entries.count > 1 { Text("Вариант \(index + 1)").font(.caption).foregroundStyle(.secondary) }
+                            Text(store.data.name(for: entry.subject)).font(.body.bold()).fixedSize(horizontal: false, vertical: true)
+                            if !entry.room.isEmpty { Label(entry.room.contains(where: \.isNumber) ? "Аудитория \(entry.room)" : entry.room, systemImage: "door.left.hand.open").font(.subheadline).foregroundStyle(.secondary) }
+                            if !entry.teacher.isEmpty { Label(entry.teacher, systemImage: "person").font(.subheadline).foregroundStyle(.secondary) }
+                        }
+                    }
+                }
+                if let bell {
+                    Text("Пара \(timeText(bell.start))–\(timeText(bell.end))\(bell.breakStart.flatMap { a in bell.breakEnd.map { " · Перерыв \(timeText(a))–\(timeText($0))" } } ?? "")")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+                ProgressView(value: phase.progress).tint(JournalStyle.accent).accessibilityLabel("Прогресс текущего периода")
+            } else { Text(phase.detail).font(.subheadline).foregroundStyle(.secondary) }
+        }.padding(.vertical, 8).accessibilityElement(children: .contain).accessibilityIdentifier("current-status")
+    }
+    private func metric(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.title2.bold().monospacedDigit())
+        }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }

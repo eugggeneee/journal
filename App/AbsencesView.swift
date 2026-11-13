@@ -41,7 +41,7 @@ struct AbsencesView: View {
             }
             Section {
                 Picker("Вид списка", selection: $mode) { Text("Предметы").tag(0); Text("Журнал").tag(1) }.pickerStyle(.segmented)
-                Picker("Причина", selection: $filter) { Text("Все").tag(0); Text("Без уважительной").tag(1); Text("По уважительной").tag(2) }
+                    .listRowInsets(EdgeInsets()).listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
             if absences.isEmpty {
                 ContentUnavailableView("Записей нет", systemImage: "checkmark.circle", description: Text(store.data.absences.isEmpty ? "Пропуски можно отмечать прямо в расписании или добавлять вручную." : "По выбранному фильтру пропусков нет."))
@@ -67,7 +67,15 @@ struct AbsencesView: View {
             }
         }
         .navigationTitle("Пропуски")
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Добавить пропуск", systemImage: "plus") { editor = .absence(Absence(hours: store.data.settings.absenceHours)) } } }
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                Menu {
+                    Picker("Причина", selection: $filter) { Text("Все").tag(0); Text("Без уважительной").tag(1); Text("По уважительной").tag(2) }
+                } label: { Image(systemName: filter == 0 ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill") }
+                    .accessibilityLabel("Причина пропуска: \(filter == 0 ? "все" : filter == 1 ? "без уважительной" : "по уважительной")")
+                Button("Добавить пропуск", systemImage: "plus") { editor = .absence(Absence(hours: store.data.settings.absenceHours)) }
+            }
+        }
         .sheet(item: $editor) { EditorSheet(route: $0) }
         .sheet(isPresented: $semesterSettings) { NavigationStack { SemesterSettingsView() } }
         .sheet(isPresented: Binding(get: { selectedSubject != nil }, set: { if !$0 { selectedSubject = nil } })) {

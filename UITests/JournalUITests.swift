@@ -7,6 +7,12 @@ final class JournalUITests: XCTestCase {
         app.launchArguments = ["--demo"]
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["Расписание"].waitForExistence(timeout: 15))
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Minsk")!
+        let date = calendar.dateComponents([.weekday, .month, .day], from: Date())
+        if date.weekday != 1 && !(date.month == 8 && (date.day ?? 0) >= 2) {
+            XCTAssertTrue(app.staticTexts["До перерыва"].waitForExistence(timeout: 5))
+        }
         capture("01-schedule", app)
         app.tabBars.buttons["Оценки"].tap()
         XCTAssertTrue(app.buttons["add-grade"].waitForExistence(timeout: 5))

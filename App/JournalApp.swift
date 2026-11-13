@@ -57,7 +57,7 @@ struct RootView: View {
             OnboardingView(firstRun: !store.data.settings.onboarded) {
                 lastWelcomeBuild = currentBuild
                 welcome = false
-            }.presentationDetents([.large]).presentationDragIndicator(.visible).interactiveDismissDisabled()
+            }.presentationDetents([.large]).presentationDragIndicator(.hidden).interactiveDismissDisabled()
         }
         .alert("Не удалось выполнить действие", isPresented: Binding(get: { store.errorMessage != nil }, set: { if !$0 { store.errorMessage = nil } })) {
             Button("Понятно") { store.errorMessage = nil }

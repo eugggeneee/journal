@@ -40,6 +40,7 @@ struct GradesView: View {
             } header: { Text("Сводка") }
             Section {
                 Picker("Вид списка", selection: $mode) { Text("Предметы").tag(0); Text("Журнал").tag(1) }.pickerStyle(.segmented)
+                    .listRowInsets(EdgeInsets()).listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
             if grades.isEmpty {
                 ContentUnavailableView("Пока без оценок", systemImage: "chart.bar.xaxis", description: Text("Добавьте первую оценку — Journal посчитает средний балл и покажет прогресс."))
