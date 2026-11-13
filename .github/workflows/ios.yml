@@ -47,7 +47,7 @@ jobs:
         if: steps.scope.outputs.full == 'true'
         run: bash scripts/test-ios.sh
       - name: Package unsigned IPA for AltStore
-        if: github.event_name != 'pull_request'
+        if: steps.scope.outputs.full == 'true'
         run: bash scripts/package-ipa.sh
       - name: Save test results
         if: always() && steps.scope.outputs.full == 'true'
