@@ -21,7 +21,7 @@ Actions закреплены по SHA. Checkout не сохраняет токе
 ## Новый выпуск
 
 1. В отдельной ветке обновите `version.json`: `release`, числовой `marketing` и возрастающий `build`. Например, `1.0.0-beta.1`, `1.0.0`, `1`.
-2. Создайте `docs/releases/v<release>.md` с понятным описанием изменений и проверок.
+2. Создайте `docs/releases/v<release>.md` с понятным описанием изменений и проверок. Коммиты, PR, тег и выпуск оформляйте по правилу [CONTRIBUTING.md](../CONTRIBUTING.md): конкретные результаты в разделах «Сделано / Добавлено / Переделано / Убрано / Исправлено / Проверено», без пустых разделов.
 3. Запустите генератор проекта, проверьте diff и откройте PR. Дождитесь зелёной проверки.
 4. После squash-слияния поставьте тег **на проверенный коммит main** и отправьте его:
 
@@ -29,7 +29,7 @@ Actions закреплены по SHA. Checkout не сохраняет токе
 git switch main
 git pull --ff-only
 python3 scripts/check-release.py v1.0.0-beta.1
-git tag -a v1.0.0-beta.1 -m 'Journal 1.0.0-beta.1'
+git tag -a v1.0.0-beta.1 -F docs/releases/v1.0.0-beta.1.md
 git push origin v1.0.0-beta.1
 ```
 
