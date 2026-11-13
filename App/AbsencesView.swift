@@ -129,7 +129,8 @@ struct LimitCard: View {
                 Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
                 Text(status.hours > status.limit ? "Превышено на \(status.hours - status.limit) ч" : status.hours == status.limit ? "Лимит достигнут" : "Осталось \(status.remaining) из \(status.limit) ч").font(.subheadline.weight(.medium)).foregroundStyle(color)
             }
-        }.padding(.vertical, 12).accessibilityElement(children: .ignore)
+        }.padding(.vertical, 12).accessibilityElement(children: .combine)
             .accessibilityLabel("\(title), \(subtitle). \(status.hours) часов из \(status.limit). Осталось \(status.remaining) часов.")
+            .accessibilityIdentifier(status.key.hasPrefix("m:") ? "month-limit" : "semester-limit")
     }
 }

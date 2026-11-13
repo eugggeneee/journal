@@ -3,6 +3,11 @@ import Testing
 @testable import Journal
 import JournalCore
 
+private actor LoadCounter {
+    var count = 0
+    func increment() { count += 1 }
+}
+
 @MainActor
 struct JournalStorageTests {
     private func directory() throws -> URL {
@@ -52,5 +57,28 @@ struct JournalStorageTests {
         #expect(!store.save(Grade(subject: "Тест", value: 8)))
         #expect(store.data.grades.isEmpty)
         #expect(store.errorMessage != nil)
+    }
+
+    @Test func groupChangeDuringPrefetchStillArchivesNewGroup() async throws {
+        let folder = try directory()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let counter = LoadCounter()
+        let client = ScheduleClient { _ in
+            await counter.increment()
+            try await Task.sleep(for: .milliseconds(100))
+            return (Data("<p>│1234│1│А│101│Тест│</p><p>│2345│1│Б│102│Тест│</p>".utf8), 200)
+        }
+        let store = JournalStore(directory: folder, client: client)
+        #expect(store.change("Настройка", undoable: false, { $0.settings.group = "1234"; $0.settings.onboarded = true }))
+        let today = Day("2026-11-13")!
+        let initial = Task { await store.prefetch(today: today) }
+        while await counter.count == 0 { try await Task.sleep(for: .milliseconds(5)) }
+        store.chooseGroup("2345")
+        await initial.value
+        for offset in -1...4 {
+            let day = today.adding(offset)
+            if !day.isSunday && !day.isVacation { #expect(store.data.schedule(day, group: "2345") != nil) }
+        }
+        #expect(store.data.settings.group == "2345")
     }
 }

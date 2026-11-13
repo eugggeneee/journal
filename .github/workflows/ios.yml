@@ -24,6 +24,12 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+      - name: Choose verification scope
+        id: scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python3 scripts/validation-scope.py
       - name: Verify project and core rules
         run: |
           set -euo pipefail
@@ -38,12 +44,13 @@ jobs:
           git fetch --no-tags origin main:refs/remotes/origin/main
           git merge-base --is-ancestor "$GITHUB_SHA" origin/main
       - name: Build and test on iPhone simulator
+        if: steps.scope.outputs.full == 'true'
         run: bash scripts/test-ios.sh
       - name: Package unsigned IPA for AltStore
         if: github.event_name != 'pull_request'
         run: bash scripts/package-ipa.sh
       - name: Save test results
-        if: always()
+        if: always() && steps.scope.outputs.full == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: Journal-checks-${{ github.run_number }}
@@ -51,6 +58,7 @@ jobs:
             build/*.xcresult
             build/*.log
             build/screenshots/
+            build/ios18-screenshots/
           retention-days: 7
           if-no-files-found: warn
       - name: Save installable IPA

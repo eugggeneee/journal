@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 mkdir -p build
+trap 'if [[ -d build/Journal-iOS18.xcresult ]]; then mkdir -p build/ios18-screenshots; xcrun xcresulttool export attachments --path build/Journal-iOS18.xcresult --output-path build/ios18-screenshots || true; fi' EXIT
 
 # Select a real installed iPhone, preferring the newest stable iOS runtime.
 SIMULATOR_ID=$(xcrun simctl list devices available --json | python3 -c '
@@ -51,6 +52,7 @@ fi
 xcrun simctl shutdown "$SIMULATOR_ID"
 xcrun simctl boot "$IOS18_ID" || true
 xcrun simctl bootstatus "$IOS18_ID" -b
+xcrun simctl status_bar "$IOS18_ID" override --time '9:41' --dataNetwork wifi --wifiMode active --wifiBars 3 --batteryState charged --batteryLevel 100
 xcodebuild test-without-building -project Journal.xcodeproj -scheme Journal \
   -destination "platform=iOS Simulator,id=$IOS18_ID" \
   -derivedDataPath build/DerivedData -resultBundlePath build/Journal-iOS18.xcresult \

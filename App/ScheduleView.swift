@@ -35,7 +35,7 @@ struct ScheduleView: View {
                     summary(schedule)
                     if day == Day() {
                         TimelineView(.periodic(from: .now, by: 30)) { timeline in
-                            if let phase = DayPhase.current(schedule: schedule, profile: store.data.profile(day), minute: Day.minute(at: timeline.date)) {
+                            if let phase = DayPhase.current(schedule: schedule, profile: store.data.profile(day), minute: Day.minute(at: store.displayTime(timeline.date))) {
                                 NowCard(phase: phase, schedule: schedule)
                             }
                         }
@@ -234,7 +234,7 @@ struct NowCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack { Label(phase.title, systemImage: phase.isFinished ? "checkmark.circle" : "clock").font(.subheadline.weight(.semibold)); Spacer() }
-            if phase.isFinished { Text("Хорошего отдыха.").font(.largeTitle.weight(.bold)) }
+            if phase.isFinished { Text("Хорошего отдыха.").font(.title3.weight(.semibold)) }
             else {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(durationText(phase.minutes)).font(.largeTitle.weight(.bold).monospacedDigit())
@@ -244,11 +244,11 @@ struct NowCard: View {
                     Text(store.data.name(for: entry.subject)).font(.headline).fixedSize(horizontal: false, vertical: true)
                 }
             }
-            Text(phase.detail).font(.subheadline)
+            if !phase.isFinished { Text(phase.detail).font(.subheadline) }
             if !phase.isFinished { ProgressView(value: phase.progress).tint(.primary).accessibilityLabel("Прогресс текущего периода") }
         }
         .foregroundStyle(Color(uiColor: .label))
-        .padding(24).frame(maxWidth: .infinity, alignment: .leading)
+        .padding(20).frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(Color(uiColor: .secondarySystemGroupedBackground))

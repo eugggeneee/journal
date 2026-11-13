@@ -72,6 +72,7 @@ public actor ScheduleClient {
     }
     public func discoverGroups(today: Day = Day()) async -> (groups: [String], message: String?) {
         for offset in Array(0...5) + Array((-6 ... -1).reversed()) {
+            if Task.isCancelled { return ([], nil) }
             switch await page(today.adding(offset)) {
             case .page(let page): return (page.groups, nil)
             case .offline(let message): return ([], message + " Можно ввести группу вручную.")

@@ -16,14 +16,16 @@ final class JournalStore {
     var recoveryMessage: String?
     private(set) var undoTitle: String?
     @ObservationIgnored private var history: [(String, JournalData)] = []
-    @ObservationIgnored private let client = ScheduleClient()
+    @ObservationIgnored private let client: ScheduleClient
     @ObservationIgnored private var loading: Set<String> = []
     @ObservationIgnored private var prefetching = false
+    @ObservationIgnored private var pendingForcedPrefetch = false
     @ObservationIgnored private var lastGood: Data?
     @ObservationIgnored private var folder: URL?
     @ObservationIgnored let demo: Bool
 
-    init(directory: URL? = nil) {
+    init(directory: URL? = nil, client: ScheduleClient = ScheduleClient()) {
+        self.client = client
         #if DEBUG
         demo = ProcessInfo.processInfo.arguments.contains("--demo")
         #else
@@ -109,6 +111,11 @@ final class JournalStore {
 
     func undoTitleDismiss() { undoTitle = nil }
 
+    func displayTime(_ actual: Date) -> Date {
+        guard demo else { return actual }
+        return Day.calendar.date(bySettingHour: 9, minute: 41, second: 0, of: Day().date)!
+    }
+
     var recoveryFiles: [URL] {
         guard let folder else { return [] }
         return ((try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []).filter { $0.lastPathComponent.hasPrefix("damaged-") }
@@ -150,15 +157,23 @@ final class JournalStore {
         }
     }
 
-    func prefetch(force: Bool = false) async {
-        guard !prefetching, data.settings.onboarded, force || data.settings.autoRefresh else { return }
+    func prefetch(force: Bool = false, today: Day = Day()) async {
+        if prefetching { pendingForcedPrefetch = pendingForcedPrefetch || force; return }
+        guard data.settings.onboarded, force || data.settings.autoRefresh else { return }
         prefetching = true
         defer { prefetching = false }
-        // Sequential requests limit pressure on the college site; include yesterday to preserve history.
-        for offset in -1...4 {
-            if Task.isCancelled { return }
-            await load(Day().adding(offset), force: force)
-        }
+        var reload = force
+        repeat {
+            pendingForcedPrefetch = false
+            let group = data.settings.group
+            // Sequential requests limit pressure on the college site; include yesterday to preserve history.
+            for offset in -1...4 {
+                if Task.isCancelled { return }
+                if data.settings.group != group { pendingForcedPrefetch = true; break }
+                await load(today.adding(offset), force: reload)
+            }
+            reload = pendingForcedPrefetch
+        } while pendingForcedPrefetch
     }
     func groups() async -> (groups: [String], message: String?) {
         if demo { return (["1234", "2345", "3456"], nil) }

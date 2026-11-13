@@ -12,7 +12,15 @@ struct JournalApp: App {
                 .environment(\.calendar, Day.calendar)
                 .environment(\.timeZone, Day.calendar.timeZone)
                 .tint(.orange)
+                .preferredColorScheme(previewScheme)
         }
+    }
+    private var previewScheme: ColorScheme? {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("--dark") ? .dark : nil
+        #else
+        nil
+        #endif
     }
 }
 

@@ -16,7 +16,14 @@ struct GradesView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Средний балл").font(.subheadline).foregroundStyle(.secondary)
+                    HStack {
+                        Text("Средний балл").font(.subheadline).foregroundStyle(.secondary)
+                        Spacer()
+                        Menu {
+                            Button("Всё время") { period = 0 }
+                            Button("Этот семестр") { period = 1 }
+                        } label: { Label(period == 0 ? "Всё время" : "Этот семестр", systemImage: "chevron.down").font(.caption.weight(.medium)).frame(minHeight: 44) }
+                    }
                     HStack(alignment: .firstTextBaseline) {
                         Text(GradeMath.formatted(GradeMath.average(grades))).font(.system(.largeTitle, design: .rounded, weight: .bold)).monospacedDigit()
                         Text("из 10").foregroundStyle(.secondary)
@@ -28,13 +35,12 @@ struct GradesView: View {
                         Chart(1...10, id: \.self) { value in
                             BarMark(x: .value("Оценка", String(value)), y: .value("Количество", grades.filter { $0.value == value }.count))
                                 .foregroundStyle(JournalStyle.gradeColor(value).gradient).cornerRadius(4)
-                        }.frame(height: 88).chartYAxis(.hidden)
+                        }.frame(height: 72).chartYAxis(.hidden)
                             .accessibilityLabel("Распределение оценок от 1 до 10")
                     }
                 }.padding(.vertical, 8)
             }
             Section {
-                Picker("Период", selection: $period) { Text("Всё время").tag(0); Text("Этот семестр").tag(1) }.pickerStyle(.segmented)
                 Picker("Вид списка", selection: $mode) { Text("Предметы").tag(0); Text("Журнал").tag(1) }.pickerStyle(.segmented)
             }
             if grades.isEmpty {

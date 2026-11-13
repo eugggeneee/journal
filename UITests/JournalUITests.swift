@@ -19,7 +19,11 @@ final class JournalUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Отменить"].waitForExistence(timeout: 5))
         app.buttons["Отменить"].tap()
         app.tabBars.buttons["Пропуски"].tap()
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "За месяц")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Пропуски"].waitForExistence(timeout: 5))
+        capture("03-absences", app)
+        let month = app.descendants(matching: .any).matching(identifier: "month-limit").firstMatch
+        if !month.waitForExistence(timeout: 5) { print(app.debugDescription) }
+        XCTAssertTrue(month.exists)
         app.buttons["settings-button"].tap()
         XCTAssertTrue(app.navigationBars["Настройки"].waitForExistence(timeout: 5))
         app.buttons["Готово"].tap()
@@ -27,10 +31,11 @@ final class JournalUITests: XCTestCase {
 
     func testLargeTextAndLandscape() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["--demo", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launchArguments = ["--demo", "--dark", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["Оценки"].waitForExistence(timeout: 15))
         app.tabBars.buttons["Оценки"].tap()
+        capture("dark-large-text", app)
         app.buttons["add-grade"].tap()
         XCTAssertTrue(app.buttons["grade-save"].waitForExistence(timeout: 5))
         app.buttons["Отмена"].tap()
