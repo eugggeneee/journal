@@ -18,10 +18,15 @@ for runtime, rows in devices.items():
 if not candidates: sys.exit("No iOS 26+ iPhone simulator installed")
 print(sorted(candidates,reverse=True)[0][2])')
 
+xcodebuild build-for-testing -project Journal.xcodeproj -scheme Journal \
+  -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+  -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO \
+  2>&1 | tee build/compile.log
+
 xcrun simctl boot "$SIMULATOR_ID" || true
 xcrun simctl bootstatus "$SIMULATOR_ID" -b
 xcrun simctl status_bar "$SIMULATOR_ID" override --time '9:41' --dataNetwork wifi --wifiMode active --wifiBars 3 --batteryState charged --batteryLevel 100
-xcodebuild test -project Journal.xcodeproj -scheme Journal \
+xcodebuild test-without-building -project Journal.xcodeproj -scheme Journal \
   -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
   -derivedDataPath build/DerivedData -resultBundlePath build/Journal.xcresult \
   -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
@@ -46,7 +51,7 @@ fi
 xcrun simctl shutdown "$SIMULATOR_ID"
 xcrun simctl boot "$IOS18_ID" || true
 xcrun simctl bootstatus "$IOS18_ID" -b
-xcodebuild test -project Journal.xcodeproj -scheme Journal \
+xcodebuild test-without-building -project Journal.xcodeproj -scheme Journal \
   -destination "platform=iOS Simulator,id=$IOS18_ID" \
   -derivedDataPath build/DerivedData -resultBundlePath build/Journal-iOS18.xcresult \
   -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \

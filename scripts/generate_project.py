@@ -7,6 +7,7 @@ import hashlib
 import json
 
 ROOT = Path(__file__).resolve().parent.parent
+VERSION = json.loads((ROOT / 'version.json').read_text(encoding='utf-8'))
 
 def ident(name):
     return hashlib.sha256(name.encode()).hexdigest()[:24].upper()
@@ -32,6 +33,7 @@ def config_list(key, extra):
             'DEBUG_INFORMATION_FORMAT': 'dwarf' if mode == 'Debug' else '"dwarf-with-dsym"',
             'SWIFT_ACTIVE_COMPILATION_CONDITIONS': '"DEBUG $(inherited)"' if mode == 'Debug' else '"$(inherited)"',
             'ENABLE_TESTABILITY': 'YES' if mode == 'Debug' else 'NO',
+            'ONLY_ACTIVE_ARCH': 'YES' if mode == 'Debug' else 'NO',
         }
         settings.update(extra)
         entries.append(config(f'{key}:{mode}', settings))
@@ -79,7 +81,7 @@ app_configs = config_list('app', {
     'ASSETCATALOG_COMPILER_APPICON_NAME': 'AppIcon', 'ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME': 'AccentColor',
     'TARGETED_DEVICE_FAMILY': '1', 'SUPPORTED_PLATFORMS': '"iphoneos iphonesimulator"',
     'SUPPORTS_MACCATALYST': 'NO', 'SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD': 'NO',
-    'MARKETING_VERSION': '1.0.0', 'CURRENT_PROJECT_VERSION': '1',
+    'MARKETING_VERSION': quote(VERSION['marketing']), 'CURRENT_PROJECT_VERSION': str(VERSION['build']),
     'CODE_SIGN_STYLE': 'Automatic', 'LD_RUNPATH_SEARCH_PATHS': '"$(inherited) @executable_path/Frameworks"',
 })
 test_configs = config_list('test', {
