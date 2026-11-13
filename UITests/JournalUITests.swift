@@ -63,7 +63,8 @@ final class JournalUITests: XCTestCase {
         capture("04-welcome", app)
         if !chooseGroup.isHittable { app.scrollViews.firstMatch.swipeUp() }
         chooseGroup.tap()
-        let group = app.buttons["1234"].firstMatch
+        XCTAssertTrue(app.navigationBars["Ваша группа"].waitForExistence(timeout: 5))
+        let group = app.descendants(matching: .any).matching(identifier: "group-option-1234").firstMatch
         XCTAssertTrue(group.waitForExistence(timeout: 5))
         group.tap()
         let start = app.buttons["welcome-continue"]

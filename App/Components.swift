@@ -95,8 +95,12 @@ struct GroupPicker: View {
     @State private var groups: [String] = []
     @State private var message: String?
     @State private var busy = true
+    var embedded = false
     var body: some View {
-        NavigationStack {
+        if embedded { picker }
+        else { NavigationStack { picker.toolbar { ToolbarItem(placement: .cancellationAction) { Button("Закрыть") { dismiss() } } } } }
+    }
+    private var picker: some View {
             List {
                 if busy { HStack { ProgressView(); Text("Ищем группы на сайте…") } }
                 if let message { Section { Text(message).foregroundStyle(.secondary); Button("Повторить") { Task { await fetch() } }.disabled(busy) } }
@@ -104,7 +108,7 @@ struct GroupPicker: View {
                     ForEach(groups.filter { query.isEmpty || $0.contains(query) }, id: \.self) { group in
                         Button { select(group) } label: {
                             HStack { Text(group).foregroundStyle(.primary); Spacer(); if group == store.data.settings.group { Image(systemName: "checkmark") } }
-                        }.frame(minHeight: 44)
+                        }.frame(minHeight: 44).accessibilityIdentifier("group-option-\(group)")
                     }
                 }
                 if validGroup(query) && !groups.contains(query) { Button("Использовать группу \(query)") { select(query) }.frame(minHeight: 44) }
@@ -113,9 +117,7 @@ struct GroupPicker: View {
             .searchable(text: $query, prompt: "Номер группы")
             .onChange(of: query) { _, value in query = String(value.filter { $0.isASCII && $0.isNumber }.prefix(5)) }
             .navigationTitle("Ваша группа")
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Закрыть") { dismiss() } } }
             .task { await fetch() }
-        }
     }
     private func select(_ group: String) { store.chooseGroup(group); if store.data.settings.group == group { dismiss() } }
     private func fetch() async { busy = true; defer { busy = false }; let result = await store.groups(); groups = result.groups; message = result.message }

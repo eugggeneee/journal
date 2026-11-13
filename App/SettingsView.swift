@@ -38,7 +38,7 @@ struct SettingsView: View {
         }
         .navigationTitle("Настройки").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Готово") { dismiss() } } }
-        .sheet(isPresented: $groupPicker) { GroupPicker() }
+        .navigationDestination(isPresented: $groupPicker) { GroupPicker(embedded: true) }
         .navigationDestination(for: SettingsRoute.self) { route in
             switch route {
             case .bells: BellsView()

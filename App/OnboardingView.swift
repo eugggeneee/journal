@@ -62,8 +62,8 @@ struct OnboardingView: View {
                     .background(Color(uiColor: .systemBackground))
             }
             .background(Color(uiColor: .systemBackground))
-            .sheet(isPresented: $groupPicker) { GroupPicker() }
-            .sheet(isPresented: $bells) { NavigationStack { BellsView() } }
+            .navigationDestination(isPresented: $groupPicker) { GroupPicker(embedded: true) }
+            .navigationDestination(isPresented: $bells) { BellsView() }
         }
     }
     private func finish() {
