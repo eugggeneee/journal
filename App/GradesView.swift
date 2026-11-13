@@ -4,6 +4,7 @@ import JournalCore
 
 struct GradesView: View {
     @Environment(JournalStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var mode = 0
     @State private var period = 0
     @State private var search = ""
@@ -16,21 +17,31 @@ struct GradesView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 16) {
-                    HStack {
-                        Text("Средний балл").font(.subheadline).foregroundStyle(.secondary)
-                        Spacer()
-                        Menu {
-                            Button("Всё время") { period = 0 }
-                            Button("Этот семестр") { period = 1 }
-                        } label: { Label(period == 0 ? "Всё время" : "Этот семестр", systemImage: "chevron.down").font(.caption.weight(.medium)).frame(minHeight: 44) }
+                    if typeSize.isAccessibilitySize {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Средний балл").font(.subheadline).foregroundStyle(.secondary)
+                            periodMenu
+                        }
+                    } else {
+                        HStack { Text("Средний балл").font(.subheadline).foregroundStyle(.secondary); Spacer(); periodMenu }
                     }
-                    HStack(alignment: .firstTextBaseline) {
+                    let metricLayout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4)) : AnyLayout(HStackLayout(alignment: .firstTextBaseline))
+                    metricLayout {
                         Text(GradeMath.formatted(GradeMath.average(grades))).font(.system(.largeTitle, design: .rounded, weight: .bold)).monospacedDigit()
                         Text("из 10").foregroundStyle(.secondary)
-                        Spacer()
-                        Image(systemName: "chart.bar.xaxis").font(.largeTitle).foregroundStyle(.orange).accessibilityHidden(true)
+                        if !typeSize.isAccessibilitySize {
+                            Spacer()
+                            Image(systemName: "chart.bar.xaxis").font(.largeTitle).foregroundStyle(.orange).accessibilityHidden(true)
+                        }
                     }
-                    Text("\(grades.count) \(plural(grades.count, "оценка", "оценки", "оценок")) · \(Set(grades.map(\.subject)).count) \(plural(Set(grades.map(\.subject)).count, "предмет", "предмета", "предметов"))").font(.subheadline).foregroundStyle(.secondary)
+                    if typeSize.isAccessibilitySize {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("\(grades.count) \(plural(grades.count, "оценка", "оценки", "оценок"))")
+                            Text("\(Set(grades.map(\.subject)).count) \(plural(Set(grades.map(\.subject)).count, "предмет", "предмета", "предметов"))")
+                        }.font(.subheadline).foregroundStyle(.secondary)
+                    } else {
+                        Text("\(grades.count) \(plural(grades.count, "оценка", "оценки", "оценок")) · \(Set(grades.map(\.subject)).count) \(plural(Set(grades.map(\.subject)).count, "предмет", "предмета", "предметов"))").font(.subheadline).foregroundStyle(.secondary)
+                    }
                     if !grades.isEmpty {
                         Chart(1...10, id: \.self) { value in
                             BarMark(x: .value("Оценка", String(value)), y: .value("Количество", grades.filter { $0.value == value }.count))
@@ -51,12 +62,13 @@ struct GradesView: View {
                     ForEach(subjects, id: \.self) { subject in
                         NavigationLink(value: subject) {
                             let values = grades.filter { $0.subject == subject }
-                            HStack(spacing: 16) {
+                            let rowLayout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout(spacing: 16))
+                            rowLayout {
                                 VStack(alignment: .leading, spacing: 6) {
                                     Text(store.data.name(for: subject)).font(.headline)
                                     Text("\(values.count) \(plural(values.count, "оценка", "оценки", "оценок")) · последняя \(GradeMath.ordered(values).last?.value ?? 0)").font(.subheadline).foregroundStyle(.secondary)
                                 }
-                                Spacer(minLength: 4)
+                                if !typeSize.isAccessibilitySize { Spacer(minLength: 4) }
                                 Text(GradeMath.formatted(GradeMath.average(values))).font(.title3.weight(.bold).monospacedDigit())
                             }.padding(.vertical, 8)
                         }
@@ -76,14 +88,25 @@ struct GradesView: View {
         .navigationDestination(for: String.self) { SubjectDetail(subject: $0) }
         .sheet(item: $editor) { EditorSheet(route: $0) }
     }
+    private var periodMenu: some View {
+        Menu {
+            Button("Всё время") { period = 0 }
+            Button("Этот семестр") { period = 1 }
+        } label: {
+            Label(period == 0 ? "Всё время" : "Этот семестр", systemImage: "chevron.down")
+                .font(.caption.weight(.medium)).fixedSize(horizontal: false, vertical: true).frame(minHeight: 44)
+        }
+    }
     private func add() { editor = .grade(Grade(subject: GradeMath.ordered(store.data.grades).last?.subject ?? "")) }
 }
 
 struct GradeRow: View {
     @Environment(JournalStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var typeSize
     let grade: Grade
     var body: some View {
-        HStack(spacing: 14) {
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout(spacing: 14))
+        layout {
             GradeBadge(value: grade.value)
             VStack(alignment: .leading, spacing: 4) {
                 Text(store.data.name(for: grade.subject)).font(.headline)

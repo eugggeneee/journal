@@ -4,6 +4,7 @@ import JournalCore
 struct ScheduleView: View {
     @Environment(JournalStore.self) private var store
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var day = Day()
     @State private var lastToday = Day()
     @State private var datePicker = false
@@ -158,7 +159,8 @@ struct ScheduleView: View {
         let bell = store.data.profile(day).bell(lesson.number)
         let absence = store.data.absence(day, lesson: lesson.number)
         return Surface(padding: 16) {
-            HStack(alignment: .top, spacing: 12) {
+            let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16)) : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+            layout {
                 VStack(spacing: 6) {
                     Text("\(lesson.number)").font(.title2.weight(.semibold).monospacedDigit()).foregroundStyle(.orange)
                     if let bell { Text(timeText(bell.start)).font(.caption.weight(.medium).monospacedDigit()); Text(timeText(bell.end)).font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
@@ -229,6 +231,7 @@ struct ScheduleView: View {
 
 struct NowCard: View {
     @Environment(JournalStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var typeSize
     let phase: DayPhase
     let schedule: Schedule
     var body: some View {
@@ -236,7 +239,8 @@ struct NowCard: View {
             HStack { Label(phase.title, systemImage: phase.isFinished ? "checkmark.circle" : "clock").font(.subheadline.weight(.semibold)); Spacer() }
             if phase.isFinished { Text("Хорошего отдыха.").font(.title3.weight(.semibold)) }
             else {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4)) : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 8))
+                layout {
                     Text(durationText(phase.minutes)).font(.largeTitle.weight(.bold).monospacedDigit())
                     Text("осталось").font(.subheadline)
                 }
