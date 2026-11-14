@@ -7,6 +7,9 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
+from collections import Counter
+from html.parser import HTMLParser
+from urllib.parse import urlparse
 
 import layers
 
@@ -14,7 +17,29 @@ ROOT = layers.ROOT
 SITE = ROOT / 'site'
 FILES = ('index.html', 'styles.css', 'app.js', 'palette.js')
 EXTERNAL = re.compile(r'(?:src|href)="(https?://[^"]+)"')
-ALLOWED_HOSTS = ('github.com', 'altstore.io', 'sideloadly.io')
+ALLOWED_HOSTS = ('github.com', 'eugggeneee.github.io', 'altstore.io', 'sideloadly.io')
+
+
+class _PageStructure(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.ids = []
+        self.anchors = []
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if attrs.get('id'):
+            self.ids.append(attrs['id'])
+        if tag == 'a' and attrs.get('href', '').startswith('#'):
+            self.anchors.append(attrs['href'][1:])
+
+
+def check_structure(html: str) -> list[str]:
+    page = _PageStructure()
+    page.feed(html)
+    out = [f'site/index.html: повторяется id="{name}"' for name, count in Counter(page.ids).items() if count > 1]
+    out += [f'site/index.html: якорь #{name} не найден' for name in page.anchors if name not in page.ids]
+    return out
 
 
 def _read(p) -> str:
@@ -29,6 +54,7 @@ def check() -> list[str]:
     if out:
         return out
     html, js = _read(SITE / 'index.html'), _read(SITE / 'app.js')
+    out += check_structure(html)
     app = ROOT / 'lib'
 
     gen = ROOT / 'scripts' / 'site' / 'make_palette.py'
@@ -59,7 +85,7 @@ def check() -> list[str]:
 
     for name in ('index.html', 'app.js'):
         for url in EXTERNAL.findall(_read(SITE / name)):
-            if not any(h in url for h in ALLOWED_HOSTS):
+            if urlparse(url).hostname not in ALLOWED_HOSTS:
                 out.append(f'site/{name}: внешний адрес вне списка: {url}')
     if 'eugggeneee/journal' not in js:
         out.append('site/app.js: нет адреса репозитория для блока «Что нового»')

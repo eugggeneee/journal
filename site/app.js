@@ -4,7 +4,6 @@
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var REPO = 'eugggeneee/journal';
   var THEMES = window.JOURNAL_THEMES || [];
-  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var mq = window.matchMedia('(prefers-color-scheme: dark)');
 
   /* ---------- значки Material (24x24) ---------- */
@@ -48,25 +47,28 @@
   function isDark() { return S.mode ? S.mode === 'dark' : mq.matches; }
   function cur() { return THEMES.filter(function (t) { return t.id === S.theme; })[0] || THEMES[0]; }
   var MAP = { sLow: 'surfaceContainerLow', sMid: 'surfaceContainer', sHigh: 'surfaceContainerHigh', sHighest: 'surfaceContainerHighest' };
-  function applyTheme(animate) {
+  function applyTheme() {
     var t = cur(); if (!t) return;
     var root = document.documentElement, c = isDark() ? t.dark : t.light;
-    if (animate && !reduce) { root.classList.add('theme-anim'); setTimeout(function () { root.classList.remove('theme-anim'); }, 600); }
     Object.keys(c).forEach(function (k) { root.style.setProperty('--' + k, c[k]); });
     Object.keys(MAP).forEach(function (k) { root.style.setProperty('--' + k, c[MAP[k]]); });
     root.style.colorScheme = isDark() ? 'dark' : 'light';
     var m = $('meta[name=theme-color]'); if (m) m.content = c.surfaceContainer;
     var b = $('#mode'); b.innerHTML = svg(isDark() ? 'sun' : 'moon');
     b.setAttribute('aria-label', isDark() ? 'Включить светлую тему' : 'Включить тёмную тему');
-    $$('.theme').forEach(function (el) { el.setAttribute('aria-checked', String(el.dataset.id === S.theme)); });
+    $$('.theme').forEach(function (el) {
+      var selected = el.dataset.id === t.id;
+      el.setAttribute('aria-checked', String(selected)); el.tabIndex = selected ? 0 : -1;
+    });
+    $('#themeCurrent').textContent = 'Выбрана тема: ' + t.name;
     paintBars(); renderPhones();
   }
   $('#mode').addEventListener('click', function () {
     S.mode = isDark() ? 'light' : 'dark';
     try { localStorage.setItem('j-mode', S.mode); } catch (e) {}
-    applyTheme(true);
+    applyTheme();
   });
-  mq.addEventListener && mq.addEventListener('change', function () { if (!S.mode) applyTheme(true); });
+  mq.addEventListener && mq.addEventListener('change', function () { if (!S.mode) applyTheme(); });
   var grid = $('#themeGrid');
   THEMES.forEach(function (t) {
     var b = document.createElement('button');
@@ -74,9 +76,51 @@
     b.innerHTML = '<img src="assets/icons/' + t.id + '.png" width="64" height="64" alt="" loading="lazy"><span>' + t.name + '</span>';
     b.addEventListener('click', function () {
       S.theme = t.id; try { localStorage.setItem('j-theme', t.id); } catch (e) {}
-      applyTheme(true);
+      applyTheme();
     });
     grid.appendChild(b);
+  });
+  grid.addEventListener('keydown', function (e) {
+    var buttons = $$('.theme', grid), index = buttons.indexOf(e.target), next = index;
+    if (index < 0) return;
+    var columns = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+    if (e.key === 'ArrowRight') next++;
+    else if (e.key === 'ArrowLeft') next--;
+    else if (e.key === 'ArrowDown') next += columns;
+    else if (e.key === 'ArrowUp') next -= columns;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = buttons.length - 1;
+    else return;
+    e.preventDefault(); next = (next + buttons.length) % buttons.length;
+    buttons[next].click(); buttons[next].focus();
+  });
+
+  /* Верхнее меню не закрывает страницу прозрачной подложкой. */
+  var menu = $('#menuToggle'), header = $('#top'), narrow = window.matchMedia('(max-width: 1000px)');
+  function closeMenu() {
+    header.classList.remove('menu-open'); menu.setAttribute('aria-expanded', 'false'); menu.setAttribute('aria-label', 'Открыть меню');
+  }
+  menu.addEventListener('click', function () {
+    var open = menu.getAttribute('aria-expanded') !== 'true';
+    header.classList.toggle('menu-open', open); menu.setAttribute('aria-expanded', String(open));
+    menu.setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню');
+    if (open) $('#nav a').focus();
+  });
+  $('#nav').addEventListener('click', function (e) {
+    var link = e.target.closest('a'); if (!link) return;
+    closeMenu();
+    if (narrow.matches) {
+      var section = $(link.getAttribute('href'));
+      section.setAttribute('tabindex', '-1'); section.focus({ preventScroll: true });
+    }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.getAttribute('aria-expanded') === 'true') { closeMenu(); menu.focus(); }
+  });
+  header.addEventListener('focusout', function (e) { if (!header.contains(e.relatedTarget)) closeMenu(); });
+  narrow.addEventListener('change', function () {
+    var hiddenFocus = narrow.matches && $('#nav').contains(document.activeElement);
+    closeMenu(); if (hiddenFocus) menu.focus();
   });
 
   /* ---------- цвета оценок и статусов (ui/kit/foundation/ctx.dart) ---------- */
@@ -196,25 +240,23 @@
   var phones = [];
   function phoneHTML(tab) {
     var nav = TABS.map(function (t, i) {
-      return '<button class="nit" type="button" role="tab" data-t="' + i + '" aria-selected="' + (i === tab) + '"' + (i === 3 ? ' tabindex="-1" aria-disabled="true"' : '') + '><span class="pill">' + svg(i === tab ? t[1] : t[0]) + '</span>' + t[2] + '</button>';
+      return '<button class="nit" type="button" data-t="' + i + '" aria-pressed="' + (i === tab) + '"' + (i === 3 ? ' disabled' : '') + '><span class="pill">' + svg(i === tab ? t[1] : t[0]) + '</span>' + t[2] + '</button>';
     }).join('');
-    return '<div class="phone" role="img" aria-label="Экран приложения Journal на iPhone 16"><div class="scr">' + status('8:48') +
-      '<div class="pages">' + scheduleScreen() + gradesScreen() + absencesScreen() + '</div>' +
+    return '<div class="phone" role="group" aria-label="Витрина Journal"><div class="scr">' + status('8:48') +
+      '<div class="pages" role="img" aria-label="Экран приложения Journal">' + scheduleScreen() + gradesScreen() + absencesScreen() + '</div>' +
       '<div class="fab">' + svg('add') + '<span>' + FAB[tab] + '</span></div>' +
-      '<div class="nbar" role="tablist" aria-label="Разделы приложения">' + nav + '</div><div class="home"></div></div></div>';
+      '<div class="nbar" role="group" aria-label="Переключить экран макета">' + nav + '</div><div class="home"></div></div></div>';
   }
-  function showTab(p, i, instant) {
+  function showTab(p, i) {
     p.tab = i;
     $$('.pg', p.el).forEach(function (pg, k) {
       pg.classList.toggle('hide', k !== i);
-      pg.classList.toggle('l', k < i); pg.classList.toggle('r', k > i);
-      if (instant) pg.style.transition = 'none';
     });
-    if (instant) { void p.el.offsetWidth; $$('.pg', p.el).forEach(function (pg) { pg.style.transition = ''; }); }
     $$('.nit', p.el).forEach(function (b, k) {
-      var on = k === i; b.setAttribute('aria-selected', on);
+      var on = k === i; b.setAttribute('aria-pressed', String(on));
       b.querySelector('.pill').innerHTML = svg(on ? TABS[k][1] : TABS[k][0]);
     });
+    $('.pages', p.el).setAttribute('aria-label', 'Экран «' + TABS[i][2] + '» приложения Journal');
     var f = $('.fab', p.el);
     f.style.display = i < 3 ? '' : 'none'; if (i < 3) f.lastChild.textContent = FAB[i];
     if (p.onTab) p.onTab(i);
@@ -226,7 +268,7 @@
       $$('.nit', p.el).forEach(function (b) {
         b.addEventListener('click', function () { var i = +b.dataset.t; if (i < 3 && p.interactive) showTab(p, i); if (i < 3 && p.interactive && p.sync) p.sync(i); });
       });
-      showTab(p, p.tab, true); fit(p);
+      showTab(p, p.tab); fit(p);
     });
   }
   function fit(p) {
@@ -241,14 +283,15 @@
     ['Пропуски', 'Лимиты без сюрпризов', 'Отметка у пары или на весь день. Приложение предупредит, когда лимит месяца или семестра близко.']
   ];
   var seg = $('#seg'), showText = $('#showText'), mainP;
-  seg.innerHTML = TEXTS.map(function (t, i) { return '<button type="button" role="tab" data-i="' + i + '">' + svg(TABS[i][1]) + t[0] + '</button>'; }).join('');
+  seg.innerHTML = TEXTS.map(function (t, i) { return '<button type="button" role="tab" id="screenTab' + i + '" aria-controls="showText" data-i="' + i + '">' + svg(TABS[i][1]) + t[0] + '<span class="tab-arrow" aria-hidden="true">↗</span></button>'; }).join('');
   function setText(i) {
-    $$('button', seg).forEach(function (b, k) { b.setAttribute('aria-selected', k === i); });
-    showText.innerHTML = '<div class="fade"><h3>' + TEXTS[i][1] + '</h3><p>' + TEXTS[i][2] + '</p></div>';
+    $$('button', seg).forEach(function (b, k) { b.setAttribute('aria-selected', String(k === i)); b.tabIndex = k === i ? 0 : -1; });
+    showText.setAttribute('aria-labelledby', 'screenTab' + i);
+    showText.innerHTML = '<div><h3>' + TEXTS[i][1] + '</h3><p>' + TEXTS[i][2] + '</p></div>';
   }
   $$('[data-phone]').forEach(function (host) {
     var main = host.hasAttribute('data-main');
-    var p = { host: host, tab: 0, interactive: main, maxH: main ? 876 : 660 };
+    var p = { host: host, tab: 0, interactive: main, maxH: main ? 724 : 660 };
     if (main) { mainP = p; p.sync = setText; }
     phones.push(p);
   });
@@ -256,40 +299,35 @@
     var b = e.target.closest('button'); if (!b || !mainP) return;
     var i = +b.dataset.i; showTab(mainP, i); setText(i);
   });
+  seg.addEventListener('keydown', function (e) {
+    var buttons = $$('button', seg), index = buttons.indexOf(e.target), next = index;
+    if (index < 0) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next++;
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next--;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = buttons.length - 1;
+    else return;
+    e.preventDefault(); next = (next + buttons.length) % buttons.length;
+    buttons[next].click(); buttons[next].focus();
+  });
   setText(0);
   var rt; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { phones.forEach(fit); }, 60); });
   if (window.ResizeObserver) phones.forEach(function (p) { new ResizeObserver(function () { fit(p); }).observe(p.host); });
 
-  /* лёгкий наклон телефона в шапке */
-  var hp = $('.hero-phone');
-  if (hp && !reduce && window.matchMedia('(hover:hover)').matches) {
-    $('.hero-card').addEventListener('pointermove', function (e) {
-      var r = hp.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
-      var b = $('.pbox', hp); if (b) b.style.transform = 'perspective(1400px) rotateY(' + (x * 8).toFixed(2) + 'deg) rotateX(' + (-y * 5).toFixed(2) + 'deg)';
-    });
-    $('.hero-card').addEventListener('pointerleave', function () { var b = $('.pbox', hp); if (b) b.style.transform = ''; });
-  }
-
-  /* ---------- появление и подсветка раздела ---------- */
-  var rv = $$('.rv');
-  rv.forEach(function (el, i) { el.style.transitionDelay = (i % 3) * 70 + 'ms'; });
+  /* Разделы видны сразу; прокрутка меняет только пункт навигации. */
   if ('IntersectionObserver' in window) {
-    var io = new IntersectionObserver(function (es) {
-      es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
-    }, { threshold: .15 });
-    rv.forEach(function (el) { io.observe(el); });
     var links = $$('#nav a'), secs = links.map(function (a) { return $(a.getAttribute('href')); });
     var so = new IntersectionObserver(function (es) {
       es.forEach(function (e) {
         if (!e.isIntersecting) return;
         links.forEach(function (a) {
           var on = a.getAttribute('href') === '#' + e.target.id; a.classList.toggle('on', on);
-          if (on) { var n = $('#nav'); if (n.scrollWidth > n.clientWidth) n.scrollTo({ left: a.offsetLeft - 24, behavior: reduce ? 'auto' : 'smooth' }); }
+          if (on) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
         });
       });
     }, { rootMargin: '-35% 0px -60% 0px' });
     secs.forEach(function (s) { if (s) so.observe(s); });
-  } else rv.forEach(function (el) { el.classList.add('in'); });
+  }
 
   /* ---------- релизы GitHub ---------- */
   var API = 'https://api.github.com/repos/' + REPO + '/releases?per_page=8';
@@ -318,7 +356,7 @@
     if (!box.childNodes.length) box.appendChild(el('p', '', 'Описание изменений смотрите на странице релиза.'));
     return box;
   }
-  function dateText(s) { try { return new Date(s).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return ''; } }
+  function dateText(s) { try { return new Date(s).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Minsk' }); } catch (e) { return ''; } }
   function asset(rel, suffix) { return (rel.assets || []).filter(function (a) { return a.name.slice(-suffix.length) === suffix; })[0]; }
   function size(b) { return (b / 1048576).toFixed(0) + ' МБ'; }
   function relHead(r) {
@@ -330,8 +368,8 @@
     var rels = list.filter(function (r) { return !r.draft; });
     if (!rels.length) throw new Error('empty');
     var newest = rels[0], stable = rels.filter(function (r) { return !r.prerelease; })[0] || newest;
-    var box = $('#news'); box.textContent = '';
-    var c = el('div', 'card news-card rv in'); c.appendChild(relHead(newest)); c.appendChild(bodyNode(newest.body));
+    var box = $('#releaseFeed'); box.textContent = ''; box.setAttribute('aria-busy', 'false');
+    var c = el('div', 'card news-card'); c.appendChild(relHead(newest)); c.appendChild(bodyNode(newest.body));
     var f = el('div', 'rel-foot'), a = el('a', 'btn btn-tonal', 'Все изменения на GitHub'); a.href = newest.html_url; a.rel = 'noopener'; f.appendChild(a); c.appendChild(f);
     box.appendChild(c);
     var older = rels.slice(1, 5);
@@ -352,7 +390,7 @@
     });
   }
   function fail() {
-    var box = $('#news'); box.textContent = '';
+    var box = $('#releaseFeed'); box.textContent = ''; box.setAttribute('aria-busy', 'false');
     var c = el('div', 'card news-card'); c.appendChild(el('p', 'sub', 'Не удалось загрузить данные с GitHub. Свежие версии и список изменений всегда на странице релизов.'));
     var a = el('a', 'btn btn-fill', 'Открыть релизы'); a.href = 'https://github.com/' + REPO + '/releases'; a.rel = 'noopener'; c.appendChild(a); box.appendChild(c);
   }
@@ -366,5 +404,5 @@
       .catch(fail);
   })();
 
-  applyTheme(false);
+  applyTheme();
 })();

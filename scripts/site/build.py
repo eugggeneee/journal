@@ -9,6 +9,7 @@ from __future__ import annotations
 import shutil
 import subprocess
 import sys
+import hashlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -26,6 +27,13 @@ def main() -> int:
     shutil.copy(ROOT / 'docs' / 'logo.png', assets / 'logo.png')
     for p in sorted((ROOT / 'assets' / 'icons' / 'preview').glob('*.png')):
         shutil.copy(p, assets / 'icons' / p.name)
+    # Новая разметка всегда получает подходящие стили и код, даже при старом кэше браузера.
+    page = OUT / 'index.html'
+    html = page.read_text(encoding='utf-8')
+    for name in ('styles.css', 'app.js', 'palette.js'):
+        digest = hashlib.sha256((OUT / name).read_bytes()).hexdigest()[:12]
+        html = html.replace(f'"{name}"', f'"{name}?v={digest}"')
+    page.write_text(html, encoding='utf-8')
     (OUT / '.nojekyll').write_text('', encoding='utf-8')
     print(f'Сайт собран: {OUT.relative_to(ROOT)}')
     return 0
