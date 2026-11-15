@@ -11,6 +11,7 @@ import '../app/scope.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
+import '../kit/foundation/ctx.dart';
 import 'day_card.dart';
 import 'day_timeline.dart';
 import 'marks.dart';
@@ -142,7 +143,6 @@ class _DayViewState extends State<DayView> {
             slots: s.slots,
             profile: profile,
             store: store,
-            status: status,
             onShortDay: () => _markShortDay(context),
             onMark: () {
               Haptics.selection();
@@ -150,6 +150,12 @@ class _DayViewState extends State<DayView> {
             },
           ),
           DayTimeline(date: date, slots: s.slots, store: store),
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Center(
+              child: Text(status, textAlign: TextAlign.center, style: context.tt.bodySmall?.copyWith(color: context.cs.onSurfaceVariant)),
+            ),
+          ),
         ]);
       case DayStatus.sunday:
         return RestDay(

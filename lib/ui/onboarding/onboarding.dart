@@ -8,6 +8,7 @@ import '../../data/store.dart';
 import '../app/scope.dart';
 import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
+import '../kit/components/gesture_guide.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
 import '../kit/inputs/selectors.dart';
@@ -17,7 +18,7 @@ import '../settings/bells_page.dart';
 import '../settings/group_picker.dart';
 import '../settings/settings_pages.dart';
 
-/// Приветствие при первом запуске: знакомство → возможности → группа → стартовые настройки.
+/// Приветствие при первом запуске: знакомство → возможности → жесты → группа → стартовые настройки.
 class OnboardingFlow extends StatefulWidget {
   const OnboardingFlow({super.key});
   @override
@@ -25,8 +26,8 @@ class OnboardingFlow extends StatefulWidget {
 }
 
 class _OnboardingFlowState extends State<OnboardingFlow> {
-  static const _count = 4;
-  static const _groupPage = 2;
+  static const _count = 5;
+  static const _groupPage = 3;
 
   PageController _pc = PageController();
   int _page = 0;
@@ -97,7 +98,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                       controller: _pc,
                       physics: const NeverScrollableScrollPhysics(),
                       onPageChanged: (i) => setState(() => _page = i),
-                      children: [_welcome(context), _features(context), _group(context, store), _settings(context)],
+                      children: [_welcome(context), _features(context), _gestures(context), _group(context, store), _settings(context)],
                     ),
                   ),
                   Padding(
@@ -211,6 +212,12 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       ),
     ]);
   }
+
+  Widget _gestures(BuildContext context) => _scrolling([
+        _title(context, 'Жесты', 'Несколько движений, которые экономят время.'),
+        const SizedBox(height: 28),
+        const GestureGuide(),
+      ]);
 
   Widget _group(BuildContext context, AppStore store) {
     final cs = context.cs;

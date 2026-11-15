@@ -69,7 +69,7 @@ class LessonCard extends StatelessWidget {
       onLongPress: () => toggleLessonAbsence(context, store, date, slot),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(14, 14, 4, hasBreak ? 10 : 14),
+          padding: EdgeInsets.fromLTRB(14, 12, 4, hasBreak ? 8 : 12),
           child: Row(children: [
             // Пропуск — плашка с цифрой на верхнем углу номера пары, пометка — на нижнем краю:
             // размер карточки не меняется.
@@ -138,7 +138,7 @@ class LessonCard extends StatelessWidget {
         // Перерыв внутри пары занимает всю ширину карточки: время читается целиком.
         if (bell != null && bell.hasBreak)
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
             child: _InnerBreak(bell: bell, active: isNow && _inBreak(bell)),
           ),
       ]),

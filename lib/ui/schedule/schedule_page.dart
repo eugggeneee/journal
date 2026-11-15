@@ -176,7 +176,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     );
 
     final strip = SizedBox(
-      height: 88,
+      height: 80,
       child: ListView.builder(
         controller: _strip,
         scrollDirection: Axis.horizontal,
@@ -252,39 +252,42 @@ class _DayChip extends StatelessWidget {
             duration: Motion.short,
             curve: Motion.standard,
             width: 52,
-            height: 78,
+            height: 70,
             decoration: BoxDecoration(
               color: selected ? cs.primary : Colors.transparent,
               borderRadius: BorderRadius.circular(selected ? 26 : 18),
               border: isToday && !selected ? Border.all(color: cs.primary, width: 1.5) : null,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  weekdayShort(date),
-                  style: context.tt.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: selected ? cs.onPrimary.withValues(alpha: 0.85) : cs.onSurfaceVariant,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    weekdayShort(date),
+                    style: context.tt.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: selected ? cs.onPrimary.withValues(alpha: 0.85) : cs.onSurfaceVariant,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${date.day}',
-                  style: context.tt.titleLarge?.copyWith(color: fg, fontWeight: (selected || isToday) ? FontWeight.w800 : FontWeight.w500),
-                ),
-                const SizedBox(height: 6),
-                AnimatedContainer(
-                  duration: Motion.short,
-                  curve: Motion.standard,
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: (marked || noted) ? (selected ? cs.onPrimary : (marked ? absenceAccent(context, excused: false) : cs.tertiary)) : Colors.transparent,
+                  const SizedBox(height: 4),
+                  Text(
+                    '${date.day}',
+                    style: context.tt.titleLarge?.copyWith(color: fg, fontWeight: (selected || isToday) ? FontWeight.w800 : FontWeight.w500),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 6),
+                  AnimatedContainer(
+                    duration: Motion.short,
+                    curve: Motion.standard,
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: (marked || noted) ? (selected ? cs.onPrimary : (marked ? absenceAccent(context, excused: false) : cs.tertiary)) : Colors.transparent,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

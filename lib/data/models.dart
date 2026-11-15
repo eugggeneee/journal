@@ -419,6 +419,7 @@ class Settings {
     this.absenceHours = 2,
     this.haptics = true,
     this.motion = 0,
+    this.dayCardFolded = false,
     this.autoRefresh = true,
     Map<String, BellProfile>? bells,
     Map<String, String>? semesterSplits,
@@ -437,6 +438,7 @@ class Settings {
   int absenceHours; // сколько часов отмечать при быстром нажатии: 1 или 2
   bool haptics; // тактильная отдача
   int motion; // анимации: 0 — выразительные, 1 — спокойные, 2 — выключены
+  bool dayCardFolded; // карточка дня на главной свёрнута в тонкую полоску
   bool autoRefresh; // подгружать расписание при запуске и возвращении в приложение
 
   /// Расписание звонков: 'week' (пн–пт) и 'sat' (суббота).
@@ -459,6 +461,7 @@ class Settings {
         'ah': absenceHours,
         'hap': haptics,
         'mot': motion,
+        'dc': dayCardFolded,
         'auto': autoRefresh,
         'bells': {for (final e in bells.entries) e.key: e.value.toJson()},
         'sem': semesterSplits,
@@ -483,6 +486,7 @@ class Settings {
         absenceHours: hours == 1 ? 1 : 2,
         haptics: j['hap'] is bool ? j['hap'] as bool : true,
         motion: motion >= 0 && motion <= 2 ? motion : 0,
+        dayCardFolded: j['dc'] is bool ? j['dc'] as bool : false,
         autoRefresh: j['auto'] is bool ? j['auto'] as bool : true,
         bells: {
           for (final e in Map<String, dynamic>.from((j['bells'] as Map?) ?? const {}).entries)

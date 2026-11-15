@@ -265,10 +265,16 @@ class LimitCard extends StatelessWidget {
                 builder: (context, v, _) => CustomPaint(
                   painter: _RingPainter(progress: v, color: accent, track: tone.fg.withValues(alpha: 0.14), stroke: 7),
                   child: Center(
-                    child: AnimatedNumber(
-                      value: hours.toDouble(),
-                      format: (x) => '${x.round()}',
-                      style: context.tt.titleLarge?.copyWith(color: tone.fg, fontWeight: FontWeight.w800, height: 1),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: AnimatedNumber(
+                          value: hours.toDouble(),
+                          format: (x) => '${x.round()}',
+                          style: context.tt.titleLarge?.copyWith(color: tone.fg, fontWeight: FontWeight.w800, height: 1),
+                        ),
+                      ),
                     ),
                   ),
                 ),

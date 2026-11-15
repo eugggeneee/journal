@@ -12,9 +12,10 @@ import 'widgets.dart';
 
 /// Итоговая карточка страницы: цветная заливка, мягкие круги и плавное появление.
 class HeroCard extends StatelessWidget {
-  const HeroCard({super.key, required this.tone, required this.child});
+  const HeroCard({super.key, required this.tone, required this.child, this.padding = const EdgeInsets.fromLTRB(24, 22, 24, 22)});
   final Tone tone;
   final Widget child;
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) => Appear(
@@ -26,7 +27,7 @@ class HeroCard extends StatelessWidget {
             color: tone.fg,
             radius: 32,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
+              padding: padding,
               child: child,
             ),
           ),

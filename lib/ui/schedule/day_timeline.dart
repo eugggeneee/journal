@@ -19,7 +19,7 @@ class DayTimeline extends StatelessWidget {
   final AppStore store;
 
   static const double _timesW = 50;
-  static const double _railW = 22;
+  static const double _railW = 28;
 
   @override
   Widget build(BuildContext context) {
@@ -146,19 +146,17 @@ class _TimelineRow extends StatelessWidget {
   final bool current;
   final double bottomGap;
 
-  /// Высота от верха строки до центра узла: совпадает с центром номера пары в карточке.
-  static const double nodeY = 37;
-
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
     final railLeft = timesW;
-    final contentLeft = timesW + DayTimeline._railW + 4;
+    final contentLeft = timesW + DayTimeline._railW + 2;
     final fade = context.motion(Motion.medium);
     const figures = [FontFeature.tabularFigures()];
     return Appear(
       index: index,
       child: Stack(fit: StackFit.passthrough, children: [
+        // Шкала и узел занимают всю строку без нижнего зазора, поэтому узел стоит ровно по центру карточки.
         Positioned(
           left: railLeft,
           top: 0,
@@ -172,10 +170,10 @@ class _TimelineRow extends StatelessWidget {
               painter: _RailPainter(
                 rail: rail,
                 fill: v,
-                nodeY: nodeY,
+                gap: bottomGap,
                 primary: cs.primary,
                 onPrimary: cs.onPrimary,
-                track: cs.outlineVariant,
+                track: cs.surfaceContainerHighest,
                 halo: cs.primaryContainer,
                 surface: cs.surface,
                 outline: cs.outline,
@@ -190,30 +188,34 @@ class _TimelineRow extends StatelessWidget {
         if (start != null)
           Positioned(
             left: 0,
-            top: nodeY - 8,
+            top: 0,
+            bottom: bottomGap,
             width: timesW - 4,
-            // Время никогда не обрезается: при крупном шрифте системы оно уменьшается, а не теряет цифры.
+            // Время стоит по центру карточки и никогда не обрезается: при крупном шрифте оно уменьшается.
             child: AnimatedOpacity(
               opacity: dim ? 0.62 : 1,
               duration: fade,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
+              child: Align(
                 alignment: Alignment.centerRight,
-                child: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
-                  Text(
-                    fmtMin(start!),
-                    maxLines: 1,
-                    softWrap: false,
-                    style: TextStyle(fontSize: 15, height: 1.15, fontWeight: FontWeight.w800, fontFeatures: figures, color: current ? cs.primary : cs.onSurface),
-                  ),
-                  if (end != null)
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
                     Text(
-                      fmtMin(end!),
+                      fmtMin(start!),
                       maxLines: 1,
                       softWrap: false,
-                      style: TextStyle(fontSize: 12, height: 1.3, fontWeight: FontWeight.w500, fontFeatures: figures, color: cs.onSurfaceVariant),
+                      style: TextStyle(fontSize: 15, height: 1.15, fontWeight: FontWeight.w800, fontFeatures: figures, color: current ? cs.primary : cs.onSurface),
                     ),
-                ]),
+                    if (end != null)
+                      Text(
+                        fmtMin(end!),
+                        maxLines: 1,
+                        softWrap: false,
+                        style: TextStyle(fontSize: 12, height: 1.3, fontWeight: FontWeight.w500, fontFeatures: figures, color: cs.onSurfaceVariant),
+                      ),
+                  ]),
+                ),
               ),
             ),
           ),
@@ -226,7 +228,7 @@ class _RailPainter extends CustomPainter {
   const _RailPainter({
     required this.rail,
     required this.fill,
-    required this.nodeY,
+    required this.gap,
     required this.primary,
     required this.onPrimary,
     required this.track,
@@ -236,7 +238,9 @@ class _RailPainter extends CustomPainter {
   });
   final _Rail rail;
   final double fill;
-  final double nodeY;
+
+  /// Нижний зазор строки: узел стоит по центру карточки, то есть выше середины строки на половину зазора.
+  final double gap;
   final Color primary;
   final Color onPrimary;
   final Color track;
@@ -244,59 +248,70 @@ class _RailPainter extends CustomPainter {
   final Color surface;
   final Color outline;
 
-  static const double _width = 4;
+  static const double _width = 6;
 
   @override
   void paint(Canvas canvas, Size size) {
     final x = size.width / 2;
     final h = size.height;
+    final nodeY = (h - gap) / 2;
     final y0 = (rail.node && rail.first) ? nodeY : 0.0;
     final y1 = (rail.node && rail.last) ? nodeY : h;
-    final line = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _width
-      ..strokeCap = StrokeCap.butt
-      ..isAntiAlias = true;
+    const r = Radius.circular(_width / 2);
+    final roundTop = rail.node && rail.first;
+    final roundBottom = rail.node && rail.last;
+
+    RRect bar(double a, double b, {required bool top, required bool bottom}) => RRect.fromLTRBAndCorners(
+          x - _width / 2,
+          a,
+          x + _width / 2,
+          b,
+          topLeft: top ? r : Radius.zero,
+          topRight: top ? r : Radius.zero,
+          bottomLeft: bottom ? r : Radius.zero,
+          bottomRight: bottom ? r : Radius.zero,
+        );
 
     if (y1 > y0) {
-      canvas.drawLine(Offset(x, y0), Offset(x, y1), line..color = track);
-      line.color = primary;
+      canvas.drawRRect(bar(y0, y1, top: roundTop, bottom: roundBottom), Paint()..color = track);
+      final paint = Paint()..color = primary;
       if (!rail.node) {
         final yf = y0 + (y1 - y0) * fill;
-        if (yf > y0) canvas.drawLine(Offset(x, y0), Offset(x, yf), line);
+        if (yf > y0) canvas.drawRect(Rect.fromLTRB(x - _width / 2, y0, x + _width / 2, yf), paint);
       } else if (rail.reached) {
-        if (!rail.first) canvas.drawLine(Offset(x, 0), Offset(x, nodeY), line);
+        if (!rail.first) canvas.drawRect(Rect.fromLTRB(x - _width / 2, 0, x + _width / 2, nodeY), paint);
         final yf = nodeY + (y1 - nodeY) * fill;
-        if (yf > nodeY) canvas.drawLine(Offset(x, nodeY), Offset(x, yf), line);
+        if (yf > nodeY) canvas.drawRect(Rect.fromLTRB(x - _width / 2, nodeY, x + _width / 2, yf), paint);
       }
     }
 
     if (!rail.node) return;
     final c = Offset(x, nodeY);
     if (rail.current) {
-      canvas.drawCircle(c, 13, Paint()..color = halo);
-      canvas.drawCircle(c, 8.5, Paint()..color = primary);
-      canvas.drawCircle(c, 3.2, Paint()..color = onPrimary);
+      canvas.drawCircle(c, 14, Paint()..color = halo);
+      canvas.drawCircle(c, 9.5, Paint()..color = primary);
+      canvas.drawCircle(c, 3.6, Paint()..color = onPrimary);
     } else if (rail.reached) {
-      canvas.drawCircle(c, 8, Paint()..color = primary);
+      canvas.drawCircle(c, 12, Paint()..color = surface);
+      canvas.drawCircle(c, 9, Paint()..color = primary);
       final tick = Path()
-        ..moveTo(x - 3.4, nodeY + 0.2)
-        ..lineTo(x - 1.0, nodeY + 2.7)
-        ..lineTo(x + 3.5, nodeY - 2.5);
+        ..moveTo(x - 3.6, nodeY + 0.2)
+        ..lineTo(x - 1.1, nodeY + 2.9)
+        ..lineTo(x + 3.8, nodeY - 2.7);
       canvas.drawPath(
         tick,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
+          ..strokeWidth = 2.2
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round
           ..color = onPrimary,
       );
     } else {
-      canvas.drawCircle(c, 8, Paint()..color = surface);
+      canvas.drawCircle(c, 12, Paint()..color = surface);
       canvas.drawCircle(
         c,
-        6.5,
+        7.5,
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 3
@@ -308,6 +323,7 @@ class _RailPainter extends CustomPainter {
   @override
   bool shouldRepaint(_RailPainter old) =>
       old.fill != fill ||
+      old.gap != gap ||
       old.rail.node != rail.node ||
       old.rail.first != rail.first ||
       old.rail.last != rail.last ||

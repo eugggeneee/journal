@@ -9,8 +9,8 @@ import '../absences/absence_actions.dart';
 import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/overview.dart';
-import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
+import 'day_bar.dart';
 import 'lesson_card.dart';
 
 /// Главная карточка дня: что идёт сейчас и что дальше, сколько осталось, сколько пар пройдено,
@@ -23,7 +23,6 @@ class DayCard extends StatelessWidget {
     required this.slots,
     required this.profile,
     required this.store,
-    required this.status,
     required this.onShortDay,
     required this.onMark,
   });
@@ -31,9 +30,6 @@ class DayCard extends StatelessWidget {
   final List<LessonSlot> slots;
   final BellProfile profile;
   final AppStore store;
-
-  /// Подпись об источнике данных: «Обновлено в 12:30», «Сохранено на устройстве».
-  final String status;
   final VoidCallback onShortDay;
   final VoidCallback onMark;
 
@@ -70,6 +66,22 @@ class DayCard extends StatelessWidget {
 
   static String _big(int m) => m >= 60 ? '${m ~/ 60} ч ${m % 60}' : '$m';
 
+  /// Отрезки дня для полосы: пары, а пара с перерывом внутри разбита на две половины.
+  List<(int, int)> _segments() {
+    final nums = [for (final s in slots) if (profile[s.number] != null) s.number]..sort();
+    final out = <(int, int)>[];
+    for (final n in nums) {
+      final b = profile[n]!;
+      if (b.hasBreak) {
+        out.add((b.start, b.breakStart!));
+        out.add((b.breakEnd!, b.end));
+      } else {
+        out.add((b.start, b.end));
+      }
+    }
+    return out;
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
@@ -78,6 +90,7 @@ class DayCard extends StatelessWidget {
     final minute = now.hour * 60 + now.minute;
     final diff = dayDiff(date, today());
     final isToday = diff == 0;
+    final folded = store.settings.dayCardFolded;
 
     final bells = [for (final s in slots) profile[s.number]].whereType<BellSlot>().toList();
     int? from;
@@ -112,8 +125,10 @@ class DayCard extends StatelessWidget {
     var sub = '';
     String? lead;
     int? left;
-    double? progress;
-    String? upNext;
+    String? afterLead;
+    LessonSlot? upNext;
+    var foldTitle = 'Расписание дня';
+    var foldSub = [pairsText(slots.length), if (range != null) range].join(' · ');
     var phaseKey = 'calm-${ymd(date)}';
 
     if (live) {
@@ -128,18 +143,27 @@ class DayCard extends StatelessWidget {
           break;
         case DayPhase.lesson:
           if (cur != null && curBell != null) {
+            final n = _after(cur.number);
+            final innerAhead = curBell.hasBreak && minute < curBell.breakStart!;
+            final lunchNext = innerAhead ? curBell.lunchInside : profile.isLunchAfter(cur.number);
             caption = 'Идёт сейчас · ${cur.number} пара';
             range = shortRange(curBell.start, curBell.end);
             title = _title(cur);
             sub = _place(cur);
-            lead = 'до конца';
-            left = c.left;
-            progress = c.progress;
-            final n = _after(cur.number);
-            if (n != null) {
-              final b = profile[n.number];
-              upNext = 'Потом: ${n.number} пара${b == null ? '' : ' в ${fmtMin(b.start)}'} · ${_title(n)}';
+            if (innerAhead) {
+              lead = lunchNext ? 'до обеда' : 'до перерыва';
+              left = curBell.breakStart! - minute;
+              afterLead = 'Пара идёт до ${fmtMin(curBell.end)}';
+            } else if (n != null) {
+              lead = lunchNext ? 'до обеда' : 'до перерыва';
+              left = c.left;
+            } else {
+              lead = 'до конца';
+              left = c.left;
             }
+            upNext = n;
+            foldTitle = '${cur.number} пара · ${_title(cur)}';
+            foldSub = ['$lead $left мин', if (n != null) 'потом ${n.number} пара'].join(' · ');
           }
         case DayPhase.innerBreak:
           if (cur != null && curBell != null) {
@@ -152,7 +176,9 @@ class DayCard extends StatelessWidget {
             sub = 'Дальше вторая половина в ${fmtMin(curBell.breakEnd!)}';
             lead = 'до конца';
             left = c.left;
-            progress = c.progress;
+            upNext = _after(cur.number);
+            foldTitle = caption;
+            foldSub = '$lead $left мин · ${_title(cur)}';
           }
         case DayPhase.gap:
           if (next != null && nextBell != null && curBell != null) {
@@ -164,9 +190,10 @@ class DayCard extends StatelessWidget {
             range = shortRange(curBell.end, nextBell.start);
             title = 'Дальше: ${_title(next)}';
             sub = ['${next.number} пара в ${fmtMin(nextBell.start)}', _place(next)].where((x) => x.isNotEmpty).join(' · ');
-            lead = 'через';
+            lead = 'до пары';
             left = c.left;
-            progress = c.progress;
+            foldTitle = caption;
+            foldSub = 'до пары ${c.left} мин · ${next.number} пара ${_title(next)}';
           }
         case DayPhase.before:
           if (next != null && nextBell != null) {
@@ -176,8 +203,10 @@ class DayCard extends StatelessWidget {
             range = fmtMin(nextBell.start);
             title = 'Первая пара: ${_title(next)}';
             sub = ['${next.number} пара', _place(next)].where((x) => x.isNotEmpty).join(' · ');
-            lead = 'через';
+            lead = 'до начала';
             left = c.left;
+            foldTitle = caption;
+            foldSub = 'до начала ${c.left} мин · ${_title(next)}';
           }
         case DayPhase.after:
           final lastBell = c.pair == null ? null : profile[c.pair!];
@@ -187,6 +216,8 @@ class DayCard extends StatelessWidget {
           range = lastBell == null ? null : fmtMin(lastBell.end);
           title = 'Пары закончились';
           sub = lastBell == null ? '' : 'Последняя закончилась в ${fmtMin(lastBell.end)}';
+          foldTitle = caption;
+          foldSub = sub;
       }
     } else {
       final first = _first();
@@ -200,94 +231,179 @@ class DayCard extends StatelessWidget {
 
     final fg = tone.fg;
     const figures = [FontFeature.tabularFigures()];
-
-    final top = Column(
-      key: ValueKey(phaseKey),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(children: [
-          Expanded(child: Text(caption, maxLines: 1, overflow: TextOverflow.ellipsis, style: tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w700))),
-          if (range != null) Text(range, style: tt.labelLarge?.copyWith(color: fg, fontWeight: FontWeight.w700, fontFeatures: figures)),
-        ]),
-        const SizedBox(height: 8),
-        Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: tt.headlineSmall?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1.15)),
-        if (sub.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(sub, maxLines: 2, overflow: TextOverflow.ellipsis, style: tt.bodyMedium?.copyWith(color: fg.withValues(alpha: 0.85))),
-          ),
-        if (left != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 14),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-              Text('$lead ', style: tt.titleMedium?.copyWith(color: fg)),
-              AnimatedNumber(
-                value: left.toDouble(),
-                format: (v) => _big(v.round()),
-                style: tt.displaySmall?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1.05),
-              ),
-              Text(' мин', style: tt.titleMedium?.copyWith(color: fg)),
-            ]),
-          ),
-        if (progress != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: 0, end: progress),
-              duration: context.motion(Motion.long),
-              curve: Motion.standard,
-              builder: (context, v, _) => Bar(value: v, color: accent, height: 10, track: fg.withValues(alpha: 0.14)),
-            ),
-          ),
-      ],
+    final barMinute = live ? minute : (diff < 0 ? 24 * 60 : -1);
+    final bar = DayBar(
+      segments: _segments(),
+      minute: barMinute,
+      fill: accent,
+      track: fg.withValues(alpha: 0.16),
+      marker: live ? fg : null,
+      height: folded ? 8 : 10,
     );
 
+    void toggleFold() {
+      Haptics.selection();
+      store.setDayCardFolded(!folded);
+    }
+
+    final foldButton = IconButton(
+      tooltip: folded ? 'Развернуть карточку' : 'Свернуть карточку',
+      style: IconButton.styleFrom(
+        foregroundColor: fg,
+        backgroundColor: fg.withValues(alpha: 0.12),
+        minimumSize: const Size(40, 40),
+        padding: EdgeInsets.zero,
+      ),
+      icon: Icon(folded ? Icons.unfold_more_rounded : Icons.unfold_less_rounded, size: 22),
+      onPressed: toggleFold,
+    );
+
+    final Widget content;
+    if (folded) {
+      content = Column(
+        key: ValueKey('folded-$phaseKey'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(foldTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w800)),
+                if (foldSub.isNotEmpty)
+                  Text(foldSub, maxLines: 1, overflow: TextOverflow.ellipsis, style: tt.bodySmall?.copyWith(color: fg.withValues(alpha: 0.85))),
+              ]),
+            ),
+            const SizedBox(width: 8),
+            foldButton,
+          ]),
+          const SizedBox(height: 6),
+          bar,
+        ],
+      );
+    } else {
+      final next = upNext;
+      final nextBell = next == null ? null : profile[next.number];
+      final nextPlace = next == null ? '' : _place(next);
+      content = Column(
+        key: ValueKey('open-$phaseKey'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(children: [
+            Expanded(child: Text(caption, maxLines: 1, overflow: TextOverflow.ellipsis, style: tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w700))),
+            if (range != null) Text(range, style: tt.labelLarge?.copyWith(color: fg, fontWeight: FontWeight.w700, fontFeatures: figures)),
+            const SizedBox(width: 8),
+            foldButton,
+          ]),
+          const SizedBox(height: 4),
+          Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: tt.headlineSmall?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1.15)),
+          if (sub.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(sub, maxLines: 2, overflow: TextOverflow.ellipsis, style: tt.bodyMedium?.copyWith(color: fg.withValues(alpha: 0.85))),
+            ),
+          if (left != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+                Text('$lead ', style: tt.titleMedium?.copyWith(color: fg)),
+                AnimatedNumber(
+                  value: left.toDouble(),
+                  format: (v) => _big(v.round()),
+                  style: tt.displaySmall?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1.05),
+                ),
+                Text(' мин', style: tt.titleMedium?.copyWith(color: fg)),
+              ]),
+            ),
+          if (afterLead != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(afterLead, maxLines: 1, overflow: TextOverflow.ellipsis, style: tt.bodyMedium?.copyWith(color: fg.withValues(alpha: 0.85))),
+            ),
+          const SizedBox(height: 10),
+          bar,
+          if (next != null) ...[
+            const SizedBox(height: 10),
+            _NextPair(
+              fg: fg,
+              number: next.number,
+              start: nextBell?.start,
+              title: _title(next),
+              place: nextPlace,
+            ),
+          ],
+          const SizedBox(height: 10),
+          _StatsPanel(stats: _stats(live, done, to, from, bells, hours), fg: fg),
+          const SizedBox(height: 10),
+          _WholeDaySplit(
+            fg: fg,
+            allMarked: allMarked,
+            shortDay: shortDay,
+            enabled: slots.isNotEmpty,
+            onWholeDay: () => toggleWholeDay(context, store, date, slots),
+            onShortDay: onShortDay,
+            onMark: onMark,
+          ),
+        ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: HeroCard(
+        tone: tone,
+        padding: folded ? const EdgeInsets.fromLTRB(18, 12, 12, 12) : const EdgeInsets.fromLTRB(20, 14, 20, 14),
+        child: Smooth(child: content),
+      ),
+    );
+  }
+
+  List<_Stat> _stats(bool live, int done, int? to, int? from, List<BellSlot> bells, int hours) {
     final study = bells.fold<int>(0, (a, b) => a + b.minutes);
-    final stats = <_Stat>[
+    return [
       if (live) _Stat('$done из ${slots.length}', 'пройдено') else if (study > 0) _Stat(spanText(study), 'на парах'),
       if (live && to != null) _Stat(fmtMin(to), 'конец дня') else if (!live && from != null) _Stat(fmtMin(from), 'начало'),
       _Stat('$hours ч', hours > 0 ? 'пропущено' : 'без пропусков'),
     ];
+  }
+}
 
-    final footerText = upNext ?? status;
-    final footerIcon = upNext != null ? Icons.schedule_rounded : Icons.cloud_done_rounded;
+/// Следующая пара сразу под полосой: номер, время начала, предмет, кабинет и преподаватель.
+class _NextPair extends StatelessWidget {
+  const _NextPair({required this.fg, required this.number, required this.start, required this.title, required this.place});
+  final Color fg;
+  final int number;
+  final int? start;
+  final String title;
+  final String place;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: HeroCard(
-        tone: tone,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Smooth(child: top),
-          const SizedBox(height: 16),
-          _StatsPanel(stats: stats, fg: fg),
-          const SizedBox(height: 12),
-          Row(children: [
-            Icon(footerIcon, size: 16, color: fg.withValues(alpha: 0.8)),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Swap(
-                child: Text(
-                  footerText,
-                  key: ValueKey(footerText),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: tt.bodySmall?.copyWith(color: fg.withValues(alpha: 0.85)),
-                ),
-              ),
+  @override
+  Widget build(BuildContext context) {
+    final tt = context.tt;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 10, 14, 10),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(20)),
+      child: Row(children: [
+        Container(
+          width: 40,
+          height: 40,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: fg.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(14)),
+          child: Text('$number', style: tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w800)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              start == null ? 'Дальше' : 'Дальше · в ${fmtMin(start!)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: tt.labelMedium?.copyWith(color: fg.withValues(alpha: 0.8), fontWeight: FontWeight.w600),
             ),
-            const SizedBox(width: 8),
-            _WholeDaySplit(
-              fg: fg,
-              allMarked: allMarked,
-              shortDay: shortDay,
-              enabled: slots.isNotEmpty,
-              onWholeDay: () => toggleWholeDay(context, store, date, slots),
-              onShortDay: onShortDay,
-              onMark: onMark,
-            ),
+            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w800)),
+            if (place.isNotEmpty)
+              Text(place, maxLines: 1, overflow: TextOverflow.ellipsis, style: tt.bodySmall?.copyWith(color: fg.withValues(alpha: 0.85))),
           ]),
-        ]),
-      ),
+        ),
+      ]),
     );
   }
 }
@@ -369,8 +485,9 @@ class _WholeDaySplit extends StatelessWidget {
     const inner = Radius.circular(6);
     final d = context.motion(Motion.short);
     final bg = fg.withValues(alpha: 0.14);
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      FilledButton.icon(
+    return Row(children: [
+      Expanded(
+        child: FilledButton.icon(
         style: FilledButton.styleFrom(
           backgroundColor: bg,
           foregroundColor: fg,
@@ -400,6 +517,7 @@ class _WholeDaySplit extends StatelessWidget {
                 onWholeDay();
               }
             : null,
+        ),
       ),
       const SizedBox(width: 2),
       MenuAnchor(

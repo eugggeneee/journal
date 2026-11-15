@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show LongPressGestureRecognizer;
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/dates.dart';
@@ -5,6 +6,9 @@ import '../../../core/haptics.dart';
 import '../animation/motion.dart';
 import '../animation/reveal.dart';
 import '../foundation/ctx.dart';
+
+/// Время удержания карточки до срабатывания (отметка пропуска): короче системных 500 мс.
+const Duration kQuickHold = Duration(milliseconds: 260);
 
 /// Запас снизу под плавающую кнопку, чтобы она не закрывала последние элементы списка.
 const double kFabClearance = 104;
@@ -421,10 +425,25 @@ class _SegmentCardState extends State<SegmentCard> {
     final cs = context.cs;
     final r = segmentRadius(widget.index, widget.count);
     final d = context.motion(Motion.short);
-    Widget body = Material(
-      color: widget.color ?? cs.surfaceContainerLow,
-      child: InkWell(onTap: widget.onTap, onLongPress: widget.onLongPress, child: widget.child),
-    );
+    Widget inner = InkWell(onTap: widget.onTap, child: widget.child);
+    final onLong = widget.onLongPress;
+    if (onLong != null) {
+      // Удержание срабатывает быстрее стандартных полусекунды: отметка пропуска не заставляет ждать.
+      inner = RawGestureDetector(
+        behavior: HitTestBehavior.translucent,
+        gestures: {
+          LongPressGestureRecognizer: GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+            () => LongPressGestureRecognizer(duration: kQuickHold),
+            (r) => r.onLongPress = () {
+              Haptics.selection();
+              onLong();
+            },
+          ),
+        },
+        child: inner,
+      );
+    }
+    Widget body = Material(color: widget.color ?? cs.surfaceContainerLow, child: inner);
     if (widget.dismissKey != null) {
       body = Dismissible(
         key: widget.dismissKey!,

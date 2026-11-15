@@ -37,6 +37,13 @@ void main() {
     expect(Settings.fromJson({'group': '6312', 'mot': 7}).motion, 0);
   });
 
+  test('свёрнутая карточка дня сохраняется, по умолчанию развёрнута', () {
+    expect(Settings().dayCardFolded, isFalse);
+    final back = Settings.fromJson(Settings(group: '6312', dayCardFolded: true).toJson());
+    expect(back.dayCardFolded, isTrue);
+    expect(Settings.fromJson({'group': '6312', 'dc': 'да'}).dayCardFolded, isFalse);
+  });
+
   test('устаревший ключ в копии настроек не мешает чтению', () {
     final s = Settings.fromJson({'group': '6312', 'dep': false, 'mot': 1});
     expect(s.group, '6312');

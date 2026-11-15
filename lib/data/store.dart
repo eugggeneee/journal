@@ -347,6 +347,12 @@ class AppStore extends ChangeNotifier {
     _changed();
   }
 
+  void setDayCardFolded(bool v) {
+    if (v == settings.dayCardFolded) return;
+    settings.dayCardFolded = v;
+    _changed();
+  }
+
   void setAutoRefresh(bool v) {
     if (v == settings.autoRefresh) return;
     settings.autoRefresh = v;

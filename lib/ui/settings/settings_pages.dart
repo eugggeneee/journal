@@ -9,6 +9,7 @@ import '../app/scope.dart';
 import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
+import '../kit/components/gesture_guide.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
 import '../kit/inputs/selectors.dart';
@@ -306,6 +307,23 @@ class BehaviorSettingsPage extends StatelessWidget {
                   ? 'Движение короче и тише, без лишних эффектов.'
                   : 'Всё меняется сразу. Системная настройка «Убрать анимации» тоже учитывается.',
           style: context.tt.bodySmall?.copyWith(color: context.cs.onSurfaceVariant, height: 1.4),
+        ),
+      ),
+      const SectionHeader('Подсказки'),
+      SegmentCard(
+        index: 0,
+        count: 1,
+        onTap: () {
+          Haptics.selection();
+          showAdaptiveSheet<void>(
+            context,
+            (_) => const SheetScaffold(title: 'Жесты', subtitle: 'Что делают нажатие, удержание и смахивание', children: [GestureGuide()]),
+          );
+        },
+        child: const SettingsTile(
+          icon: Icons.gesture_rounded,
+          title: 'Руководство по жестам',
+          subtitle: 'Нажатие, удержание, смахивание и свёрнутая карточка',
         ),
       ),
     ]);
