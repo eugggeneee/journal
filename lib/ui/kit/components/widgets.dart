@@ -5,7 +5,6 @@ import '../../../core/haptics.dart';
 import '../animation/motion.dart';
 import '../animation/reveal.dart';
 import '../foundation/ctx.dart';
-import 'scroll_depth.dart';
 
 /// Запас снизу под плавающую кнопку, чтобы она не закрывала последние элементы списка.
 const double kFabClearance = 104;
@@ -32,9 +31,10 @@ const double kHeaderHeight = 76;
 
 /// Заголовок страницы: крупное название и маленькая подпись под ним.
 class PageTitle extends StatelessWidget {
-  const PageTitle(this.title, {super.key, this.subtitle});
+  const PageTitle(this.title, {super.key, this.subtitle, this.maxLines = 1});
   final String title;
   final String? subtitle;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -45,9 +45,9 @@ class PageTitle extends StatelessWidget {
           children: [
             Text(
               title,
-              maxLines: 1,
+              maxLines: maxLines,
               overflow: TextOverflow.ellipsis,
-              style: context.tt.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+              style: context.tt.headlineMedium?.copyWith(fontWeight: FontWeight.w800, height: maxLines > 1 ? 1.1 : null),
             ),
             if (subtitle != null)
               Text(
@@ -58,6 +58,24 @@ class PageTitle extends StatelessWidget {
               ),
           ],
         ),
+      );
+}
+
+/// Шапка вложенного экрана (настройки, предмет): та же высота, шрифт и положение названия, что и у вкладок,
+/// слева кнопка «Назад».
+class SubHeader extends StatelessWidget {
+  const SubHeader(this.title, {super.key, this.subtitle, this.maxLines = 1});
+  final String title;
+  final String? subtitle;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) => SliverAppBar(
+        pinned: true,
+        toolbarHeight: kHeaderHeight,
+        titleSpacing: 0,
+        backgroundColor: context.cs.surface,
+        title: PageTitle(title, subtitle: subtitle, maxLines: maxLines),
       );
 }
 
@@ -84,26 +102,20 @@ class LargePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
-    final view = ScrollDepth(
-      top: false,
-      child: CustomScrollView(
+    final view = CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverAppBar(
           pinned: true,
           toolbarHeight: kHeaderHeight,
           titleSpacing: 20,
-          shadowColor: cs.shadow,
-          backgroundColor: WidgetStateColor.resolveWith(
-            (states) => states.contains(WidgetState.scrolledUnder) ? cs.surfaceContainer : cs.surface,
-          ),
+          backgroundColor: cs.surface,
           title: PageTitle(title, subtitle: subtitle),
           actions: actions,
         ),
         ...slivers,
         SliverToBoxAdapter(child: SizedBox(height: bottomGap)),
       ],
-      ),
     );
     return ContentFrame(child: onRefresh == null ? view : RefreshIndicator(onRefresh: onRefresh!, child: view));
   }

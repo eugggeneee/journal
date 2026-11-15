@@ -3,7 +3,7 @@
 
   python3 scripts/project/check.py
 
-Проверяет: сайт (site/) на соответствие приложению, импорты Dart, правила слоёв, неиспользуемые файлы, версию и заметки релиза, ссылки в Markdown, отсутствие эмодзи и мусора, пути скриптов в workflow.
+Проверяет: импорты Dart, правила слоёв, неиспользуемые файлы, версию и заметки релиза, ссылки в Markdown, отсутствие эмодзи и мусора, пути скриптов в workflow.
 """
 from __future__ import annotations
 
@@ -16,7 +16,6 @@ sys.path.insert(0, str(HERE))
 
 import layers  # noqa: E402
 import version  # noqa: E402
-import site_check  # noqa: E402
 
 ROOT = layers.ROOT
 SKIP_DIRS = {'.git', '.dart_tool', 'build', 'android', 'ios', 'node_modules'}
@@ -124,7 +123,6 @@ def main() -> int:
         ('Ссылки', check_markdown_links()),
         ('Workflow', check_workflows()),
         ('Идентификатор пакета', check_package_id()),
-        ('Сайт', site_check.check()),
     ]
     failed = False
     for title, problems in sections:

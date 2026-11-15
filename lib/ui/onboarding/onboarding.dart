@@ -8,7 +8,6 @@ import '../../data/store.dart';
 import '../app/scope.dart';
 import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
-import '../kit/components/scroll_depth.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
 import '../kit/inputs/selectors.dart';
@@ -137,9 +136,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   // ───────────── страницы ─────────────
 
   /// Прокручиваемая страница: содержимое уходит под нижнюю панель с мягкой тенью, а не обрезается резкой линией.
-  Widget _scrolling(List<Widget> children, {double top = 24}) => ScrollDepth(
-        child: ListView(padding: EdgeInsets.fromLTRB(24, top, 24, 28), children: children),
-      );
+  Widget _scrolling(List<Widget> children, {double top = 24}) => ListView(padding: EdgeInsets.fromLTRB(24, top, 24, 28), children: children);
 
   Widget _title(BuildContext context, String title, String subtitle) => Column(children: [
         Text(title, textAlign: TextAlign.center, style: context.tt.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),

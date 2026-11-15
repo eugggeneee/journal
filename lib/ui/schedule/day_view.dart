@@ -6,22 +6,17 @@ import '../../core/dates.dart';
 import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
-import '../../logic/bells.dart';
 import '../../logic/schedule/schedule_service.dart';
-import '../absences/absence_actions.dart';
 import '../app/scope.dart';
 import '../kit/animation/reveal.dart';
-import '../kit/components/scroll_depth.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
-import 'day_summary.dart';
+import 'day_card.dart';
 import 'day_timeline.dart';
 import 'marks.dart';
-import 'now_card.dart';
 import 'rest_day.dart';
 
-/// Один день расписания: сводка, карточка «Сейчас», лента пар и состояния без пар.
+/// Один день расписания: главная карточка дня, лента пар и состояния без пар.
 class DayView extends StatefulWidget {
   const DayView({super.key, required this.date, required this.onJump});
   final DateTime date;
@@ -85,16 +80,14 @@ class _DayViewState extends State<DayView> {
         : KeyedSubtree(key: ValueKey('day-${st.status.name}'), child: _content(context, store, st));
     return RefreshIndicator(
       onRefresh: () => _load(force: true),
-      child: ScrollDepth(
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, kFabClearance),
-          children: [
-            if (st != null && st.status != DayStatus.ok) _chips(context),
-            MarksSection(date: widget.date, store: store, slots: slots),
-            Smooth(child: content),
-          ],
-        ),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, kFabClearance),
+        children: [
+          if (st != null && st.status != DayStatus.ok) _chips(context),
+          MarksSection(date: widget.date, store: store, slots: slots),
+          Smooth(child: content),
+        ],
       ),
     );
   }
@@ -137,58 +130,26 @@ class _DayViewState extends State<DayView> {
   }
 
   Widget _content(BuildContext context, AppStore store, DayState st) {
-    final cs = context.cs;
     switch (st.status) {
       case DayStatus.ok:
         final s = st.schedule!;
         final date = widget.date;
         final profile = store.bellProfileFor(date);
-        final now = DateTime.now();
-        final minute = now.hour * 60 + now.minute;
-        final isToday = sameDay(date, today());
         final status = st.note ?? (st.fromCache ? 'Сохранено на устройстве' : 'Обновлено в ${hhmm(s.fetchedAt)}');
-        final marked = [for (final slot in s.slots) if (store.absenceFor(date, slot.number) != null) slot];
-        final allMarked = marked.length == s.slots.length && s.slots.isNotEmpty;
-        final hours = marked.fold<int>(0, (a, slot) => a + (store.absenceFor(date, slot.number)?.hours ?? 0));
-
-        final bells = [for (final slot in s.slots) profile[slot.number]].whereType<BellSlot>().toList();
-        String? range;
-        if (bells.isNotEmpty) {
-          final from = bells.map((b) => b.start).reduce((a, b) => a < b ? a : b);
-          final to = bells.map((b) => b.end).reduce((a, b) => a > b ? a : b);
-          range = shortRange(from, to);
-          if (isToday && minute >= from && minute < to) range = '$range · осталось ${spanText(to - minute)}';
-        }
-        final clock = isToday ? dayClock(profile, [for (final slot in s.slots) slot.number], minute) : null;
-        final statusIcon = st.note != null
-            ? Icons.info_outline_rounded
-            : (st.fromCache ? Icons.download_done_rounded : Icons.cloud_done_rounded);
-
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          DaySummary(
-            pairs: s.slots.length,
-            hours: hours,
-            subtitle: range ?? status,
-            allMarked: allMarked,
-            shortDay: store.markFor(date, 0)?.label == kShortDayMark,
-            onWholeDay: () => toggleWholeDay(context, store, date, s.slots),
+          DayCard(
+            date: date,
+            slots: s.slots,
+            profile: profile,
+            store: store,
+            status: status,
             onShortDay: () => _markShortDay(context),
             onMark: () {
               Haptics.selection();
               showMarkSheet(context, date);
             },
           ),
-          if (clock != null && clock.phase != DayPhase.none)
-            NowCard(clock: clock, slots: s.slots, profile: profile, store: store),
           DayTimeline(date: date, slots: s.slots, store: store),
-          Padding(
-            padding: const EdgeInsets.only(top: 18),
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(statusIcon, size: 14, color: cs.onSurfaceVariant),
-              const SizedBox(width: 6),
-              Flexible(child: Text(status, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant))),
-            ]),
-          ),
         ]);
       case DayStatus.sunday:
         return RestDay(

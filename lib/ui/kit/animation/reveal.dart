@@ -202,7 +202,7 @@ class _AppearState extends State<Appear> with SingleTickerProviderStateMixin {
   late final Animation<double> _fade = _c.drive(CurveTween(curve: const Interval(0, 0.7, curve: Curves.easeOut)));
   late final Animation<Offset> _slide =
       _c.drive(CurveTween(curve: Motion.decelerate)).drive(Tween<Offset>(begin: Offset(0, widget.offset), end: Offset.zero));
-  // Элемент чуть «подрастает» к своему размеру: к лёгкому подъёму добавляется ощущение глубины.
+  // Элемент чуть «подрастает» к своему размеру.
   late final Animation<double> _scale = _c.drive(CurveTween(curve: Motion.decelerate)).drive(Tween<double>(begin: 0.97, end: 1));
   Timer? _timer;
 

@@ -120,7 +120,6 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
-    final cs = context.cs;
     final marked = <String>{for (final a in store.absences) ymd(a.date)};
     final noted = <String>{for (final m in store.marks) ymd(m.date)};
     final isToday = sameDay(_selected, today());
@@ -169,7 +168,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
           itemBuilder: (_) => [
             const PopupMenuItem(value: 'bells', child: ListTile(leading: Icon(Icons.notifications_active_outlined), title: Text('Звонки на этот день'), contentPadding: EdgeInsets.zero)),
             const PopupMenuItem(value: 'refresh', child: ListTile(leading: Icon(Icons.refresh_rounded), title: Text('Обновить расписание'), contentPadding: EdgeInsets.zero)),
-            const PopupMenuItem(value: 'group', child: ListTile(leading: Icon(Icons.groups_rounded), title: Text('Сменить группу'), contentPadding: EdgeInsets.zero)),
+            PopupMenuItem(value: 'group', child: ListTile(leading: const Icon(Icons.groups_rounded), title: const Text('Сменить группу'), subtitle: Text('Сейчас ${store.settings.group}'), contentPadding: EdgeInsets.zero)),
           ],
         ),
         const SizedBox(width: 4),
@@ -177,7 +176,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     );
 
     final strip = SizedBox(
-      height: 92,
+      height: 88,
       child: ListView.builder(
         controller: _strip,
         scrollDirection: Axis.horizontal,
@@ -216,21 +215,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     return ContentFrame(
       child: Column(children: [
         header,
-        // Месяц и лента дат всегда на виду: прокрутка дня их не трогает.
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-          child: Row(children: [
-            Swap(
-              child: Text(
-                monthYear(_selected),
-                key: ValueKey(monthYear(_selected)),
-                style: context.tt.titleSmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w700),
-              ),
-            ),
-            const Spacer(),
-            Pill('Группа ${store.settings.group}', tone: Tone(cs.secondaryContainer, cs.onSecondaryContainer), icon: Icons.groups_rounded),
-          ]),
-        ),
+        // Лента дат всегда на виду: прокрутка дня её не трогает.
         strip,
         Expanded(child: pages),
       ]),

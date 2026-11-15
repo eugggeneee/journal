@@ -2,7 +2,6 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/palette.dart';
 import '../app/scope.dart';
-import '../kit/components/scroll_depth.dart';
 import '../kit/components/widgets.dart';
 import '../kit/inputs/selectors.dart';
 import '../theme/app_theme.dart';
@@ -20,9 +19,9 @@ class ThemePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: cs.surface,
       body: ContentFrame(
-        child: ScrollDepth(top: false, child: CustomScrollView(
+        child: CustomScrollView(
           slivers: [
-            SliverAppBar.large(title: const Text('Тема и значок')),
+            const SubHeader('Тема и значок'),
             Inset(children: [
               const ThemePreview(),
               const SectionHeader('Режим'),
@@ -46,7 +45,7 @@ class ThemePage extends StatelessWidget {
             ]),
             const SliverToBoxAdapter(child: SizedBox(height: 40)),
           ],
-        )),
+        ),
       ),
     );
   }

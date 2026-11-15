@@ -7,7 +7,7 @@
 ```
 journal/
   .github/
-    workflows/          ci.yml, release.yml, setup-signing.yml, site.yml (публикация сайта)
+    workflows/          ci.yml, release.yml, setup-signing.yml
     releases/           vX.Y.Z.md: текст релиза стабильной версии
     ISSUE_TEMPLATE/     шаблоны issue
     release-notes.md    шаблон оформления релиза
@@ -18,7 +18,7 @@ journal/
   docs/
     logo.png            логотип для README
     ARCHITECTURE.md, COMMITS.md, PRERELEASES.md, RELEASING.md,
-    SITE.md, STYLE.md, TESTING.md, VERSIONING.md
+    STYLE.md, TESTING.md, VERSIONING.md
   lib/
     core/               даты, вибро, палитра тем, смена значка
     data/               models.dart (модели), store.dart (хранилище)
@@ -30,19 +30,17 @@ journal/
       kit/              общие элементы интерфейса
         foundation/     расширения контекста, цвета оценок и статусов
         animation/      единые длительности и кривые (режим анимаций из настроек), появление элементов
-        components/     карточки, итоговые блоки, пустые состояния, уведомления, глубина прокрутки (scroll_depth.dart)
+        components/     карточки, итоговые блоки, пустые состояния, уведомления
         inputs/         выбор даты, предмета, оценки, переключатели
         sheets/         нижние шторки и диалоги
       schedule/ grades/ absences/ profile/ settings/ onboarding/   экраны
   scripts/
     icons/              генерация и подключение значков тем; bell.png: маска колокольчика
-    project/            check.py, layers.py, site_check.py, version.py
-    site/               build.py (сборка сайта), make_palette.py (палитра темы для сайта)
+    project/            check.py, layers.py, version.py
     release/            make-keystore.sh
-  site/                 сайт приложения: index.html, styles.css, app.js, palette.js (создаётся скриптом)
   test/
     data/ logic/ project/ fixtures/
-  CHANGELOG.md, CONTRIBUTING.md, AGENTS.md, SECURITY.md, README.md, LICENSE
+  CHANGELOG.md, CONTRIBUTING.md, SECURITY.md, README.md, LICENSE
 ```
 
 ## Слои и правила зависимостей
@@ -60,7 +58,6 @@ journal/
 
 Правила проверяет `scripts/project/check.py` (разбор импортов в `layers.py`; запускается и в CI).
 
-В `test/project/site_test.py` проверяется структура сайта: уникальность идентификаторов и переходы к существующим разделам. Проверка запускается стандартным `unittest` Python в задаче CI «Проверка репозитория».
 
 ## Данные
 
@@ -80,7 +77,8 @@ journal/
 
 - Страницы «Оценки» и «Пропуски» построены на одних компонентах `ui/kit/components/overview.dart`: итоговая карточка, переключатель «Предметы / Журнал», фильтр, карточка предмета, строка журнала.
 - Анимации берут длительности и кривые из `ui/kit/animation/motion.dart`. Настройка «Анимации» (выразительные, спокойные, выключены) масштабирует все длительности, системное «Убрать анимации» действует всегда.
-- Края списков: содержимое уходит под шапку и нижнюю панель; панели отбрасывают тень (`ScrollDepth`, закреплённый `SliverAppBar` с `scrolledUnderElevation`). Включается настройкой «Глубина прокрутки».
+- Поверхности плоские: без теней, подъёма и затемнения; границы и уровни задают только цвета `ColorScheme`.
+- Главный экран: `day_card.dart` (карточка дня: сейчас, дальше, остаток, пройдено, конец дня, пропуски, «Весь день») и лента `day_timeline.dart`. Одна кнопка добавления на вкладку, оформление шапок единое (`PageTitle`, `LargePage`, `SubHeader`).
 - Цвета оценок, пропусков и лимитов: `ui/kit/foundation/ctx.dart`.
 
 ## Платформенная часть

@@ -2,7 +2,6 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
 import '../app/scope.dart';
-import '../kit/components/scroll_depth.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/overview.dart';
 import '../kit/components/widgets.dart';
@@ -55,9 +54,9 @@ class _SubjectPageState extends State<SubjectPage> {
         label: const Text('Оценка'),
       ),
       body: ContentFrame(
-        child: ScrollDepth(top: false, child: CustomScrollView(
+        child: CustomScrollView(
           slivers: [
-            SliverAppBar.large(title: Text(store.subjectName(subject))),
+            SubHeader(store.subjectName(subject), maxLines: 2),
             if (grades.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
@@ -106,7 +105,7 @@ class _SubjectPageState extends State<SubjectPage> {
               ]),
             const SliverToBoxAdapter(child: SizedBox(height: kFabClearance)),
           ],
-        )),
+        ),
       ),
       backgroundColor: cs.surface,
     );

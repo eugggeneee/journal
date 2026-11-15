@@ -36,7 +36,7 @@
 
 ## Области
 
-`site`, `schedule`, `grades`, `absences`, `profile`, `settings`, `onboarding`, `kit`, `theme`, `data`, `logic`, `core`, `icons`, `release`, `deps`, `docs`.
+`schedule`, `grades`, `absences`, `profile`, `settings`, `onboarding`, `kit`, `theme`, `data`, `logic`, `core`, `icons`, `release`, `deps`, `docs`.
 
 ## Тело и подвал
 

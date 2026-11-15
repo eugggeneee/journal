@@ -4,7 +4,6 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/dates.dart';
 import '../animation/motion.dart';
-import '../components/scroll_depth.dart';
 import '../foundation/ctx.dart';
 
 const double _wideBreakpoint = 700;
@@ -104,13 +103,11 @@ class SheetScaffold extends StatelessWidget {
           if (pinned != null) Padding(padding: const EdgeInsets.fromLTRB(24, 4, 24, 4), child: pinned),
           Flexible(
             fit: fill ? FlexFit.tight : FlexFit.loose,
-            child: ScrollDepth(
-              child: SingleChildScrollView(
+            child: SingleChildScrollView(
                 keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
               ),
-            ),
           ),
           if (footer != null)
             Container(

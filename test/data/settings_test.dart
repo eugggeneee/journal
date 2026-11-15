@@ -30,16 +30,17 @@ void main() {
     expect(back.themeColor, 'teal');
   });
 
-  test('анимации и глубина: значения по умолчанию, сохранение и защита от мусора', () {
-    final s = Settings();
-    expect(s.motion, 0);
-    expect(s.depth, isTrue);
-    final back = Settings.fromJson(Settings(group: '6312', motion: 2, depth: false).toJson());
+  test('анимации: значение по умолчанию, сохранение и защита от мусора', () {
+    expect(Settings().motion, 0);
+    final back = Settings.fromJson(Settings(group: '6312', motion: 2).toJson());
     expect(back.motion, 2);
-    expect(back.depth, isFalse);
-    final bad = Settings.fromJson({'group': '6312', 'mot': 7, 'dep': 'да'});
-    expect(bad.motion, 0);
-    expect(bad.depth, isTrue);
+    expect(Settings.fromJson({'group': '6312', 'mot': 7}).motion, 0);
+  });
+
+  test('устаревший ключ в копии настроек не мешает чтению', () {
+    final s = Settings.fromJson({'group': '6312', 'dep': false, 'mot': 1});
+    expect(s.group, '6312');
+    expect(s.motion, 1);
   });
 
   test('неизвестная тема заменяется стандартной', () {

@@ -47,14 +47,16 @@ class LessonCard extends StatelessWidget {
     final base = isNow ? Tone(cs.primary, cs.onPrimary) : Tone(cs.primaryContainer, cs.onPrimaryContainer);
     final tone = absence == null ? base : absenceTone(context, excused: absence.excused);
     final title = slot.subjects.map(store.subjectName).join(' / ');
-    // Аудитория и преподаватель: каждая запись — отдельная строка, внутри неё части переносятся целиком.
+    // Аудитория и преподаватель со значками: каждая запись — отдельная строка, части переносятся целиком.
     final lines = [
-      for (final e in slot.entries) [roomText(e.room), e.teacher].where((x) => x.isNotEmpty).toList(),
+      for (final e in slot.entries)
+        <(IconData, String)>[
+          if (e.room.isNotEmpty) (Icons.meeting_room_outlined, roomText(e.room)),
+          if (e.teacher.isNotEmpty) (Icons.person_outline_rounded, e.teacher),
+        ],
     ].where((x) => x.isNotEmpty).toList();
-    // Идущая пара чуть плотнее окрашена, чтобы взгляд находил её сразу.
-    final Color? cardColor = absence != null
-        ? tone.bg.withValues(alpha: 0.55)
-        : (isNow ? cs.primaryContainer.withValues(alpha: 0.5) : null);
+    // Идущая пара залита цветом темы, чтобы взгляд находил её сразу.
+    final Color? cardColor = absence != null ? tone.bg.withValues(alpha: 0.55) : (isNow ? cs.primaryContainer : null);
     final ring = Color.alphaBlend(cardColor ?? cs.surfaceContainerLow, cs.surfaceContainerLow);
 
     final hasBreak = bell?.hasBreak ?? false;
@@ -103,9 +105,14 @@ class LessonCard extends StatelessWidget {
                 Text(title, maxLines: 3, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, height: 1.2)),
                 for (final parts in lines)
                   Padding(
-                    padding: const EdgeInsets.only(top: 3),
-                    child: Wrap(spacing: 10, children: [
-                      for (final p in parts) Text(p, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Wrap(spacing: 12, runSpacing: 2, children: [
+                      for (final p in parts)
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(p.$1, size: 16, color: cs.onSurfaceVariant),
+                          const SizedBox(width: 4),
+                          Flexible(child: Text(p.$2, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant))),
+                        ]),
                     ]),
                   ),
               ]),

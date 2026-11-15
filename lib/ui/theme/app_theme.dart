@@ -77,9 +77,8 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: s.surface,
         surfaceTintColor: Colors.transparent,
-        // Когда список заезжает под шапку, она приподнимается и отбрасывает мягкую тень.
-        scrolledUnderElevation: 3,
-        shadowColor: s.shadow,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
       ),
       cardTheme: CardThemeData(
@@ -91,6 +90,9 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         backgroundColor: s.surfaceContainer,
         indicatorColor: s.secondaryContainer,
         labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
@@ -128,7 +130,10 @@ class AppTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: s.primaryContainer,
         foregroundColor: s.onPrimaryContainer,
-        elevation: 2,
+        elevation: 0,
+        focusElevation: 0,
+        hoverElevation: 0,
+        highlightElevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         extendedTextStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
       ),
@@ -158,23 +163,32 @@ class AppTheme {
         clipBehavior: Clip.antiAlias,
         backgroundColor: s.surfaceContainerLow,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        modalElevation: 0,
+        shadowColor: Colors.transparent,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: s.surfaceContainerHigh,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
+        elevation: 0,
         insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       popupMenuTheme: PopupMenuThemeData(
         color: s.surfaceContainerHigh,
         surfaceTintColor: Colors.transparent,
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: s.outlineVariant),
+        ),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: s.primary,

@@ -34,8 +34,36 @@ class _GradeFormState extends State<_GradeForm> {
   late String kind = widget.edit?.kind ?? '';
   late final TextEditingController note = TextEditingController(text: widget.edit?.note ?? '');
   int _added = 0;
+  bool _seeded = false;
 
   bool get _canSave => subject.isNotEmpty && value != null;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_seeded) return;
+    _seeded = true;
+    // Новая оценка: предмет уже выбран (идущая или последняя пара дня, иначе предмет прошлой оценки),
+    // поэтому нужно только нажать оценку и «Сохранить».
+    if (widget.edit == null && subject.isEmpty) subject = _guessSubject();
+  }
+
+  String _guessSubject() {
+    final store = StoreScope.of(context);
+    final day = widget.date ?? today();
+    final sched = store.cachedSchedule(store.settings.group, day);
+    if (sched != null && sched.slots.isNotEmpty && sameDay(day, today())) {
+      final now = DateTime.now();
+      final minute = now.hour * 60 + now.minute;
+      LessonSlot? best;
+      for (final s in sched.slots) {
+        final bell = store.bellFor(day, s.number);
+        if (bell != null && bell.start <= minute) best = s;
+      }
+      if (best != null) return best.subject;
+    }
+    return store.grades.isEmpty ? '' : store.grades.last.subject;
+  }
 
   @override
   void dispose() {

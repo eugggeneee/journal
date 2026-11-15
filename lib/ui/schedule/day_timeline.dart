@@ -55,7 +55,7 @@ class DayTimeline extends StatelessWidget {
         rail: _Rail(node: true, first: i == 0, last: isLast, reached: phase != _Ph.future, current: phase == _Ph.now, fill: fill),
         dim: isToday && phase == _Ph.past,
         current: phase == _Ph.now,
-        bottomGap: isLast ? 0 : 6,
+        bottomGap: isLast ? 0 : 8,
         child: LessonCard(slot: slot, date: date, store: store, isNow: phase == _Ph.now),
       ));
 
@@ -82,7 +82,7 @@ class DayTimeline extends StatelessWidget {
         timesW: timesW,
         rail: _Rail(node: false, first: false, last: false, reached: gapFill > 0, current: false, fill: gapFill),
         dim: isToday && gapFill >= 1,
-        bottomGap: 6,
+        bottomGap: 8,
         child: _GapPill(
           label: label,
           range: (a != null && b != null) ? shortRange(a.end, b.start) : null,
@@ -134,7 +134,7 @@ class _TimelineRow extends StatelessWidget {
     this.end,
     this.dim = false,
     this.current = false,
-    this.bottomGap = 6,
+    this.bottomGap = 8,
   });
   final int index;
   final double timesW;
@@ -204,7 +204,7 @@ class _TimelineRow extends StatelessWidget {
                     fmtMin(start!),
                     maxLines: 1,
                     softWrap: false,
-                    style: TextStyle(fontSize: 14, height: 1.15, fontWeight: FontWeight.w800, fontFeatures: figures, color: current ? cs.primary : cs.onSurface),
+                    style: TextStyle(fontSize: 15, height: 1.15, fontWeight: FontWeight.w800, fontFeatures: figures, color: current ? cs.primary : cs.onSurface),
                   ),
                   if (end != null)
                     Text(
@@ -349,9 +349,9 @@ class _GapPill extends StatelessWidget {
     return AnimatedContainer(
       duration: context.motion(Motion.medium),
       curve: Motion.standard,
-      height: 40,
+      height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(18)),
       child: Row(children: [
         Icon(icon, size: 18, color: fg),
         const SizedBox(width: 10),

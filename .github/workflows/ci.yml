@@ -25,7 +25,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: python3 scripts/project/check.py
-      - run: python3 -m unittest discover -s test/project -p '*_test.py'
 
   test:
     name: Анализ и тесты

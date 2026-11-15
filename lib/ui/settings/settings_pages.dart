@@ -7,7 +7,6 @@ import '../../data/models.dart';
 import '../../logic/limits.dart';
 import '../app/scope.dart';
 import '../kit/animation/motion.dart';
-import '../kit/components/scroll_depth.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
@@ -28,13 +27,13 @@ class SettingsScaffold extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: context.cs.surface,
         body: ContentFrame(
-          child: ScrollDepth(top: false, child: CustomScrollView(
+          child: CustomScrollView(
             slivers: [
-              SliverAppBar.large(title: Text(title)),
+              SubHeader(title),
               Inset(children: children),
               const SliverToBoxAdapter(child: SizedBox(height: 40)),
             ],
-          )),
+          ),
         ),
       );
 }
@@ -307,17 +306,6 @@ class BehaviorSettingsPage extends StatelessWidget {
                   ? 'Движение короче и тише, без лишних эффектов.'
                   : 'Всё меняется сразу. Системная настройка «Убрать анимации» тоже учитывается.',
           style: context.tt.bodySmall?.copyWith(color: context.cs.onSurfaceVariant, height: 1.4),
-        ),
-      ),
-      SegmentCard(
-        index: 0,
-        count: 1,
-        onTap: () => store.setDepth(!s.depth),
-        child: SettingsTile(
-          icon: Icons.layers_rounded,
-          title: 'Глубина прокрутки',
-          subtitle: 'Список уходит под шапку и нижнюю панель с мягкой тенью',
-          trailing: SettingsSwitch(value: s.depth, onChanged: store.setDepth),
         ),
       ),
     ]);

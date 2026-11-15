@@ -87,17 +87,18 @@ class ProfilePage extends StatelessWidget {
               scale: 0.99,
               child: Material(
                 color: cs.primaryContainer,
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(32),
                 clipBehavior: Clip.antiAlias,
                 child: ArtCircles(
                   color: cs.primary,
+                  radius: 32,
                   child: InkWell(
                     onTap: () {
                       Haptics.selection();
                       openGroupPicker(context);
                     },
                     child: Padding(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.fromLTRB(24, 22, 20, 22),
                       child: Row(children: [
                         CookieIcon(icon: Icons.school_rounded, size: 64, bg: cs.primary, fg: cs.onPrimary),
                         const SizedBox(width: 18),

@@ -347,12 +347,6 @@ class AppStore extends ChangeNotifier {
     _changed();
   }
 
-  void setDepth(bool v) {
-    if (v == settings.depth) return;
-    settings.depth = v;
-    _changed();
-  }
-
   void setAutoRefresh(bool v) {
     if (v == settings.autoRefresh) return;
     settings.autoRefresh = v;
