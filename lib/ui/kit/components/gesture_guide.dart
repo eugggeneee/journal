@@ -5,7 +5,10 @@ import 'widgets.dart';
 
 /// Руководство по жестам: шесть коротких карточек. Используется на стартовых экранах и в «Поведении».
 class GestureGuide extends StatelessWidget {
-  const GestureGuide({super.key});
+  const GestureGuide({super.key, this.compact = false});
+
+  /// Плотный вид для стартовых экранов: всё помещается на экран без прокрутки.
+  final bool compact;
 
   static const _items = [
     (Icons.touch_app_rounded, 'Нажмите на пару', 'Откроются подробности: пропуск, оценка и пометка.'),
@@ -18,49 +21,48 @@ class GestureGuide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.cs;
-    final tones = [
-      Tone(cs.primaryContainer, cs.onPrimaryContainer),
-      Tone(cs.secondaryContainer, cs.onSecondaryContainer),
-      Tone(cs.tertiaryContainer, cs.onTertiaryContainer),
-    ];
+    final tones = [for (final h in const [kHueBlue, kHueViolet, kHueRose, kHueAmber, kHueGreen, kHueTeal]) hueTone(context, h)];
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       for (var i = 0; i < _items.length; i++)
         SegmentCard(
           index: i,
           count: _items.length,
-          child: _GestureRow(icon: _items[i].$1, tone: tones[i % tones.length], title: _items[i].$2, text: _items[i].$3),
+          child: _GestureRow(icon: _items[i].$1, tone: tones[i % tones.length], title: _items[i].$2, text: _items[i].$3, compact: compact),
         ),
     ]);
   }
 }
 
 class _GestureRow extends StatelessWidget {
-  const _GestureRow({required this.icon, required this.tone, required this.title, required this.text});
+  const _GestureRow({required this.icon, required this.tone, required this.title, required this.text, required this.compact});
   final IconData icon;
   final Tone tone;
   final String title;
   final String text;
+  final bool compact;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+  Widget build(BuildContext context) {
+    final box = compact ? 40.0 : 46.0;
+    return Padding(
+        padding: EdgeInsets.fromLTRB(14, compact ? 9 : 14, 14, compact ? 9 : 14),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(
-            width: 46,
-            height: 46,
+            width: box,
+            height: box,
             alignment: Alignment.center,
-            decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(46 * 0.34)),
-            child: Icon(icon, size: 24, color: tone.fg),
+            decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(box * 0.34)),
+            child: Icon(icon, size: compact ? 22 : 24, color: tone.fg),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 2),
-              Text(text, style: context.tt.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant, height: 1.3)),
+              Text(title, style: (compact ? context.tt.titleSmall : context.tt.titleMedium)?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 1),
+              Text(text, style: (compact ? context.tt.bodySmall : context.tt.bodyMedium)?.copyWith(color: context.cs.onSurfaceVariant, height: 1.25)),
             ]),
           ),
         ]),
       );
+  }
 }

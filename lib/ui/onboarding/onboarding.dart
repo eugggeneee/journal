@@ -13,10 +13,10 @@ import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
 import '../kit/inputs/selectors.dart';
 import '../kit/inputs/settings_tiles.dart';
-import '../profile/theme_widgets.dart';
 import '../settings/bells_page.dart';
 import '../settings/group_picker.dart';
 import '../settings/settings_pages.dart';
+import '../settings/theme_widgets.dart';
 
 /// Приветствие при первом запуске: знакомство → возможности → жесты → группа → стартовые настройки.
 class OnboardingFlow extends StatefulWidget {
@@ -136,8 +136,22 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   // ───────────── страницы ─────────────
 
-  /// Прокручиваемая страница: содержимое уходит под нижнюю панель с мягкой тенью, а не обрезается резкой линией.
-  Widget _scrolling(List<Widget> children, {double top = 24}) => ListView(padding: EdgeInsets.fromLTRB(24, top, 24, 28), children: children);
+  /// Страница без прокрутки: всё содержимое видно сразу. Если на очень маленьком экране или при крупном шрифте оно не
+  /// помещается, страница целиком чуть уменьшается, а не прокручивается.
+  Widget _fit(List<Widget> children) => LayoutBuilder(
+        builder: (context, box) => Center(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: SizedBox(
+              width: box.maxWidth,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                child: Column(mainAxisSize: MainAxisSize.min, children: children),
+              ),
+            ),
+          ),
+        ),
+      );
 
   Widget _title(BuildContext context, String title, String subtitle) => Column(children: [
         Text(title, textAlign: TextAlign.center, style: context.tt.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
@@ -147,18 +161,15 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   Widget _welcome(BuildContext context) {
     final cs = context.cs;
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
+    return _fit([
           TweenAnimationBuilder<double>(
             tween: Tween<double>(begin: 0.55, end: 1),
             duration: Motion.ms(900),
             curve: Motion.spring,
             builder: (context, v, child) => Opacity(opacity: v.clamp(0.0, 1.0).toDouble(), child: Transform.scale(scale: v, child: child)),
-            child: CookieIcon(size: 156, bg: cs.primary, glyph: _BellSwing(size: 84, color: cs.onPrimary)),
+            child: CookieIcon(size: 144, bg: cs.primary, glyph: _BellSwing(size: 78, color: cs.onPrimary)),
           ),
-          const SizedBox(height: 36),
+          const SizedBox(height: 32),
           Text('Journal', textAlign: TextAlign.center, style: context.tt.displaySmall?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
           Text('МГТЭК · Дневник', textAlign: TextAlign.center, style: context.tt.titleMedium?.copyWith(color: cs.primary, fontWeight: FontWeight.w600)),
@@ -174,23 +185,21 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             const SizedBox(width: 6),
             Flexible(child: Text('Данные хранятся только на вашем устройстве', style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant))),
           ]),
-        ]),
-      ),
-    );
+    ]);
   }
 
   Widget _features(BuildContext context) {
     final cs = context.cs;
-    return _scrolling([
+    return _fit([
       _title(context, 'Всё под рукой', 'Три вещи, ради которых вы открываете дневник.'),
-      const SizedBox(height: 28),
+      const SizedBox(height: 24),
       _FeatureCard(
         index: 0,
         icon: Icons.calendar_month_rounded,
         bg: cs.primaryContainer,
         fg: cs.onPrimaryContainer,
         title: 'Расписание',
-        text: 'Расписание вашей группы с сайта колледжа на любую дату. Уже загруженные дни доступны без интернета.',
+        text: 'Расписание группы на любую дату. Загруженные дни доступны без интернета.',
       ),
       const SizedBox(height: 12),
       _FeatureCard(
@@ -199,7 +208,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         bg: cs.tertiaryContainer,
         fg: cs.onTertiaryContainer,
         title: 'Оценки',
-        text: 'Записывайте оценки по 10-балльной шкале с пометками и следите за средним баллом по предметам.',
+        text: 'Оценки по 10-балльной шкале и средний балл по каждому предмету.',
       ),
       const SizedBox(height: 12),
       _FeatureCard(
@@ -208,24 +217,24 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         bg: cs.errorContainer,
         fg: cs.onErrorContainer,
         title: 'Пропуски',
-        text: 'Отмечайте пропуски одним нажатием на пару — или сразу весь день — и смотрите, сколько часов набралось.',
+        text: 'Пропуск одним нажатием на пару или сразу на весь день.',
       ),
     ]);
   }
 
-  Widget _gestures(BuildContext context) => _scrolling([
+  Widget _gestures(BuildContext context) => _fit([
         _title(context, 'Жесты', 'Несколько движений, которые экономят время.'),
-        const SizedBox(height: 28),
-        const GestureGuide(),
+        const SizedBox(height: 20),
+        const GestureGuide(compact: true),
       ]);
 
   Widget _group(BuildContext context, AppStore store) {
     final cs = context.cs;
     final has = store.hasGroup;
     final group = store.settings.group;
-    return _scrolling([
+    return _fit([
       _title(context, 'Ваша группа', 'Выберите группу из списка на сайте колледжа или введите её номер.'),
-      const SizedBox(height: 32),
+      const SizedBox(height: 28),
       Appear(
         child: PressScale(
           scale: 0.99,
@@ -311,7 +320,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       Padding(
         padding: const EdgeInsets.fromLTRB(12, 14, 12, 0),
         child: Text(
-          'Это необязательно: время пар можно ввести позже в профиле.',
+          'Это необязательно: время пар можно ввести позже в настройках.',
           textAlign: TextAlign.center,
           style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
         ),
@@ -322,15 +331,13 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   Widget _settings(BuildContext context) {
     final store = StoreScope.of(context);
     final s = store.settings;
-    return _scrolling(top: 12, [
-      _title(context, 'Настройте под себя', 'Всё это можно изменить позже в профиле.'),
-      const SectionHeader('Оформление', top: 18),
+    return _fit([
+      _title(context, 'Настройте под себя', 'Всё это можно изменить позже в настройках.'),
+      const SizedBox(height: 20),
       const ThemeSelector(),
       const SizedBox(height: 10),
       const ThemeColorField(),
-      const SectionHeader('Быстрый пропуск', top: 18),
-      const HoursSelector(),
-      const SectionHeader('Поведение', top: 18),
+      const SizedBox(height: 14),
       SegmentCard(
         index: 0,
         count: 2,

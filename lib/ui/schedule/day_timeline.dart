@@ -31,6 +31,18 @@ class DayTimeline extends StatelessWidget {
     final timesW = hasTimes ? _timesW : 0.0;
     final isToday = diff == 0;
 
+    // Ближайшая пара, которая ещё не началась: на ней подпись «Дальше · через …».
+    int? nextIndex;
+    if (isToday) {
+      for (var i = 0; i < slots.length; i++) {
+        final b = profile[slots[i].number];
+        if (b != null && minute < b.start) {
+          nextIndex = i;
+          break;
+        }
+      }
+    }
+
     final rows = <Widget>[];
     var k = 0;
     for (var i = 0; i < slots.length; i++) {
@@ -56,7 +68,16 @@ class DayTimeline extends StatelessWidget {
         dim: isToday && phase == _Ph.past,
         current: phase == _Ph.now,
         bottomGap: isLast ? 0 : 8,
-        child: LessonCard(slot: slot, date: date, store: store, isNow: phase == _Ph.now),
+        child: LessonCard(
+          slot: slot,
+          date: date,
+          store: store,
+          phase: phase == _Ph.now
+              ? LessonPhase.now
+              : (phase == _Ph.past ? LessonPhase.past : (i == nextIndex ? LessonPhase.next : LessonPhase.later)),
+          minutes: bell == null ? null : (phase == _Ph.now ? bell.end - minute : (i == nextIndex ? bell.start - minute : null)),
+          progress: fill,
+        ),
       ));
 
       if (isLast) continue;
@@ -365,14 +386,14 @@ class _GapPill extends StatelessWidget {
     return AnimatedContainer(
       duration: context.motion(Motion.medium),
       curve: Motion.standard,
-      height: 36,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      constraints: const BoxConstraints(minHeight: 36),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(18)),
       child: Row(children: [
         Icon(icon, size: 18, color: fg),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.labelLarge?.copyWith(color: fg, fontWeight: FontWeight.w700)),
+          child: Text(label, style: context.tt.labelLarge?.copyWith(color: fg, fontWeight: FontWeight.w700)),
         ),
         if (range != null)
           Text(

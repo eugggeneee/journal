@@ -6,12 +6,12 @@ import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../logic/bells.dart';
 import '../absences/absence_actions.dart';
-import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/overview.dart';
 import '../kit/foundation/ctx.dart';
 import 'day_bar.dart';
-import 'lesson_card.dart';
+import '../schedule/lesson_card.dart';
+import '../schedule/whole_day_split.dart';
 
 /// Главная карточка дня: что идёт сейчас и что дальше, сколько осталось, сколько пар пройдено,
 /// когда кончается день и сколько часов пропущено. Для другого дня показывает его сводку.
@@ -267,9 +267,9 @@ class DayCard extends StatelessWidget {
           Row(children: [
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(foldTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w800)),
+                Text(foldTitle, style: tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w800)),
                 if (foldSub.isNotEmpty)
-                  Text(foldSub, maxLines: 1, overflow: TextOverflow.ellipsis, style: tt.bodySmall?.copyWith(color: fg.withValues(alpha: 0.85))),
+                  Text(foldSub, style: tt.bodySmall?.copyWith(color: fg.withValues(alpha: 0.85))),
               ]),
             ),
             const SizedBox(width: 8),
@@ -288,17 +288,17 @@ class DayCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(children: [
-            Expanded(child: Text(caption, maxLines: 1, overflow: TextOverflow.ellipsis, style: tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w700))),
+            Expanded(child: Text(caption, style: tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w700))),
             if (range != null) Text(range, style: tt.labelLarge?.copyWith(color: fg, fontWeight: FontWeight.w700, fontFeatures: figures)),
             const SizedBox(width: 8),
             foldButton,
           ]),
           const SizedBox(height: 4),
-          Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: tt.headlineSmall?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1.15)),
+          Text(title, style: tt.headlineSmall?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1.15)),
           if (sub.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text(sub, maxLines: 2, overflow: TextOverflow.ellipsis, style: tt.bodyMedium?.copyWith(color: fg.withValues(alpha: 0.85))),
+              child: Text(sub, style: tt.bodyMedium?.copyWith(color: fg.withValues(alpha: 0.85))),
             ),
           if (left != null)
             Padding(
@@ -316,7 +316,7 @@ class DayCard extends StatelessWidget {
           if (afterLead != null)
             Padding(
               padding: const EdgeInsets.only(top: 2),
-              child: Text(afterLead, maxLines: 1, overflow: TextOverflow.ellipsis, style: tt.bodyMedium?.copyWith(color: fg.withValues(alpha: 0.85))),
+              child: Text(afterLead, style: tt.bodyMedium?.copyWith(color: fg.withValues(alpha: 0.85))),
             ),
           const SizedBox(height: 10),
           bar,
@@ -333,7 +333,7 @@ class DayCard extends StatelessWidget {
           const SizedBox(height: 10),
           _StatsPanel(stats: _stats(live, done, to, from, bells, hours), fg: fg),
           const SizedBox(height: 10),
-          _WholeDaySplit(
+          WholeDaySplit(
             fg: fg,
             allMarked: allMarked,
             shortDay: shortDay,
@@ -394,13 +394,11 @@ class _NextPair extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(
               start == null ? 'Дальше' : 'Дальше · в ${fmtMin(start!)}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: tt.labelMedium?.copyWith(color: fg.withValues(alpha: 0.8), fontWeight: FontWeight.w600),
             ),
-            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w800)),
+            Text(title, style: tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w800)),
             if (place.isNotEmpty)
-              Text(place, maxLines: 1, overflow: TextOverflow.ellipsis, style: tt.bodySmall?.copyWith(color: fg.withValues(alpha: 0.85))),
+              Text(place, style: tt.bodySmall?.copyWith(color: fg.withValues(alpha: 0.85))),
           ]),
         ),
       ]),
@@ -445,8 +443,6 @@ class _StatsPanel extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   stats[i].label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: tt.bodySmall?.copyWith(color: fg.withValues(alpha: 0.8)),
                 ),
               ]),
@@ -455,121 +451,5 @@ class _StatsPanel extends StatelessWidget {
         ],
       ]),
     );
-  }
-}
-
-/// Split button: слева основное действие, справа стрелка с меню. Половинки разделены зазором 2 dp
-/// и скруглены сильнее с внешней стороны. Цвета берутся у карточки, на которой кнопка стоит.
-class _WholeDaySplit extends StatelessWidget {
-  const _WholeDaySplit({
-    required this.fg,
-    required this.allMarked,
-    required this.shortDay,
-    required this.enabled,
-    required this.onWholeDay,
-    required this.onShortDay,
-    required this.onMark,
-  });
-  final Color fg;
-  final bool allMarked;
-  final bool shortDay;
-  final bool enabled;
-  final VoidCallback onWholeDay;
-  final VoidCallback onShortDay;
-  final VoidCallback onMark;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.cs;
-    const outer = Radius.circular(22);
-    const inner = Radius.circular(6);
-    final d = context.motion(Motion.short);
-    final bg = fg.withValues(alpha: 0.14);
-    return Row(children: [
-      Expanded(
-        child: FilledButton.icon(
-        style: FilledButton.styleFrom(
-          backgroundColor: bg,
-          foregroundColor: fg,
-          disabledBackgroundColor: bg,
-          disabledForegroundColor: fg.withValues(alpha: 0.5),
-          minimumSize: const Size(0, 44),
-          padding: const EdgeInsets.fromLTRB(14, 0, 16, 0),
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(left: outer, right: inner)),
-        ),
-        icon: AnimatedSwitcher(
-          duration: d,
-          transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
-          child: Icon(allMarked ? Icons.event_available_rounded : Icons.event_busy_rounded, key: ValueKey(allMarked), size: 20),
-        ),
-        // Ширина кнопки меняется вместе с подписью плавно, а не рывком.
-        label: AnimatedSize(
-          duration: d,
-          curve: Motion.standard,
-          child: Swap(
-            alignment: Alignment.center,
-            child: Text(allMarked ? 'Снять день' : 'Весь день', key: ValueKey(allMarked)),
-          ),
-        ),
-        onPressed: enabled
-            ? () {
-                Haptics.selection();
-                onWholeDay();
-              }
-            : null,
-        ),
-      ),
-      const SizedBox(width: 2),
-      MenuAnchor(
-        alignmentOffset: const Offset(0, 4),
-        style: MenuStyle(
-          backgroundColor: WidgetStatePropertyAll(cs.surfaceContainerHigh),
-          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
-          elevation: const WidgetStatePropertyAll(0),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: cs.outlineVariant)),
-          ),
-        ),
-        menuChildren: [
-          MenuItemButton(
-            leadingIcon: const Icon(Icons.timelapse_rounded),
-            trailingIcon: shortDay ? Icon(Icons.check_rounded, color: cs.primary) : null,
-            onPressed: onShortDay,
-            child: const Text('Сокращённый день'),
-          ),
-          MenuItemButton(
-            leadingIcon: const Icon(Icons.bookmark_add_outlined),
-            onPressed: onMark,
-            child: const Text('Пометка на день'),
-          ),
-        ],
-        builder: (context, controller, _) => FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: bg,
-            foregroundColor: fg,
-            minimumSize: const Size(44, 44),
-            padding: EdgeInsets.zero,
-            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(left: inner, right: outer)),
-          ),
-          onPressed: () {
-            Haptics.selection();
-            if (controller.isOpen) {
-              controller.close();
-            } else {
-              controller.open();
-            }
-          },
-          child: Semantics(
-            label: 'Ещё действия дня',
-            child: AnimatedRotation(
-              turns: controller.isOpen ? 0.5 : 0,
-              duration: d,
-              curve: Motion.standard,
-              child: const Icon(Icons.arrow_drop_down_rounded, size: 28),
-            ),
-          ),
-        ),
-      ),
-    ]);
   }
 }

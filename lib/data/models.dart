@@ -211,10 +211,23 @@ class Absence {
 }
 
 
-/// Профили звонков: будни и суббота.
+/// Профили звонков: будни, суббота и сокращённый день.
 const String kBellWeek = 'week';
 const String kBellSat = 'sat';
-const List<String> kBellKeys = [kBellWeek, kBellSat];
+const String kBellShort = 'short';
+const List<String> kBellKeys = [kBellWeek, kBellSat, kBellShort];
+
+/// Звонки сокращённого дня колледжа: шесть пар по часу, перерывы по 10 минут, без обеда и без перерыва внутри пары.
+const BellProfile kShortDayProfile = BellProfile(
+  slots: {
+    1: BellSlot(start: 8 * 60 + 20, end: 9 * 60 + 20),
+    2: BellSlot(start: 9 * 60 + 30, end: 10 * 60 + 30),
+    3: BellSlot(start: 10 * 60 + 40, end: 11 * 60 + 40),
+    4: BellSlot(start: 11 * 60 + 50, end: 12 * 60 + 50),
+    5: BellSlot(start: 13 * 60, end: 14 * 60),
+    6: BellSlot(start: 14 * 60 + 10, end: 15 * 60 + 10),
+  },
+);
 
 /// Максимальное число пар в расписании звонков.
 const int kMaxPairs = 7;
@@ -441,7 +454,7 @@ class Settings {
   bool dayCardFolded; // карточка дня на главной свёрнута в тонкую полоску
   bool autoRefresh; // подгружать расписание при запуске и возвращении в приложение
 
-  /// Расписание звонков: 'week' (пн–пт) и 'sat' (суббота).
+  /// Расписание звонков: 'week' (пн–пт), 'sat' (суббота) и 'short' (сокращённый день).
   final Map<String, BellProfile> bells;
 
   /// Конец 1-го семестра по учебным годам: '2026' → '2027-01-24' (с этой даты идёт 2-й семестр).
@@ -450,7 +463,8 @@ class Settings {
   /// Скрытые предупреждения о лимитах: ключ периода → самый высокий скрытый уровень (1 — «близко», 2 — «лимит»).
   final Map<String, int> dismissed;
 
-  BellProfile bell(String key) => bells[key] ?? const BellProfile();
+  /// Звонки по ключу; для сокращённого дня до первой правки действует шаблон колледжа.
+  BellProfile bell(String key) => bells[key] ?? (key == kBellShort ? kShortDayProfile : const BellProfile());
 
   Map<String, dynamic> toJson() => {
         'group': group,

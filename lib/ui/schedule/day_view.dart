@@ -9,15 +9,14 @@ import '../../data/store.dart';
 import '../../logic/schedule/schedule_service.dart';
 import '../app/scope.dart';
 import '../kit/animation/reveal.dart';
-import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
-import 'day_card.dart';
+import 'day_actions.dart';
 import 'day_timeline.dart';
 import 'marks.dart';
 import 'rest_day.dart';
 
-/// Один день расписания: главная карточка дня, лента пар и состояния без пар.
+/// Один день расписания: панель дня, лента пар и состояния без пар.
 class DayView extends StatefulWidget {
   const DayView({super.key, required this.date, required this.onJump});
   final DateTime date;
@@ -108,47 +107,19 @@ class _DayViewState extends State<DayView> {
           ActionChip(
             avatar: const Icon(Icons.timelapse_rounded, size: 18),
             label: const Text('Сокращённый день'),
-            onPressed: () => _markShortDay(context),
+            onPressed: () => toggleShortDay(context, StoreScope.of(context), widget.date),
           ),
         ]),
       );
-
-  /// Шаблон пометки на весь день «Сокращённый день»: ставится одним нажатием, повторное — снимает.
-  void _markShortDay(BuildContext context) {
-    final store = StoreScope.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final date = widget.date;
-    final before = store.snapshotMarks(date);
-    final existing = store.markFor(date, 0);
-    Haptics.selection();
-    if (existing != null && existing.label == kShortDayMark) {
-      store.deleteMark(existing.id);
-      showUndo(messenger, 'Пометка снята', () => store.restoreMarks(date, before));
-    } else {
-      store.saveMark(DayMark(id: existing?.id ?? newId(), date: date, lesson: 0, label: kShortDayMark));
-      showUndo(messenger, 'Сокращённый день отмечен', () => store.restoreMarks(date, before));
-    }
-  }
 
   Widget _content(BuildContext context, AppStore store, DayState st) {
     switch (st.status) {
       case DayStatus.ok:
         final s = st.schedule!;
         final date = widget.date;
-        final profile = store.bellProfileFor(date);
         final status = st.note ?? (st.fromCache ? 'Сохранено на устройстве' : 'Обновлено в ${hhmm(s.fetchedAt)}');
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          DayCard(
-            date: date,
-            slots: s.slots,
-            profile: profile,
-            store: store,
-            onShortDay: () => _markShortDay(context),
-            onMark: () {
-              Haptics.selection();
-              showMarkSheet(context, date);
-            },
-          ),
+          DayToolbar(date: date, slots: s.slots, store: store),
           DayTimeline(date: date, slots: s.slots, store: store),
           Padding(
             padding: const EdgeInsets.only(top: 12),

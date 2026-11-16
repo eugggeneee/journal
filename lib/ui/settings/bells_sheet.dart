@@ -21,7 +21,7 @@ class _BellsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
     final cs = context.cs;
-    final key = bellKeyFor(date);
+    final key = store.bellKeyOn(date);
     final profile = store.settings.bell(key);
     return SheetScaffold(
       title: 'Звонки',

@@ -87,11 +87,11 @@ class SheetScaffold extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                      Text(title, style: context.tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
                       if (subtitle != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 2),
-                          child: Text(subtitle!, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant)),
+                          child: Text(subtitle!, style: context.tt.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant)),
                         ),
                     ],
                   ),
@@ -173,7 +173,7 @@ Future<bool> confirmDialog(
         TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Отмена')),
         FilledButton(
           style: FilledButton.styleFrom(
-            minimumSize: const Size(64, 44),
+            minimumSize: const Size(64, 48),
             backgroundColor: destructive ? ctx.cs.error : null,
             foregroundColor: destructive ? ctx.cs.onError : null,
           ),
@@ -246,7 +246,7 @@ class _PromptDialogState extends State<_PromptDialog> {
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Отмена')),
           FilledButton(
-            style: FilledButton.styleFrom(minimumSize: const Size(64, 44)),
+            style: FilledButton.styleFrom(minimumSize: const Size(64, 48)),
             onPressed: _c.text.trim().isEmpty ? null : _submit,
             child: const Text('Добавить'),
           ),

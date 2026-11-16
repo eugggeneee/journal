@@ -153,15 +153,11 @@ class _GradeFormState extends State<_GradeForm> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
             Text(
               subject.isEmpty ? 'Предмет не выбран' : store.subjectName(subject),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
               style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 2),
             Text(
               details,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: context.tt.bodyMedium?.copyWith(color: tone.fg.withValues(alpha: 0.85)),
             ),
           ]),

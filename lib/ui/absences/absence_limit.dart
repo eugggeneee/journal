@@ -286,10 +286,10 @@ class LimitCard extends StatelessWidget {
                 Row(children: [
                   Icon(icon, size: 18, color: muted),
                   const SizedBox(width: 6),
-                  Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800))),
+                  Expanded(child: Text(title, style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800))),
                 ]),
                 const SizedBox(height: 1),
-                Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall?.copyWith(color: muted)),
+                Text(subtitle, style: context.tt.bodySmall?.copyWith(color: muted)),
                 const SizedBox(height: 6),
                 Text('$status · из $limit ч', style: context.tt.bodyMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w600)),
               ]),

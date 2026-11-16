@@ -10,6 +10,7 @@ import '../kit/foundation/ctx.dart';
 import '../kit/sheets/sheet.dart';
 import '../settings/bells_sheet.dart';
 import '../settings/group_picker.dart';
+import '../settings/settings_home.dart';
 import 'day_view.dart';
 
 /// Связывает страницу расписания с оболочкой (выбранная дата нужна кнопке «Добавить»).
@@ -17,7 +18,16 @@ class ScheduleController extends ChangeNotifier {
   DateTime selected = today();
   void Function(DateTime)? _jump;
 
-  void attach(void Function(DateTime) jump) => _jump = jump;
+  /// День, который попросили открыть до того, как страница расписания построилась.
+  DateTime? _pending;
+
+  void attach(void Function(DateTime) jump) {
+    _jump = jump;
+    final p = _pending;
+    _pending = null;
+    if (p != null) WidgetsBinding.instance.addPostFrameCallback((_) => jump(p));
+  }
+
   void detach() => _jump = null;
 
   void setSelected(DateTime d) {
@@ -26,7 +36,14 @@ class ScheduleController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void jumpTo(DateTime d) => _jump?.call(d);
+  void jumpTo(DateTime d) {
+    final j = _jump;
+    if (j == null) {
+      _pending = d;
+    } else {
+      j(d);
+    }
+  }
 }
 
 class SchedulePage extends StatefulWidget {
@@ -164,11 +181,16 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
             if (v == 'refresh') StoreScope.repoOf(context).prefetch(force: true);
             if (v == 'group') openGroupPicker(context);
             if (v == 'bells') showBellsSheet(context, _selected);
+            if (v == 'settings') {
+              Haptics.selection();
+              Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SettingsHomePage()));
+            }
           },
           itemBuilder: (_) => [
             const PopupMenuItem(value: 'bells', child: ListTile(leading: Icon(Icons.notifications_active_outlined), title: Text('Звонки на этот день'), contentPadding: EdgeInsets.zero)),
             const PopupMenuItem(value: 'refresh', child: ListTile(leading: Icon(Icons.refresh_rounded), title: Text('Обновить расписание'), contentPadding: EdgeInsets.zero)),
             PopupMenuItem(value: 'group', child: ListTile(leading: const Icon(Icons.groups_rounded), title: const Text('Сменить группу'), subtitle: Text('Сейчас ${store.settings.group}'), contentPadding: EdgeInsets.zero)),
+            const PopupMenuItem(value: 'settings', child: ListTile(leading: Icon(Icons.settings_rounded), title: Text('Настройки'), contentPadding: EdgeInsets.zero)),
           ],
         ),
         const SizedBox(width: 4),
@@ -217,6 +239,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
         header,
         // Лента дат всегда на виду: прокрутка дня её не трогает.
         strip,
+        const SizedBox(height: 10),
         Expanded(child: pages),
       ]),
     );
@@ -261,33 +284,33 @@ class _DayChip extends StatelessWidget {
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    weekdayShort(date),
-                    style: context.tt.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: selected ? cs.onPrimary.withValues(alpha: 0.85) : cs.onSurfaceVariant,
-                    ),
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  weekdayShort(date),
+                  style: context.tt.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: selected ? cs.onPrimary.withValues(alpha: 0.85) : cs.onSurfaceVariant,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${date.day}',
-                    style: context.tt.titleLarge?.copyWith(color: fg, fontWeight: (selected || isToday) ? FontWeight.w800 : FontWeight.w500),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${date.day}',
+                  style: context.tt.titleLarge?.copyWith(color: fg, fontWeight: (selected || isToday) ? FontWeight.w800 : FontWeight.w500),
+                ),
+                const SizedBox(height: 6),
+                AnimatedContainer(
+                  duration: Motion.short,
+                  curve: Motion.standard,
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: (marked || noted) ? (selected ? cs.onPrimary : (marked ? absenceAccent(context, excused: false) : cs.tertiary)) : Colors.transparent,
                   ),
-                  const SizedBox(height: 6),
-                  AnimatedContainer(
-                    duration: Motion.short,
-                    curve: Motion.standard,
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: (marked || noted) ? (selected ? cs.onPrimary : (marked ? absenceAccent(context, excused: false) : cs.tertiary)) : Colors.transparent,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
+            ),
             ),
           ),
         ),

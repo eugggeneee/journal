@@ -82,3 +82,33 @@ Tone neutralTone(BuildContext context) => Tone(context.cs.surfaceContainerHighes
 /// Читаемый цвет текста поверх заливки [c].
 Color onColorFor(Color c) =>
     ThemeData.estimateBrightnessForColor(c) == Brightness.dark ? Colors.white : const Color(0xFF1B1B1F);
+
+// ───────────────────────── акценты разделов и предметов ─────────────────────────
+//
+// Несколько спокойных оттенков поверх темы: ими раскрашены предметы в ленте, плитки главной и значки разделов.
+// Оттенки подобраны на цветовом круге так, чтобы рядом они не спорили друг с другом.
+
+const double kHueBlue = 214;
+const double kHueViolet = 268;
+const double kHueRose = 340;
+const double kHueAmber = 42;
+const double kHueGreen = 146;
+const double kHueTeal = 180;
+
+/// Оттенки для предметов: у каждого предмета свой постоянный цвет.
+const List<double> kSubjectHues = [kHueBlue, kHueViolet, kHueRose, kHueAmber, kHueGreen, kHueTeal, 16, 300];
+
+/// Пастельный фон и тёмный текст заданного оттенка (светлая и тёмная тема подбираются сами).
+Tone hueTone(BuildContext context, double hue) => _pastel(context, hue);
+
+/// Насыщенный цвет заданного оттенка: для полос, точек и значков.
+Color hueAccent(BuildContext context, double hue) => _accent(context, hue);
+
+/// Постоянный оттенок предмета: один и тот же предмет всегда одного цвета.
+double subjectHue(String subject) {
+  var h = 0;
+  for (final u in subject.codeUnits) {
+    h = (h * 31 + u) & 0x7fffffff;
+  }
+  return kSubjectHues[h % kSubjectHues.length];
+}

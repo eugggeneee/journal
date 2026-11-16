@@ -7,7 +7,7 @@ import '../grades/grade_sheet.dart';
 import '../grades/grades_page.dart';
 import '../kit/animation/motion.dart';
 import '../kit/animation/tab_switcher.dart';
-import '../profile/profile_page.dart';
+import '../home/home_page.dart';
 import '../schedule/schedule_page.dart';
 import 'scope.dart';
 
@@ -23,10 +23,10 @@ class _ShellState extends State<Shell> {
   static const _wide = 640.0;
 
   static const _items = [
+    (Icons.home_outlined, Icons.home_rounded, 'Главная'),
     (Icons.calendar_month_outlined, Icons.calendar_month_rounded, 'Расписание'),
     (Icons.star_outline_rounded, Icons.star_rounded, 'Оценки'),
     (Icons.event_busy_outlined, Icons.event_busy_rounded, 'Пропуски'),
-    (Icons.person_outline_rounded, Icons.person_rounded, 'Профиль'),
   ];
 
   int _tab = 0;
@@ -34,10 +34,10 @@ class _ShellState extends State<Shell> {
 
   final ScheduleController _sched = ScheduleController();
   late final List<Widget> _pages = [
+    HomePage(onTab: _select, onDay: _openDay),
     SchedulePage(controller: _sched),
     const GradesPage(),
     const AbsencesPage(),
-    const ProfilePage(),
   ];
 
   @override
@@ -61,22 +61,19 @@ class _ShellState extends State<Shell> {
     setState(() => _tab = i);
   }
 
-  /// Одна кнопка на вкладку: расписание и оценки добавляют оценку (на расписании — на выбранную дату),
-  /// пропуски — пропуск. Профиль без кнопки.
+  /// Открывает день в расписании: например, «Завтра» или день недели с главной.
+  void _openDay(DateTime d) {
+    Haptics.selection();
+    _sched.jumpTo(d);
+    if (_tab != 1) setState(() => _tab = 1);
+  }
+
+  /// Одна кнопка на вкладку: главная, расписание и оценки добавляют оценку (на расписании — на выбранную дату),
+  /// пропуски — пропуск.
   Widget _fab(BuildContext context) {
     switch (_tab) {
       case 0:
-        return FloatingActionButton.extended(
-          key: const ValueKey('fab-grade-day'),
-          heroTag: null,
-          onPressed: () {
-            Haptics.selection();
-            showGradeSheet(context, date: _sched.selected);
-          },
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('Оценка'),
-        );
-      case 1:
+      case 2:
         return FloatingActionButton.extended(
           key: const ValueKey('fab-grade'),
           heroTag: null,
@@ -87,7 +84,18 @@ class _ShellState extends State<Shell> {
           icon: const Icon(Icons.add_rounded),
           label: const Text('Оценка'),
         );
-      case 2:
+      case 1:
+        return FloatingActionButton.extended(
+          key: const ValueKey('fab-grade-day'),
+          heroTag: null,
+          onPressed: () {
+            Haptics.selection();
+            showGradeSheet(context, date: _sched.selected);
+          },
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Оценка'),
+        );
+      case 3:
         return FloatingActionButton.extended(
           key: const ValueKey('fab-absence'),
           heroTag: null,

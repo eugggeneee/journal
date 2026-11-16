@@ -15,7 +15,6 @@ import '../kit/inputs/pickers.dart';
 import '../kit/inputs/settings_tiles.dart';
 import '../kit/sheets/select_sheet.dart';
 import '../kit/sheets/sheet.dart';
-import 'bells_sheet.dart';
 
 /// Выбор времени «чч:мм» (24-часовой формат). Возвращает минуты от полуночи.
 Future<int?> pickMinutes(BuildContext context, int initial, {String? help}) async {
@@ -33,8 +32,8 @@ Future<int?> pickMinutes(BuildContext context, int initial, {String? help}) asyn
   return t == null ? null : t.hour * 60 + t.minute;
 }
 
-/// Расписание звонков: время пар с 1-й по 7-ю вручную, отдельно для будней, субботы и сокращённого дня.
-/// Внутри каждой пары можно задать перерыв, между парами — обед.
+/// Звонки: три расписания (будни, суббота, сокращённый день). Сверху готовые расписания колледжа в одно нажатие,
+/// ниже короткий список пар: нажали на пару и поправили время в понятной шторке. Всё остальное в «Дополнительно».
 class BellsPage extends StatefulWidget {
   const BellsPage({super.key, this.initialKey = kBellWeek});
   final String initialKey;
@@ -45,98 +44,9 @@ class BellsPage extends StatefulWidget {
 class _BellsPageState extends State<BellsPage> {
   late String _key = kBellKeys.contains(widget.initialKey) ? widget.initialKey : kBellWeek;
 
-  static const _defaultPair = 90;
-  static const _defaultBreak = 5;
+  static const _icons = {kBellWeek: Icons.work_outline_rounded, kBellSat: Icons.weekend_rounded, kBellShort: Icons.timelapse_rounded};
 
   BellProfile _profile(AppStore store) => store.settings.bell(_key);
-
-  void _save(AppStore store, BellProfile p) => store.setBellProfile(_key, p);
-
-  void _warn(String text) => showNote(ScaffoldMessenger.of(context), text);
-
-  Future<void> _pickStart(AppStore store, int n) async {
-    final p = _profile(store);
-    final slot = p[n];
-    final m = await pickMinutes(context, slot?.start ?? _suggestStart(p, n), help: '$n пара · начало');
-    if (m == null || !mounted) return;
-    if (m >= 24 * 60 - 1) return _warn('Слишком поздно для начала пары');
-    Haptics.selection();
-    if (slot == null) {
-      _save(store, p.withSlot(n, BellSlot(start: m, end: (m + _defaultPair).clamp(m + 1, 24 * 60 - 1).toInt())));
-      return;
-    }
-    final end = slot.end > m ? slot.end : (m + slot.minutes).clamp(m + 1, 24 * 60 - 1).toInt();
-    var next = BellSlot(start: m, end: end, breakStart: slot.breakStart, breakEnd: slot.breakEnd);
-    if (!next.valid) next = next.withoutBreak();
-    _save(store, p.withSlot(n, next));
-  }
-
-  Future<void> _pickEnd(AppStore store, int n) async {
-    final p = _profile(store);
-    final slot = p[n];
-    final m = await pickMinutes(context, slot?.end ?? (_suggestStart(p, n) + _defaultPair), help: '$n пара · конец');
-    if (m == null || !mounted) return;
-    Haptics.selection();
-    if (slot == null) {
-      final start = (m - _defaultPair).clamp(0, m - 1).toInt();
-      if (m <= 0) return _warn('Конец пары должен быть позже начала');
-      _save(store, p.withSlot(n, BellSlot(start: start, end: m)));
-      return;
-    }
-    if (m <= slot.start) return _warn('Конец пары должен быть позже начала');
-    var next = BellSlot(start: slot.start, end: m, breakStart: slot.breakStart, breakEnd: slot.breakEnd);
-    if (!next.valid) next = next.withoutBreak();
-    _save(store, p.withSlot(n, next));
-  }
-
-  /// Подсказка для времени ещё не заданной пары: через 10 минут после предыдущей.
-  int _suggestStart(BellProfile p, int n) {
-    for (var m = n - 1; m >= 1; m--) {
-      final prev = p[m];
-      if (prev != null) return (prev.end + 10).clamp(0, 24 * 60 - 1).toInt();
-    }
-    return 8 * 60 + 30;
-  }
-
-  Future<void> _pickBreak(AppStore store, int n, {required bool start}) async {
-    final p = _profile(store);
-    final slot = p[n];
-    if (slot == null || !slot.hasBreak) return;
-    final m = await pickMinutes(context, start ? slot.breakStart! : slot.breakEnd!, help: '$n пара · перерыв ${start ? 'с' : 'до'}');
-    if (m == null || !mounted) return;
-    final next = BellSlot(
-      start: slot.start,
-      end: slot.end,
-      breakStart: start ? m : slot.breakStart,
-      breakEnd: start ? slot.breakEnd : m,
-    );
-    if (!next.valid) return _warn('Перерыв должен быть внутри пары: ${slotRange(slot)}');
-    Haptics.selection();
-    _save(store, p.withSlot(n, next));
-  }
-
-  void _toggleBreak(AppStore store, int n) {
-    final p = _profile(store);
-    final slot = p[n];
-    if (slot == null) return;
-    if (slot.hasBreak) {
-      _save(store, p.withSlot(n, slot.withoutBreak()));
-      return;
-    }
-    if (slot.minutes < _defaultBreak + 4) return _warn('Пара слишком короткая для перерыва');
-    final bs = slot.start + (slot.minutes - _defaultBreak) ~/ 2;
-    _save(store, p.withSlot(n, BellSlot(start: slot.start, end: slot.end, breakStart: bs, breakEnd: bs + _defaultBreak)));
-  }
-
-  void _clearPair(AppStore store, int n) {
-    final p = _profile(store);
-    final messenger = ScaffoldMessenger.of(context);
-    if (p[n] == null) return;
-    final key = _key;
-    Haptics.light();
-    _save(store, p.withSlot(n, null));
-    showUndo(messenger, '$n пара очищена', () => store.setBellProfile(key, p));
-  }
 
   void _withUndo(AppStore store, String message, BellProfile next) {
     final messenger = ScaffoldMessenger.of(context);
@@ -152,140 +62,154 @@ class _BellsPageState extends State<BellsPage> {
     _withUndo(store, '${preset.title} применено', preset.profile);
   }
 
+  /// Новая пара: время подставляется через 10 минут после предыдущей, дальше правится в шторке.
+  void _addPair(AppStore store) {
+    final p = _profile(store);
+    var n = 1;
+    while (n <= kMaxPairs && p[n] != null) {
+      n++;
+    }
+    if (n > kMaxPairs) return;
+    final start = _suggestStart(p, n);
+    final end = (start + 90).clamp(start + 1, 24 * 60 - 1).toInt();
+    Haptics.selection();
+    store.setBellProfile(_key, p.withSlot(n, BellSlot(start: start, end: end)));
+    showPairSheet(context, _key, n);
+  }
+
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
     final cs = context.cs;
+    final tt = context.tt;
     final p = _profile(store);
     final problem = p.problem;
     final week = store.settings.bell(kBellWeek);
-
-    final hint = _key == kBellSat
-        ? 'В субботу время пар обычно другое — задайте его отдельно.'
-        : 'Применяется с понедельника по пятницу. У разных групп время может отличаться — введите своё.';
-
     final presets = [for (final x in kBellPresets) if (x.key == _key) x];
-    final presetCards = <Widget>[
-      if (presets.isNotEmpty) const SectionHeader('Готовые расписания', top: 8),
-      for (var i = 0; i < presets.length; i++)
-        SegmentCard(
-          index: i,
-          count: presets.length,
-          onTap: () => _applyPreset(store, presets[i]),
-          child: BadgeRow(
-            icon: Icons.schedule_rounded,
-            tone: Tone(cs.secondaryContainer, cs.onSecondaryContainer),
-            title: presets[i].title,
-            subtitle: presets[i].subtitle,
-            trailing: p.sameAs(presets[i].profile)
-                ? Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.check_circle_rounded, color: cs.primary))
-                : Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.add_circle_outline_rounded, color: cs.onSurfaceVariant)),
-          ),
-        ),
-    ];
+    final nums = p.slots.keys.toList()..sort();
 
-    final nums = [for (var n = 1; n <= kMaxPairs; n++) n];
+    final hint = switch (_key) {
+      kBellSat => 'Время пар в субботу обычно другое.',
+      kBellShort => 'Включается сам в день с пометкой «Сокращённый день».',
+      _ => 'Действует с понедельника по пятницу. У вашей группы время может отличаться.',
+    };
+
     final rows = <Widget>[];
-    for (final n in nums) {
-      rows.add(_PairCard(
+    for (var i = 0; i < nums.length; i++) {
+      final n = nums[i];
+      final slot = p.slots[n]!;
+      rows.add(_PairRow(
         key: ValueKey('pair-$_key-$n'),
         n: n,
-        slot: p[n],
-        onStart: () => _pickStart(store, n),
-        onEnd: () => _pickEnd(store, n),
-        onBreakStart: () => _pickBreak(store, n, start: true),
-        onBreakEnd: () => _pickBreak(store, n, start: false),
-        onToggleBreak: () => _toggleBreak(store, n),
-        onClear: () => _clearPair(store, n),
-        index: n - 1,
+        slot: slot,
+        onTap: () {
+          Haptics.selection();
+          showPairSheet(context, _key, n);
+        },
       ));
-      final next = p.nextPair(n);
-      final gap = (p[n] != null && next == n + 1) ? gapLabel(p, n) : null;
-      rows.add(Smooth(
-        child: gap == null
-            ? SizedBox(key: ValueKey('gap-none-$n'), height: 8, width: double.infinity)
-            : Padding(
-                key: ValueKey('gap-$n-$gap-${p.isLunchAfter(n)}'),
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Center(
-                  child: Pill(
-                    gap,
-                    tone: p.isLunchAfter(n) ? Tone(cs.tertiaryContainer, cs.onTertiaryContainer) : Tone(cs.surfaceContainerHighest, cs.onSurfaceVariant),
-                    icon: p.isLunchAfter(n) ? Icons.restaurant_rounded : Icons.timer_outlined,
-                  ),
+      final gap = (i + 1 < nums.length && nums[i + 1] == n + 1) ? gapLabel(p, n) : null;
+      rows.add(gap == null
+          ? const SizedBox(height: 8)
+          : Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Center(
+                child: Pill(
+                  gap,
+                  tone: p.isLunchAfter(n) ? Tone(cs.tertiaryContainer, cs.onTertiaryContainer) : Tone(cs.surfaceContainerHighest, cs.onSurfaceVariant),
+                  icon: p.isLunchAfter(n) ? Icons.restaurant_rounded : Icons.timer_outlined,
                 ),
               ),
-      ));
+            ));
     }
+
+    final extra = <Widget>[
+      SettingsTile(
+        icon: Icons.auto_fix_high_rounded,
+        title: 'Автозаполнение',
+        subtitle: 'Пары подряд: начало, длительность, перерыв и обед',
+        trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+      ),
+      SettingsTile(
+        icon: Icons.restaurant_rounded,
+        title: 'Обед',
+        subtitle: p.lunchAfter == 0 ? 'Без обеда между парами' : 'После ${p.lunchAfter} пары',
+        trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+      ),
+      if (_key != kBellWeek && !week.isEmpty)
+        SettingsTile(
+          icon: Icons.content_copy_rounded,
+          title: 'Скопировать из будней',
+          subtitle: 'Те же пары и перерывы',
+          trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+        ),
+      SettingsTile(
+        icon: _key == kBellShort ? Icons.restore_rounded : Icons.delete_sweep_outlined,
+        title: _key == kBellShort ? 'Вернуть шаблон колледжа' : 'Очистить всё',
+        subtitle: _key == kBellShort ? '6 пар по часу, перерывы по 10 минут' : 'Удалить все пары этого расписания',
+        trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+      ),
+    ];
+    final extraActions = <VoidCallback>[
+      () => showAdaptiveSheet<void>(
+            context,
+            (ctx) => _AutoFillSheet(
+              title: bellTitle(_key),
+              onApply: (plan) {
+                Navigator.of(ctx).pop();
+                _withUndo(store, 'Звонки заполнены', generateBells(plan));
+              },
+            ),
+          ),
+      () => showSelectSheet<int>(
+            context,
+            title: 'Перерыв на обед',
+            subtitle: 'Длительность: от конца этой пары до начала следующей',
+            value: p.lunchAfter,
+            options: [
+              const MenuOption(0, 'Без обеда', icon: Icons.block_rounded),
+              for (var n = 1; n < kMaxPairs; n++) MenuOption(n, 'После $n пары', icon: Icons.restaurant_rounded),
+            ],
+            onSelected: (v) => store.setBellProfile(_key, p.withLunch(v)),
+          ),
+      if (_key != kBellWeek && !week.isEmpty) () => _withUndo(store, 'Скопировано из будней', week),
+      () => _withUndo(store, _key == kBellShort ? 'Шаблон колледжа возвращён' : 'Звонки очищены', _key == kBellShort ? kShortDayProfile : const BellProfile()),
+    ];
 
     return Scaffold(
       backgroundColor: cs.surface,
       body: ContentFrame(
         child: CustomScrollView(
           slivers: [
-            const SubHeader('Звонки'),
+            const SubHeader('Звонки', subtitle: 'Время пар и перерывы'),
             Inset(children: [
-              SizedBox(
-                width: double.infinity,
-                child: SegmentedButton<String>(
-                  showSelectedIcon: false,
-                  segments: [
-                    for (final k in kBellKeys)
-                      ButtonSegment(value: k, label: Text(bellTitle(k)), icon: Icon(k == kBellSat ? Icons.weekend_rounded : Icons.work_outline_rounded)),
-                  ],
-                  selected: {_key},
-                  onSelectionChanged: (s) {
-                    Haptics.selection();
-                    setState(() => _key = s.first);
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
-                child: Text(hint, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.35)),
-              ),
-              const SizedBox(height: 4),
-              ...presetCards,
-              const SectionHeader('Вручную'),
-              Row(children: [
-                Expanded(
-                  child: FilledButton.tonalIcon(
-                    icon: const Icon(Icons.auto_fix_high_rounded, size: 20),
-                    label: const Text('Автозаполнение'),
-                    onPressed: () => _openAutoFill(store),
-                  ),
-                ),
-                if (_key != kBellWeek && !week.isEmpty) ...[
-                  const SizedBox(width: 8),
-                  IconButton.filledTonal(
-                    tooltip: 'Скопировать из будней',
-                    icon: const Icon(Icons.content_copy_rounded),
-                    onPressed: () => _withUndo(store, 'Скопировано из будней', week),
-                  ),
-                ],
-                if (!p.isEmpty) ...[
-                  const SizedBox(width: 8),
-                  IconButton.filledTonal(
-                    tooltip: 'Очистить всё',
-                    icon: const Icon(Icons.delete_sweep_outlined),
-                    onPressed: () => _withUndo(store, 'Звонки очищены', const BellProfile()),
-                  ),
-                ],
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                for (final k in kBellKeys)
+                  ChoiceTag(label: bellTitle(k), icon: _icons[k], selected: _key == k, onTap: () => setState(() => _key = k)),
               ]),
-              const SizedBox(height: 16),
-              SelectField<int>(
-                label: 'Обед',
-                icon: Icons.restaurant_rounded,
-                value: p.lunchAfter,
-                valueLabel: p.lunchAfter == 0 ? 'Без обеда' : 'После ${p.lunchAfter} пары',
-                sheetTitle: 'Перерыв на обед',
-                sheetSubtitle: 'Длительность — разница между концом этой пары и началом следующей',
-                options: [
-                  const MenuOption(0, 'Без обеда', icon: Icons.block_rounded),
-                  for (var n = 1; n < kMaxPairs; n++) MenuOption(n, 'После $n пары', icon: Icons.restaurant_rounded),
-                ],
-                onSelected: (v) => _save(store, p.withLunch(v)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
+                child: Text(hint, style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.35)),
               ),
+              if (presets.isNotEmpty) const SectionHeader('Готовые расписания', top: 20),
+              for (var i = 0; i < presets.length; i++)
+                SegmentCard(
+                  index: i,
+                  count: presets.length,
+                  onTap: () => _applyPreset(store, presets[i]),
+                  child: BadgeRow(
+                    icon: Icons.schedule_rounded,
+                    tone: hueTone(context, kHueAmber),
+                    title: presets[i].title,
+                    subtitle: presets[i].subtitle,
+                    trailing: Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Icon(
+                        p.sameAs(presets[i].profile) ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
+                        color: p.sameAs(presets[i].profile) ? cs.primary : cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
               Smooth(
                 child: problem == null
                     ? const SizedBox(key: ValueKey('problem-none'), width: double.infinity)
@@ -298,29 +222,30 @@ class _BellsPageState extends State<BellsPage> {
                           child: Row(children: [
                             Icon(Icons.error_outline_rounded, color: cs.onErrorContainer),
                             const SizedBox(width: 12),
-                            Expanded(child: Text(problem, style: context.tt.bodyMedium?.copyWith(color: cs.onErrorContainer))),
+                            Expanded(child: Text(problem, style: tt.bodyMedium?.copyWith(color: cs.onErrorContainer))),
                           ]),
                         ),
                       ),
               ),
-              const SectionHeader('Пары'),
+              SectionHeader('Пары', trailing: nums.isEmpty ? null : pairsText(nums.length)),
+              if (nums.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+                  child: Text('Время пар не задано. Выберите готовое расписание выше или добавьте пары вручную.', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.35)),
+                ),
               ...rows,
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                child: Text(
-                  'Время показывается справа в карточке каждой пары: начало, перерыв внутри пары и конец; обед после пары — отдельной строкой. '
-                  'Перерывы между парами считаются сами — по времени конца и начала. Внутри пары можно задать перерыв — например, две половины по 45 минут.',
-                  style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.4),
+              if (nums.length < kMaxPairs)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonalIcon(
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text('Добавить пару'),
+                    onPressed: () => _addPair(store),
+                  ),
                 ),
-              ),
-              if (!p.isEmpty) ...[
-                const SectionHeader('Как это выглядит'),
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(28)),
-                  child: BellTimeline(profile: p),
-                ),
-              ],
+              const SectionHeader('Дополнительно'),
+              for (var i = 0; i < extra.length; i++)
+                SegmentCard(index: i, count: extra.length, onTap: extraActions[i], child: extra[i]),
             ]),
             const SliverToBoxAdapter(child: SizedBox(height: 40)),
           ],
@@ -328,129 +253,212 @@ class _BellsPageState extends State<BellsPage> {
       ),
     );
   }
-
-  Future<void> _openAutoFill(AppStore store) => showAdaptiveSheet<void>(
-        context,
-        (ctx) => _AutoFillSheet(
-          title: bellTitle(_key),
-          onApply: (plan) {
-            Navigator.of(ctx).pop();
-            _withUndo(store, 'Звонки заполнены', generateBells(plan));
-          },
-        ),
-      );
 }
 
-/// Карточка одной пары: начало и конец, а ниже — переключатель «Перерыв внутри пары»
-/// с наглядной схемой «половина · перерыв · половина».
-class _PairCard extends StatelessWidget {
-  const _PairCard({
-    super.key,
-    required this.index,
-    required this.n,
-    required this.slot,
-    required this.onStart,
-    required this.onEnd,
-    required this.onBreakStart,
-    required this.onBreakEnd,
-    required this.onToggleBreak,
-    required this.onClear,
-  });
-  final int index;
+/// Подсказка для времени ещё не заданной пары: через 10 минут после предыдущей.
+int _suggestStart(BellProfile p, int n) {
+  for (var m = n - 1; m >= 1; m--) {
+    final prev = p[m];
+    if (prev != null) return (prev.end + 10).clamp(0, 24 * 60 - 1).toInt();
+  }
+  return 8 * 60 + 30;
+}
+
+/// Строка пары в списке: номер, время и коротко о перерыве внутри.
+class _PairRow extends StatelessWidget {
+  const _PairRow({super.key, required this.n, required this.slot, required this.onTap});
   final int n;
-  final BellSlot? slot;
-  final VoidCallback onStart;
-  final VoidCallback onEnd;
-  final VoidCallback onBreakStart;
-  final VoidCallback onBreakEnd;
-  final VoidCallback onToggleBreak;
-  final VoidCallback onClear;
+  final BellSlot slot;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
-    final s = slot;
+    final tt = context.tt;
+    final detail = slot.hasBreak
+        ? '${slot.lunchInside ? 'Обед' : 'Перерыв'} внутри пары: ${shortRange(slot.breakStart!, slot.breakEnd!)}'
+        : spanText(slot.minutes);
     return Appear(
-      index: index,
-      child: Material(
-        color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(28),
-        clipBehavior: Clip.antiAlias,
+      index: n - 1,
+      child: SegmentCard(
+        index: 0,
+        count: 1,
+        appear: false,
+        onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 6, 6),
-          child: Column(children: [
-            Row(children: [
-              NumberBadge('$n', tone: s != null ? Tone(cs.primaryContainer, cs.onPrimaryContainer) : neutralTone(context), size: 46, round: false),
-              const SizedBox(width: 12),
-              Expanded(child: _TimeField(label: 'Начало', minutes: s?.start, onTap: onStart)),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Icon(Icons.arrow_forward_rounded, size: 18, color: cs.onSurfaceVariant),
-              ),
-              Expanded(child: _TimeField(label: 'Конец', minutes: s?.end, onTap: onEnd)),
-              SizedBox(
-                width: 48,
-                child: AnimatedSwitcher(
-                  duration: Motion.ms(200),
-                  transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
-                  child: s != null
-                      ? IconButton(key: const ValueKey('clear'), tooltip: 'Очистить пару', icon: const Icon(Icons.close_rounded), onPressed: onClear)
-                      : const SizedBox.shrink(key: ValueKey('no-clear')),
-                ),
-              ),
-            ]),
-            Smooth(
-              child: s != null
-                  ? Padding(
-                      key: ValueKey('break-block-${s.hasBreak}'),
-                      padding: const EdgeInsets.fromLTRB(0, 4, 8, 6),
-                      child: Column(children: [
-                        InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () {
-                            Haptics.selection();
-                            onToggleBreak();
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(4, 4, 0, 4),
-                            child: Row(children: [
-                              const SizedBox(width: 8),
-                              Icon(s.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded, size: 20, color: s.hasBreak ? cs.tertiary : cs.onSurfaceVariant),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Text('Перерыв внутри пары', style: context.tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-                                  Text(
-                                    s.hasBreak ? (s.lunchInside ? 'Обед внутри пары: ${halvesText(s)}' : 'Две половины: ${halvesText(s)}') : 'Например, две половины по 45 минут',
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                                  ),
-                                ]),
-                              ),
-                              SettingsSwitch(value: s.hasBreak, onChanged: (_) => onToggleBreak()),
-                            ]),
-                          ),
-                        ),
-                        if (s.hasBreak) ...[
-                          const SizedBox(height: 8),
-                          _HalvesBar(slot: s),
-                          const SizedBox(height: 10),
-                          Row(children: [
-                            const SizedBox(width: 8),
-                            Expanded(child: _TimeField(label: s.lunchInside ? 'Обед с' : 'Перерыв с', minutes: s.breakStart, onTap: onBreakStart, dense: true)),
-                            const SizedBox(width: 10),
-                            Expanded(child: _TimeField(label: s.lunchInside ? 'Обед до' : 'Перерыв до', minutes: s.breakEnd, onTap: onBreakEnd, dense: true)),
-                          ]),
-                          const SizedBox(height: 4),
-                        ],
-                      ]),
-                    )
-                  : const SizedBox(key: ValueKey('no-break-block'), height: 6, width: double.infinity),
+          padding: const EdgeInsets.fromLTRB(16, 12, 14, 12),
+          child: Row(children: [
+            NumberBadge('$n', tone: hueTone(context, kSubjectHues[(n - 1) % kSubjectHues.length]), size: 46, round: false),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(slotRange(slot), style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, fontFeatures: const [FontFeature.tabularFigures()])),
+                Text(detail, style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+              ]),
             ),
+            Icon(Icons.edit_outlined, size: 20, color: cs.onSurfaceVariant),
           ]),
         ),
       ),
+    );
+  }
+}
+
+// ───────────────────────── правка одной пары ─────────────────────────
+
+/// Шторка одной пары: начало, конец, перерыв внутри пары. Изменения применяются сразу.
+Future<void> showPairSheet(BuildContext context, String key, int n) =>
+    showAdaptiveSheet<void>(context, (_) => _PairSheet(bellKey: key, n: n));
+
+class _PairSheet extends StatelessWidget {
+  const _PairSheet({required this.bellKey, required this.n});
+  final String bellKey;
+  final int n;
+
+  static const _defaultBreak = 5;
+
+  void _warn(BuildContext context, String text) => showNote(ScaffoldMessenger.of(context), text);
+
+  Future<void> _pickStart(BuildContext context, AppStore store, BellProfile p, BellSlot slot) async {
+    final m = await pickMinutes(context, slot.start, help: '$n пара · начало');
+    if (m == null || !context.mounted) return;
+    if (m >= 24 * 60 - 1) return _warn(context, 'Слишком поздно для начала пары');
+    Haptics.selection();
+    final end = slot.end > m ? slot.end : (m + slot.minutes).clamp(m + 1, 24 * 60 - 1).toInt();
+    var next = BellSlot(start: m, end: end, breakStart: slot.breakStart, breakEnd: slot.breakEnd);
+    if (!next.valid) next = next.withoutBreak();
+    store.setBellProfile(bellKey, p.withSlot(n, next));
+  }
+
+  Future<void> _pickEnd(BuildContext context, AppStore store, BellProfile p, BellSlot slot) async {
+    final m = await pickMinutes(context, slot.end, help: '$n пара · конец');
+    if (m == null || !context.mounted) return;
+    if (m <= slot.start) return _warn(context, 'Конец пары должен быть позже начала');
+    Haptics.selection();
+    var next = BellSlot(start: slot.start, end: m, breakStart: slot.breakStart, breakEnd: slot.breakEnd);
+    if (!next.valid) next = next.withoutBreak();
+    store.setBellProfile(bellKey, p.withSlot(n, next));
+  }
+
+  Future<void> _pickBreak(BuildContext context, AppStore store, BellProfile p, BellSlot slot, {required bool start}) async {
+    final m = await pickMinutes(context, start ? slot.breakStart! : slot.breakEnd!, help: '$n пара · перерыв ${start ? 'с' : 'до'}');
+    if (m == null || !context.mounted) return;
+    final next = BellSlot(start: slot.start, end: slot.end, breakStart: start ? m : slot.breakStart, breakEnd: start ? slot.breakEnd : m);
+    if (!next.valid) return _warn(context, 'Перерыв должен быть внутри пары: ${slotRange(slot)}');
+    Haptics.selection();
+    store.setBellProfile(bellKey, p.withSlot(n, next));
+  }
+
+  void _toggleBreak(BuildContext context, AppStore store, BellProfile p, BellSlot slot) {
+    Haptics.selection();
+    if (slot.hasBreak) {
+      store.setBellProfile(bellKey, p.withSlot(n, slot.withoutBreak()));
+      return;
+    }
+    if (slot.minutes < _defaultBreak + 4) return _warn(context, 'Пара слишком короткая для перерыва');
+    final bs = slot.start + (slot.minutes - _defaultBreak) ~/ 2;
+    store.setBellProfile(bellKey, p.withSlot(n, BellSlot(start: slot.start, end: slot.end, breakStart: bs, breakEnd: bs + _defaultBreak)));
+  }
+
+  void _delete(BuildContext context, AppStore store, BellProfile p) {
+    final messenger = ScaffoldMessenger.of(context);
+    final key = bellKey;
+    Haptics.light();
+    store.setBellProfile(key, p.withSlot(n, null));
+    Navigator.of(context).pop();
+    showUndo(messenger, '$n пара удалена', () => store.setBellProfile(key, p));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = StoreScope.of(context);
+    final cs = context.cs;
+    final tt = context.tt;
+    final p = store.settings.bell(bellKey);
+    final s = p[n];
+    if (s == null) {
+      return SheetScaffold(
+        title: '$n пара',
+        subtitle: 'Пара удалена',
+        footer: SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Готово'))),
+        children: const [SizedBox(height: 8)],
+      );
+    }
+    return SheetScaffold(
+      title: '$n пара',
+      subtitle: '${bellTitle(bellKey)} · ${spanText(s.minutes)}',
+      leading: NumberBadge('$n', tone: hueTone(context, kSubjectHues[(n - 1) % kSubjectHues.length]), size: 52, round: false),
+      trailing: IconButton(
+        tooltip: 'Удалить пару',
+        icon: Icon(Icons.delete_outline_rounded, color: cs.error),
+        onPressed: () => _delete(context, store, p),
+      ),
+      footer: SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Готово'))),
+      children: [
+        const SizedBox(height: 4),
+        FieldTile(
+          label: 'Начало',
+          icon: Icons.login_rounded,
+          valueLabel: fmtMin(s.start),
+          trailing: Icon(Icons.edit_outlined, color: cs.onSurfaceVariant),
+          onTap: () => _pickStart(context, store, p, s),
+        ),
+        const SizedBox(height: 8),
+        FieldTile(
+          label: 'Конец',
+          icon: Icons.logout_rounded,
+          valueLabel: fmtMin(s.end),
+          trailing: Icon(Icons.edit_outlined, color: cs.onSurfaceVariant),
+          onTap: () => _pickEnd(context, store, p, s),
+        ),
+        const SizedBox(height: 8),
+        Material(
+          color: cs.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(24),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _toggleBreak(context, store, p, s),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+              child: Row(children: [
+                Icon(s.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded, color: s.hasBreak ? cs.tertiary : cs.onSurfaceVariant),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Перерыв внутри пары', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                    Text(
+                      s.hasBreak ? (s.lunchInside ? 'Обед внутри пары: ${halvesText(s)}' : 'Две половины: ${halvesText(s)}') : 'Например, две половины по 45 минут',
+                      style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                  ]),
+                ),
+                SettingsSwitch(value: s.hasBreak, onChanged: (_) => _toggleBreak(context, store, p, s)),
+              ]),
+            ),
+          ),
+        ),
+        if (s.hasBreak) ...[
+          const SizedBox(height: 12),
+          _HalvesBar(slot: s),
+          const SizedBox(height: 12),
+          FieldTile(
+            label: s.lunchInside ? 'Обед с' : 'Перерыв с',
+            icon: Icons.pause_circle_outline_rounded,
+            valueLabel: fmtMin(s.breakStart!),
+            trailing: Icon(Icons.edit_outlined, color: cs.onSurfaceVariant),
+            onTap: () => _pickBreak(context, store, p, s, start: true),
+          ),
+          const SizedBox(height: 8),
+          FieldTile(
+            label: s.lunchInside ? 'Обед до' : 'Перерыв до',
+            icon: Icons.play_circle_outline_rounded,
+            valueLabel: fmtMin(s.breakEnd!),
+            trailing: Icon(Icons.edit_outlined, color: cs.onSurfaceVariant),
+            onTap: () => _pickBreak(context, store, p, s, start: false),
+          ),
+        ],
+        const SizedBox(height: 4),
+      ],
     );
   }
 }
@@ -508,53 +516,6 @@ class _HalvesBar extends StatelessWidget {
           ]),
         );
       }),
-    );
-  }
-}
-
-class _TimeField extends StatelessWidget {
-  const _TimeField({required this.label, required this.minutes, required this.onTap, this.dense = false});
-  final String label;
-  final int? minutes;
-  final VoidCallback onTap;
-  final bool dense;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.cs;
-    final has = minutes != null;
-    void tap() {
-      Haptics.selection();
-      onTap();
-    }
-
-    return Semantics(
-      button: true,
-      label: '$label: ${has ? fmtMin(minutes!) : 'не задано'}',
-      onTap: tap,
-      excludeSemantics: true,
-      child: Material(
-        color: cs.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: tap,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: dense ? 6 : 8),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Text(label, style: context.tt.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
-              Text(
-                has ? fmtMin(minutes!) : '—:—',
-                style: (dense ? context.tt.titleSmall : context.tt.titleMedium)?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: has ? cs.onSurface : cs.onSurfaceVariant,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-            ]),
-          ),
-        ),
-      ),
     );
   }
 }

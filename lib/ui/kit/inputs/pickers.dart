@@ -129,8 +129,6 @@ class FieldTile extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       has ? valueLabel! : placeholder,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                       style: context.tt.titleMedium?.copyWith(
                         fontWeight: has ? FontWeight.w700 : FontWeight.w500,
                         color: has ? cs.onSurface : cs.onSurfaceVariant,
@@ -240,8 +238,6 @@ class FilterButton extends StatelessWidget {
                 Flexible(
                   child: Text(
                     label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     style: context.tt.labelLarge?.copyWith(color: active ? cs.onSecondaryContainer : cs.onSurface, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -524,9 +520,9 @@ class ExcuseTile extends StatelessWidget {
                   PopIn(child: selected ? Icon(Icons.check_circle_rounded, color: tone.fg) : null),
                 ]),
                 const SizedBox(height: 12),
-                Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w800)),
+                Text(title, style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 2),
-                Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall?.copyWith(color: tone.fg.withValues(alpha: 0.8))),
+                Text(sub, style: context.tt.bodySmall?.copyWith(color: tone.fg.withValues(alpha: 0.8))),
               ]),
             ),
           ),

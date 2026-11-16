@@ -14,18 +14,16 @@ class SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.cs;
-    return ListTile(
-      onTap: onTap,
-      // у карточек-сегментов скругление задаёт сама карточка
-      shape: const RoundedRectangleBorder(),
-      minVerticalPadding: 14,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-      leading: Icon(icon, color: cs.primary),
-      title: Text(title, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-      subtitle: subtitle == null ? null : Text(subtitle!, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+    // Устроена так же, как строки расписания и оценок: значок в цветном квадрате, у каждой настройки свой оттенок.
+    final row = BadgeRow(
+      icon: icon,
+      tone: hueTone(context, subjectHue(title)),
+      title: title,
+      subtitle: subtitle,
       trailing: trailing,
+      showChevron: false,
     );
+    return onTap == null ? row : InkWell(onTap: onTap, child: row);
   }
 }
 
@@ -75,11 +73,11 @@ class BadgeRow extends StatelessWidget {
         const SizedBox(width: 14),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Text(title, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, height: 1.2)),
             if (subtitle != null)
               Padding(
                 padding: const EdgeInsets.only(top: 2),
-                child: Text(subtitle!, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.25)),
+                child: Text(subtitle!, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.25)),
               ),
           ]),
         ),

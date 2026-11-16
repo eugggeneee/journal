@@ -138,9 +138,9 @@ class OverviewCard extends StatelessWidget {
         child: Row(children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+              Text(title, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 2),
-              Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+              Text(subtitle, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
               const SizedBox(height: 10),
               bottom,
             ]),
@@ -200,9 +200,9 @@ class EntryTile extends StatelessWidget {
           const SizedBox(width: 14),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+              Text(title, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
               if (subtitle.isNotEmpty)
-                Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                Text(subtitle, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
             ]),
           ),
           const SizedBox(width: 8),

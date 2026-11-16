@@ -40,29 +40,28 @@ class PageTitle extends StatelessWidget {
   final String? subtitle;
   final int maxLines;
 
+  /// Однострочный текст шапки при нехватке места уменьшается, а не обрезается.
+  static Widget _shrink(Widget text) => FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: text);
+
   @override
-  Widget build(BuildContext context) => Semantics(
-        header: true,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              maxLines: maxLines,
-              overflow: TextOverflow.ellipsis,
-              style: context.tt.headlineMedium?.copyWith(fontWeight: FontWeight.w800, height: maxLines > 1 ? 1.1 : null),
-            ),
-            if (subtitle != null)
-              Text(
-                subtitle!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.tt.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant),
-              ),
-          ],
-        ),
-      );
+  Widget build(BuildContext context) {
+    final tt = context.tt;
+    // Длинное название (например, предмета) занимает до двух строк и берёт шрифт помельче, поэтому читается целиком.
+    final long = maxLines > 1 && title.length > 26;
+    final style = (long ? tt.headlineSmall : tt.headlineMedium)?.copyWith(fontWeight: FontWeight.w800, height: maxLines > 1 ? 1.1 : null);
+    return Semantics(
+      header: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          maxLines > 1 ? Text(title, maxLines: maxLines, overflow: TextOverflow.ellipsis, style: style) : _shrink(Text(title, maxLines: 1, softWrap: false, style: style)),
+          if (subtitle != null)
+            _shrink(Text(subtitle!, maxLines: 1, softWrap: false, style: tt.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant))),
+        ],
+      ),
+    );
+  }
 }
 
 /// Шапка вложенного экрана (настройки, предмет): та же высота, шрифт и положение названия, что и у вкладок,

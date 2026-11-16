@@ -147,9 +147,7 @@ class _ChoiceTile extends StatelessWidget {
               constraints: const BoxConstraints(minHeight: 34),
               child: Text(
                 item.label,
-                maxLines: 2,
                 textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
                 style: context.tt.labelSmall?.copyWith(
                   fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
                   color: sel ? cs.onSurface : cs.onSurfaceVariant,
@@ -163,6 +161,15 @@ class _ChoiceTile extends StatelessWidget {
   }
 }
 
+/// Яркость, которую выбрал пользователь: «светлая» и «тёмная» заданы жёстко, «как в системе» следует за телефоном.
+/// Образцы цветов рисуются именно в ней, поэтому при выборе тёмной темы кружки тёмные, при светлой светлые,
+/// и не ждут, пока тема доанимируется.
+Brightness chosenBrightness(BuildContext context, int themeMode) => switch (themeMode) {
+      1 => Brightness.light,
+      2 => Brightness.dark,
+      _ => MediaQuery.platformBrightnessOf(context),
+    };
+
 /// Выбор цветовой темы. Тема меняется сразу, а цвета всего интерфейса плавно перетекают.
 class ThemeColorGrid extends StatelessWidget {
   const ThemeColorGrid({super.key});
@@ -170,7 +177,7 @@ class ThemeColorGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
-    final brightness = Theme.of(context).brightness;
+    final brightness = chosenBrightness(context, store.settings.themeMode);
     final current = store.settings.themeColor;
     return ValueListenableBuilder<bool>(
       valueListenable: AppTheme.dynamicAvailable,
@@ -315,10 +322,10 @@ class ThemePreview extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(color: cs.surfaceContainer, borderRadius: BorderRadius.circular(24)),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-              navIcon(Icons.calendar_month_rounded, selected: true),
+              navIcon(Icons.home_rounded, selected: true),
+              navIcon(Icons.calendar_month_outlined),
               navIcon(Icons.star_outline_rounded),
               navIcon(Icons.event_busy_outlined),
-              navIcon(Icons.person_outline_rounded),
             ]),
           ),
         ]),

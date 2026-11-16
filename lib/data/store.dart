@@ -239,8 +239,12 @@ class AppStore extends ChangeNotifier {
 
   // ───────────────────────── звонки ─────────────────────────
 
+  /// Какие звонки действуют в этот день: день с пометкой «Сокращённый день» идёт по своему расписанию звонков,
+  /// остальные дни по будням или субботе. Пометку достаточно поставить, звонки подставятся сами.
+  String bellKeyOn(DateTime date) => markFor(date, 0)?.label == kShortDayMark ? kBellShort : bellKeyFor(date);
+
   /// Расписание звонков, действующее в этот день.
-  BellProfile bellProfileFor(DateTime date) => settings.bell(bellKeyFor(date));
+  BellProfile bellProfileFor(DateTime date) => settings.bell(bellKeyOn(date));
 
   /// Время конкретной пары в этот день (null — не задано).
   BellSlot? bellFor(DateTime date, int lesson) => bellProfileFor(date)[lesson];

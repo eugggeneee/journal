@@ -72,8 +72,6 @@ class OptionTile extends StatelessWidget {
                   Expanded(
                     child: Text(
                       label,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
                       style: context.tt.bodyLarge?.copyWith(fontWeight: selected ? FontWeight.w700 : FontWeight.w500, color: fg),
                     ),
                   ),

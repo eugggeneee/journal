@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/dates.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../logic/bells.dart';
@@ -11,22 +12,34 @@ import '../kit/foundation/ctx.dart';
 import 'lesson_sheet.dart';
 import 'marks.dart';
 
-/// Карточка одной пары в ленте дня: номер, предмет, аудитория и преподаватель, пропуск и пометка.
-/// Время пары вынесено на ленту слева, поэтому в самой карточке остаётся только перерыв внутри пары.
+/// Где пара относительно «сейчас» (имеет смысл для сегодняшнего дня).
+enum LessonPhase { past, now, next, later }
+
+/// Карточка одной пары в ленте дня: номер своего цвета у каждого предмета, название целиком, аудитория
+/// и преподаватель, пропуск и пометка. Идущая пара показывает, сколько осталось, и полосу прогресса,
+/// ближайшая следующая говорит, через сколько начнётся. Время пары вынесено на ленту слева.
 class LessonCard extends StatelessWidget {
   const LessonCard({
     super.key,
     required this.slot,
     required this.date,
     required this.store,
-    this.isNow = false,
+    this.phase = LessonPhase.later,
+    this.minutes,
+    this.progress = 0,
   });
   final LessonSlot slot;
   final DateTime date;
   final AppStore store;
+  final LessonPhase phase;
 
-  /// Пара идёт прямо сейчас.
-  final bool isNow;
+  /// Для идущей пары: сколько минут осталось; для следующей: через сколько минут начнётся.
+  final int? minutes;
+
+  /// Для идущей пары: какая доля уже прошла (0…1).
+  final double progress;
+
+  bool get isNow => phase == LessonPhase.now;
 
   static String roomText(String r) => r.isEmpty ? '' : (RegExp(r'\d').hasMatch(r) ? 'ауд. $r' : r);
 
@@ -44,7 +57,8 @@ class LessonCard extends StatelessWidget {
     final absence = store.absenceFor(date, slot.number);
     final mark = store.markFor(date, slot.number);
     final bell = store.bellFor(date, slot.number);
-    final base = isNow ? Tone(cs.primary, cs.onPrimary) : Tone(cs.primaryContainer, cs.onPrimaryContainer);
+    final subjectKey = slot.subjects.isEmpty ? '' : slot.subjects.first;
+    final base = hueTone(context, subjectHue(subjectKey));
     final tone = absence == null ? base : absenceTone(context, excused: absence.excused);
     final title = slot.subjects.map(store.subjectName).join(' / ');
     // Аудитория и преподаватель со значками: каждая запись — отдельная строка, части переносятся целиком.
@@ -102,7 +116,7 @@ class LessonCard extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(title, maxLines: 3, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, height: 1.2)),
+                Text(title, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, height: 1.2)),
                 for (final parts in lines)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
@@ -111,10 +125,11 @@ class LessonCard extends StatelessWidget {
                         Row(mainAxisSize: MainAxisSize.min, children: [
                           Icon(p.$1, size: 16, color: cs.onSurfaceVariant),
                           const SizedBox(width: 4),
-                          Flexible(child: Text(p.$2, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant))),
+                          Flexible(child: Text(p.$2, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant))),
                         ]),
                     ]),
                   ),
+                if (phase == LessonPhase.now || phase == LessonPhase.next) _StatusRow(phase: phase, minutes: minutes, progress: progress),
               ]),
             ),
             IconButton(
@@ -146,6 +161,36 @@ class LessonCard extends StatelessWidget {
   }
 }
 
+/// Статус пары под названием: «Идёт · ещё 40 мин» с полосой прогресса или «Дальше · через 12 мин».
+class _StatusRow extends StatelessWidget {
+  const _StatusRow({required this.phase, required this.minutes, required this.progress});
+  final LessonPhase phase;
+  final int? minutes;
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+    final now = phase == LessonPhase.now;
+    final m = minutes;
+    final text = now
+        ? (m == null ? 'Идёт сейчас' : 'Идёт · ещё ${spanText(m)}')
+        : (m == null ? 'Дальше' : 'Дальше · через ${spanText(m)}');
+    final tone = now ? Tone(cs.primary, cs.onPrimary) : Tone(cs.secondaryContainer, cs.onSecondaryContainer);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Pill(text, tone: tone, icon: now ? Icons.play_arrow_rounded : Icons.schedule_rounded),
+        if (now)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, right: 8),
+            child: Bar(value: progress.clamp(0.0, 1.0).toDouble(), color: cs.primary, height: 8, track: cs.primary.withValues(alpha: 0.18)),
+          ),
+      ]),
+    );
+  }
+}
+
 /// Перерыв внутри пары: «Обед» слева и время справа на всю ширину карточки. Во время перерыва подсвечивается.
 class _InnerBreak extends StatelessWidget {
   const _InnerBreak({required this.bell, required this.active});
@@ -170,8 +215,6 @@ class _InnerBreak extends StatelessWidget {
         Expanded(
           child: Text(
             '${word[0].toUpperCase()}${word.substring(1)}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: context.tt.labelLarge?.copyWith(color: fg, fontWeight: FontWeight.w700),
           ),
         ),

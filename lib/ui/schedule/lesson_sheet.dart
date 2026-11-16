@@ -229,7 +229,7 @@ class _LessonSheetState extends State<_LessonSheet> {
           ),
           const SizedBox(width: 12),
           FilledButton.tonalIcon(
-            style: FilledButton.styleFrom(minimumSize: const Size(64, 44)),
+            style: FilledButton.styleFrom(minimumSize: const Size(64, 48)),
             icon: Icon(dayMark == null ? Icons.bookmark_add_outlined : Icons.edit_outlined, size: 20),
             label: Text(dayMark == null ? 'Добавить' : 'Изменить'),
             onPressed: () {

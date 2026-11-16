@@ -4,7 +4,7 @@ import '../data/models.dart';
 /// Какое расписание звонков действует в день [date].
 String bellKeyFor(DateTime date) => date.weekday == DateTime.saturday ? kBellSat : kBellWeek;
 
-String bellTitle(String key) => key == kBellSat ? 'Суббота' : 'Будни';
+String bellTitle(String key) => key == kBellSat ? 'Суббота' : (key == kBellShort ? 'Сокращённый день' : 'Будни');
 
 /// Параметры быстрого заполнения звонков.
 class BellPlan {
@@ -84,14 +84,15 @@ int _m(int h, int m) => h * 60 + m;
 BellSlot _pair(int h1, int m1, int h2, int m2, int h3, int m3, int h4, int m4) =>
     BellSlot(start: _m(h1, m1), end: _m(h4, m4), breakStart: _m(h2, m2), breakEnd: _m(h3, m3));
 
-/// Расписания звонков МГТЭК: два варианта для пн–пт и один для субботы.
-/// Окончания 2 пары в субботу (10:50 и 11:40) восстановлены по фото — стоит сверить с оригиналом.
+/// Расписания звонков МГТЭК: два варианта для пн–пт, один для субботы и сокращённый день.
+/// Названия говорят о главном отличии: когда обед.
+/// Окончания 2 пары в субботу (10:50 и 11:40) восстановлены по фото: стоит сверить с оригиналом.
 final List<BellPreset> kBellPresets = [
   BellPreset(
     id: 'week1',
     key: kBellWeek,
-    title: 'Расписание 1',
-    subtitle: 'Пн–Пт · 7 пар · обед 11:50–12:20 перед 3 парой',
+    title: 'Обед 11:50–12:20',
+    subtitle: 'Пн–Пт · 7 пар · обед между 2 и 3 парой',
     profile: BellProfile(
       lunchAfter: 2,
       slots: {
@@ -108,8 +109,8 @@ final List<BellPreset> kBellPresets = [
   BellPreset(
     id: 'week2',
     key: kBellWeek,
-    title: 'Расписание 2',
-    subtitle: 'Пн–Пт · 7 пар · обед 12:45–13:15 посреди 3 пары',
+    title: 'Обед 12:45–13:15',
+    subtitle: 'Пн–Пт · 7 пар · обед посреди 3 пары',
     profile: BellProfile(
       slots: {
         1: _pair(8, 20, 9, 5, 9, 15, 10, 0),
@@ -125,7 +126,7 @@ final List<BellPreset> kBellPresets = [
   BellPreset(
     id: 'sat',
     key: kBellSat,
-    title: 'Расписание 3',
+    title: 'Суббота без обеда',
     subtitle: 'Суббота · 6 пар · для всех групп',
     profile: BellProfile(
       slots: {
@@ -137,6 +138,13 @@ final List<BellPreset> kBellPresets = [
         6: _pair(17, 5, 17, 50, 17, 55, 18, 40),
       },
     ),
+  ),
+  const BellPreset(
+    id: 'short',
+    key: kBellShort,
+    title: 'Сокращённый день',
+    subtitle: '6 пар по часу · перерывы по 10 минут · без обеда',
+    profile: kShortDayProfile,
   ),
 ];
 

@@ -46,6 +46,9 @@ class _MarkSheetState extends State<_MarkSheet> {
 
   String get label => custom ? _c.text.trim() : preset;
 
+  /// «Сокращённый день» всегда относится ко всему дню: по нему подставляются сокращённые звонки.
+  bool get _isShortDay => label == kShortDayMark;
+
   void _save() {
     final text = label;
     if (text.isEmpty) return;
@@ -54,7 +57,7 @@ class _MarkSheetState extends State<_MarkSheet> {
     final edit = widget.edit;
     final beforeNew = store.snapshotMarks(date);
     final beforeOld = (edit != null && !sameDay(edit.date, date)) ? store.snapshotMarks(edit.date) : null;
-    store.saveMark(DayMark(id: edit?.id ?? newId(), date: date, lesson: lesson, label: text));
+    store.saveMark(DayMark(id: edit?.id ?? newId(), date: date, lesson: _isShortDay ? 0 : lesson, label: text));
     Haptics.medium();
     Navigator.of(context).pop();
     showUndo(messenger, edit == null ? 'Пометка добавлена · $text' : 'Пометка изменена', () {
@@ -82,6 +85,7 @@ class _MarkSheetState extends State<_MarkSheet> {
     final editing = widget.edit != null;
     final existing = store.markFor(date, lesson);
     final replaces = existing != null && existing.id != widget.edit?.id;
+    final shortHint = _isShortDay;
     final sched = store.cachedSchedule(store.settings.group, date);
     String? lessonName;
     if (lesson > 0 && sched != null) {
@@ -175,13 +179,14 @@ class _MarkSheetState extends State<_MarkSheet> {
             ),
         ]),
         Smooth(
-          child: (lessonName != null || replaces)
+          child: (lessonName != null || replaces || shortHint)
               ? Padding(
-                  key: ValueKey('hint-$lesson-$replaces'),
+                  key: ValueKey('hint-$lesson-$replaces-$shortHint'),
                   padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),
                   child: Text(
                     [
-                      if (lessonName != null) '$lesson пара: $lessonName',
+                      if (shortHint) 'Звонки этого дня станут сокращёнными: пары по часу.',
+                      if (lessonName != null && !shortHint) '$lesson пара: $lessonName',
                       if (replaces) 'Прежняя пометка «${existing.label}» заменится.',
                     ].join('\n'),
                     style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
@@ -215,11 +220,15 @@ class MarkTag extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: ringColor, width: 2),
         ),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: tone.fg, height: 1.2),
+        // Длинное название уменьшается, а не обрезается: плашка остаётся одного размера.
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: tone.fg, height: 1.2),
+          ),
         ),
       ),
     );
@@ -290,7 +299,7 @@ class _MarkTile extends StatelessWidget {
           const SizedBox(width: 14),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(m.label, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+              Text(m.label, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
               Text(
                 m.wholeDay ? 'Весь день' : '${m.lesson} пара',
                 style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
