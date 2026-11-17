@@ -17,6 +17,7 @@ import '../settings/settings_button.dart';
 import '../kit/sheets/select_sheet.dart';
 import '../kit/sheets/sheet.dart';
 import '../settings/settings_pages.dart';
+import 'absence_heatmap.dart';
 import 'absence_limit.dart';
 import 'absence_sheet.dart';
 
@@ -105,6 +106,8 @@ class _AbsencesPageState extends State<AbsencesPage> with WidgetsBindingObserver
                   semester: semester,
                   onSemesterTap: () => _openSemester(context, semester, semesterHours),
                 ),
+                const SizedBox(height: 12),
+                AbsenceHeatmap(store: store),
                 const SizedBox(height: 16),
                 ModeSwitch(value: _mode, onChanged: (m) => setState(() => _mode = m)),
               ]),

@@ -415,6 +415,93 @@ class DayMark {
   }
 }
 
+/// Задание со сроком: домашнее задание или заметка к паре («принести тетрадь», «сдать реферат»).
+/// Может быть привязано к паре ([date] и [lesson]) и предмету; напоминает о себе на главной, когда срок близко.
+class Task {
+  Task({
+    required this.id,
+    required this.text,
+    required this.due,
+    this.subject = '',
+    this.date,
+    this.lesson = 0,
+    this.homework = true,
+    this.done = false,
+  });
+  final String id;
+  final String text;
+  final DateTime due;
+  final String subject; // ключ предмета или пусто
+  final DateTime? date; // день пары, к которой привязано задание
+  final int lesson; // номер пары, 0 — не привязано
+  final bool homework; // true — домашнее задание, false — заметка
+  final bool done;
+
+  Task copyWith({String? text, DateTime? due, String? subject, bool? homework, bool? done}) => Task(
+        id: id,
+        text: text ?? this.text,
+        due: due ?? this.due,
+        subject: subject ?? this.subject,
+        date: date,
+        lesson: lesson,
+        homework: homework ?? this.homework,
+        done: done ?? this.done,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        't': text,
+        'due': ymd(due),
+        's': subject,
+        if (date != null) 'd': ymd(date!),
+        'l': lesson,
+        'hw': homework,
+        'ok': done,
+      };
+
+  static Task? tryFromJson(Object? raw) {
+    try {
+      final j = Map<String, dynamic>.from(raw as Map);
+      final text = _str(j['t']).trim();
+      final due = parseYmd(_str(j['due']));
+      if (text.isEmpty || due == null) return null;
+      final l = _int(j['l'], 0);
+      return Task(
+        id: _str(j['id']).isEmpty ? newId() : _str(j['id']),
+        text: text,
+        due: due,
+        subject: _str(j['s']),
+        date: parseYmd(_str(j['d'])),
+        lesson: l < 0 ? 0 : l,
+        homework: j['hw'] is bool ? j['hw'] as bool : true,
+        done: j['ok'] is bool ? j['ok'] as bool : false,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
+/// Блоки главной, которые можно скрывать и переставлять (цветной блок дня остаётся всегда сверху).
+const String kBlockMetrics = 'metrics';
+const String kBlockTasks = 'tasks';
+const String kBlockTomorrow = 'tomorrow';
+const String kBlockWeek = 'week';
+const String kBlockRecent = 'recent';
+const List<String> kHomeBlocks = [kBlockMetrics, kBlockTasks, kBlockTomorrow, kBlockWeek, kBlockRecent];
+
+/// Порядок блоков без повторов и неизвестных значений; недостающие добавляются в конец в обычном порядке.
+List<String> normalizeHomeOrder(Iterable<String> order) {
+  final out = <String>[];
+  for (final b in order) {
+    if (kHomeBlocks.contains(b) && !out.contains(b)) out.add(b);
+  }
+  for (final b in kHomeBlocks) {
+    if (!out.contains(b)) out.add(b);
+  }
+  return out;
+}
+
 /// Пометка «Сокращённый день» — шаблон пометки на весь день.
 const String kShortDayMark = 'Сокращённый день';
 
@@ -434,10 +521,18 @@ class Settings {
     this.motion = 0,
     this.dayCardFolded = false,
     this.autoRefresh = true,
+    this.weekView = false,
+    this.tipGestures = false,
+    Map<String, int>? goals,
+    List<String>? homeOrder,
+    List<String>? homeHidden,
     Map<String, BellProfile>? bells,
     Map<String, String>? semesterSplits,
     Map<String, int>? dismissed,
   })  : extraSubjects = extraSubjects ?? [],
+        goals = goals ?? {},
+        homeOrder = normalizeHomeOrder(homeOrder ?? const []),
+        homeHidden = (homeHidden ?? <String>[]).where(kHomeBlocks.contains).toSet().toList(),
         bells = bells ?? {},
         semesterSplits = semesterSplits ?? {},
         dismissed = dismissed ?? {};
@@ -453,6 +548,15 @@ class Settings {
   int motion; // анимации: 0 — выразительные, 1 — спокойные, 2 — выключены
   bool dayCardFolded; // карточка дня на главной свёрнута в тонкую полоску
   bool autoRefresh; // подгружать расписание при запуске и возвращении в приложение
+  bool weekView; // расписание показано неделей (на широких экранах)
+  bool tipGestures; // подсказка о жестах при первом запуске уже закрыта
+
+  /// Цели по предметам: ключ предмета → целевой средний балл (1…10).
+  final Map<String, int> goals;
+
+  /// Порядок блоков на главной и скрытые блоки.
+  List<String> homeOrder;
+  List<String> homeHidden;
 
   /// Расписание звонков: 'week' (пн–пт), 'sat' (суббота) и 'short' (сокращённый день).
   final Map<String, BellProfile> bells;
@@ -477,6 +581,11 @@ class Settings {
         'mot': motion,
         'dc': dayCardFolded,
         'auto': autoRefresh,
+        'wv': weekView,
+        'tg': tipGestures,
+        'goal': goals,
+        'ho': homeOrder,
+        'hh': homeHidden,
         'bells': {for (final e in bells.entries) e.key: e.value.toJson()},
         'sem': semesterSplits,
         'dis': dismissed,
@@ -502,6 +611,14 @@ class Settings {
         motion: motion >= 0 && motion <= 2 ? motion : 0,
         dayCardFolded: j['dc'] is bool ? j['dc'] as bool : false,
         autoRefresh: j['auto'] is bool ? j['auto'] as bool : true,
+        weekView: j['wv'] is bool ? j['wv'] as bool : false,
+        tipGestures: j['tg'] is bool ? j['tg'] as bool : false,
+        goals: {
+          for (final e in Map<String, dynamic>.from((j['goal'] as Map?) ?? const {}).entries)
+            if (e.key.isNotEmpty && _int(e.value, 0) >= 1 && _int(e.value, 0) <= 10) e.key: _int(e.value, 0),
+        },
+        homeOrder: ((j['ho'] as List?) ?? const []).map(_str).toList(),
+        homeHidden: ((j['hh'] as List?) ?? const []).map(_str).toList(),
         bells: {
           for (final e in Map<String, dynamic>.from((j['bells'] as Map?) ?? const {}).entries)
             if (kBellKeys.contains(e.key)) e.key: BellProfile.fromJson(e.value),

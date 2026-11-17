@@ -23,6 +23,7 @@ class AppStore extends ChangeNotifier {
   List<Grade> grades = [];
   List<Absence> absences = [];
   List<DayMark> marks = [];
+  List<Task> tasks = [];
   final Map<String, DaySchedule> _cache = {}; // 'группа|yyyy-MM-dd'
   bool get hasGroup => settings.group.isNotEmpty;
 
@@ -53,6 +54,7 @@ class AppStore extends ChangeNotifier {
     absences =
         ((j['absences'] as List?) ?? const []).map(Absence.tryFromJson).whereType<Absence>().toList();
     marks = ((j['marks'] as List?) ?? const []).map(DayMark.tryFromJson).whereType<DayMark>().toList();
+    tasks = ((j['tasks'] as List?) ?? const []).map(Task.tryFromJson).whereType<Task>().toList();
   }
 
   void _readCache() {
@@ -70,11 +72,12 @@ class AppStore extends ChangeNotifier {
 
   Map<String, dynamic> exportMap() => {
         'app': _kBackupId,
-        'version': 2,
+        'version': 3,
         'settings': settings.toJson(),
         'grades': grades.map((g) => g.toJson()).toList(),
         'absences': absences.map((a) => a.toJson()).toList(),
         'marks': marks.map((m) => m.toJson()).toList(),
+        'tasks': tasks.map((t) => t.toJson()).toList(),
       };
 
   void _saveData() => _prefs.setString(_kData, jsonEncode(exportMap()));
@@ -132,6 +135,44 @@ class AppStore extends ChangeNotifier {
         return c != 0 ? c : a.id.compareTo(b.id);
       });
     return sorted.last.subject;
+  }
+
+  // ───────────────────────── задания ─────────────────────────
+
+  void saveTask(Task t) {
+    final i = tasks.indexWhere((x) => x.id == t.id);
+    if (i >= 0) {
+      tasks[i] = t;
+    } else {
+      tasks.add(t);
+    }
+    _changed();
+  }
+
+  void deleteTask(String id) {
+    tasks.removeWhere((t) => t.id == id);
+    _changed();
+  }
+
+  void toggleTask(String id) {
+    final i = tasks.indexWhere((t) => t.id == id);
+    if (i < 0) return;
+    tasks[i] = tasks[i].copyWith(done: !tasks[i].done);
+    _changed();
+  }
+
+  /// Задания, привязанные к паре.
+  List<Task> tasksForLesson(DateTime date, int lesson) =>
+      tasks.where((t) => t.lesson == lesson && t.date != null && sameDay(t.date!, date)).toList();
+
+  /// Невыполненные задания по сроку: просроченные идут первыми.
+  List<Task> get openTasks {
+    final list = tasks.where((t) => !t.done).toList()
+      ..sort((a, b) {
+        final c = a.due.compareTo(b.due);
+        return c != 0 ? c : a.id.compareTo(b.id);
+      });
+    return list;
   }
 
   // ───────────────────────── пропуски ─────────────────────────
@@ -354,6 +395,36 @@ class AppStore extends ChangeNotifier {
   void setDayCardFolded(bool v) {
     if (v == settings.dayCardFolded) return;
     settings.dayCardFolded = v;
+    _changed();
+  }
+
+  void setWeekView(bool v) {
+    if (v == settings.weekView) return;
+    settings.weekView = v;
+    _changed();
+  }
+
+  void setTipGestures(bool v) {
+    if (v == settings.tipGestures) return;
+    settings.tipGestures = v;
+    _changed();
+  }
+
+  /// Цель по предмету (1…10); null снимает цель.
+  void setGoal(String subject, int? goal) {
+    if (goal == null || goal < 1 || goal > 10) {
+      if (settings.goals.remove(subject) == null) return;
+    } else {
+      if (settings.goals[subject] == goal) return;
+      settings.goals[subject] = goal;
+    }
+    _changed();
+  }
+
+  /// Порядок и видимость блоков главной.
+  void setHomeLayout(List<String> order, List<String> hidden) {
+    settings.homeOrder = normalizeHomeOrder(order);
+    settings.homeHidden = hidden.where(kHomeBlocks.contains).toSet().toList();
     _changed();
   }
 

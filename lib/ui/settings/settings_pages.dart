@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
+import '../../core/file_io.dart';
 import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../logic/limits.dart';
@@ -336,17 +337,35 @@ class BehaviorSettingsPage extends StatelessWidget {
 class DataSettingsPage extends StatelessWidget {
   const DataSettingsPage({super.key});
 
-  Future<void> _export(BuildContext context) async {
+  Future<void> _exportFile(BuildContext context) async {
+    final store = StoreScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final d = DateTime.now();
+    final name = 'journal-${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}.json';
+    final ok = await FileIo.shareText(name, store.exportJson());
+    Haptics.medium();
+    if (!ok) showNote(messenger, 'Не удалось открыть меню отправки. Скопируйте копию в буфер обмена.');
+  }
+
+  Future<void> _exportClipboard(BuildContext context) async {
     final store = StoreScope.of(context);
     final messenger = ScaffoldMessenger.of(context);
     await Clipboard.setData(ClipboardData(text: store.exportJson()));
     Haptics.medium();
-    showNote(messenger, 'Копия в буфере обмена — сохраните её в заметках');
+    showNote(messenger, 'Копия в буфере обмена');
   }
 
-  Future<void> _import(BuildContext context) async {
-    final store = StoreScope.of(context);
-    final messenger = ScaffoldMessenger.of(context);
+  Future<void> _importFile(BuildContext context) async {
+    final text = await FileIo.pickText();
+    if (!context.mounted) return;
+    if (text == null || text.trim().isEmpty) {
+      await infoDialog(context, 'Файл не выбран', 'Выберите файл копии с расширением .json.');
+      return;
+    }
+    await _restore(context, text);
+  }
+
+  Future<void> _importClipboard(BuildContext context) async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     final text = data?.text ?? '';
     if (!context.mounted) return;
@@ -354,10 +373,16 @@ class DataSettingsPage extends StatelessWidget {
       await infoDialog(context, 'Буфер обмена пуст', 'Сначала скопируйте текст резервной копии.');
       return;
     }
+    await _restore(context, text);
+  }
+
+  Future<void> _restore(BuildContext context, String text) async {
+    final store = StoreScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     final ok = await confirmDialog(
       context,
       title: 'Восстановить данные?',
-      message: 'Текущие оценки, пропуски, пометки и звонки будут заменены данными из копии.',
+      message: 'Текущие оценки, пропуски, пометки, задания и звонки будут заменены данными из копии.',
       confirmLabel: 'Восстановить',
       destructive: true,
     );
@@ -371,27 +396,21 @@ class DataSettingsPage extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => SettingsScaffold(title: 'Данные', children: [
-        SegmentCard(
-          index: 0,
-          count: 2,
-          onTap: () => _export(context),
-          child: const SettingsTile(
-            icon: Icons.content_copy_rounded,
-            title: 'Сохранить копию',
-            subtitle: 'Оценки, пропуски, пометки и звонки — в буфер обмена',
+  Widget build(BuildContext context) {
+    final tiles = <(IconData, String, String, VoidCallback)>[
+      (Icons.ios_share_rounded, 'Сохранить в файл', 'Файл .json: оценки, пропуски, пометки, задания и звонки', () => _exportFile(context)),
+      (Icons.folder_open_rounded, 'Восстановить из файла', 'Выбрать файл .json с копией', () => _importFile(context)),
+      (Icons.content_copy_rounded, 'Скопировать в буфер обмена', 'Копия текстом, если файл не подходит', () => _exportClipboard(context)),
+      (Icons.content_paste_rounded, 'Вставить из буфера обмена', 'Восстановить из скопированного текста', () => _importClipboard(context)),
+    ];
+    return SettingsScaffold(title: 'Данные', children: [
+        for (var i = 0; i < tiles.length; i++)
+          SegmentCard(
+            index: i,
+            count: tiles.length,
+            onTap: tiles[i].$4,
+            child: SettingsTile(icon: tiles[i].$1, title: tiles[i].$2, subtitle: tiles[i].$3),
           ),
-        ),
-        SegmentCard(
-          index: 1,
-          count: 2,
-          onTap: () => _import(context),
-          child: const SettingsTile(
-            icon: Icons.restore_rounded,
-            title: 'Восстановить из копии',
-            subtitle: 'Вставить данные из буфера обмена',
-          ),
-        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 16, 12, 0),
           child: Text(
@@ -400,4 +419,5 @@ class DataSettingsPage extends StatelessWidget {
           ),
         ),
       ]);
+  }
 }

@@ -74,4 +74,56 @@ void main() {
     expect(store.grades.length, 1);
     expect(store.absences.length, 1);
   });
+
+  test('задания: сохранение, отметка, привязка к паре и порядок по сроку', () {
+    final late = Task(id: 'b', text: 'Сдать реферат', due: DateTime(2026, 11, 5), homework: false);
+    final soon = Task(id: 'a', text: 'Параграф 5', due: DateTime(2026, 11, 2), subject: 'Физика', date: day, lesson: 3);
+    store.saveTask(late);
+    store.saveTask(soon);
+    expect(store.openTasks.map((t) => t.id), ['a', 'b']);
+    expect(store.tasksForLesson(day, 3).map((t) => t.id), ['a']);
+    expect(store.tasksForLesson(day, 2), isEmpty);
+    store.toggleTask('a');
+    expect(store.openTasks.map((t) => t.id), ['b']);
+    store.toggleTask('a');
+    expect(store.tasks.firstWhere((t) => t.id == 'a').done, isFalse);
+    store.saveTask(late.copyWith(text: 'Сдать реферат по физике'));
+    expect(store.tasks.length, 2);
+    expect(store.tasks.firstWhere((t) => t.id == 'b').text, 'Сдать реферат по физике');
+    store.deleteTask('b');
+    expect(store.tasks.length, 1);
+  });
+
+  test('цели по предметам: установка, замена и снятие', () {
+    store.setGoal('Физика', 8);
+    expect(store.settings.goals['Физика'], 8);
+    store.setGoal('Физика', 9);
+    expect(store.settings.goals['Физика'], 9);
+    store.setGoal('Физика', null);
+    expect(store.settings.goals.containsKey('Физика'), isFalse);
+    store.setGoal('Физика', 11);
+    expect(store.settings.goals, isEmpty);
+  });
+
+  test('порядок блоков главной: перестановка и скрытие нормализуются', () {
+    store.setHomeLayout([kBlockRecent, 'мусор', kBlockRecent], [kBlockWeek, 'мусор']);
+    expect(store.settings.homeOrder.first, kBlockRecent);
+    expect(store.settings.homeOrder.toSet().length, kHomeBlocks.length);
+    expect(store.settings.homeHidden, [kBlockWeek]);
+  });
+
+  test('копия содержит задания, цели и порядок блоков', () {
+    store.saveTask(Task(id: 't', text: 'Принести тетрадь', due: DateTime(2026, 11, 3)));
+    store.setGoal('Физика', 8);
+    store.setHomeLayout([kBlockRecent], [kBlockWeek]);
+    final json = store.exportJson();
+    store.deleteTask('t');
+    store.setGoal('Физика', null);
+    store.setHomeLayout(kHomeBlocks, const []);
+    expect(store.importJson(json), isNull);
+    expect(store.tasks.single.text, 'Принести тетрадь');
+    expect(store.settings.goals['Физика'], 8);
+    expect(store.settings.homeOrder.first, kBlockRecent);
+    expect(store.settings.homeHidden, [kBlockWeek]);
+  });
 }

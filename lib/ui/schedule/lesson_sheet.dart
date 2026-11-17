@@ -14,6 +14,8 @@ import '../kit/foundation/ctx.dart';
 import '../kit/inputs/pickers.dart';
 import '../kit/sheets/select_sheet.dart';
 import '../kit/sheets/sheet.dart';
+import '../tasks/task_sheet.dart';
+import '../tasks/task_tile.dart';
 import 'marks.dart';
 
 /// Действия с парой: пропуск (причина и часы), снять пропуск, добавить оценку.
@@ -78,6 +80,7 @@ class _LessonSheetState extends State<_LessonSheet> {
     final profile = store.bellProfileFor(date);
     final dayMark = store.markFor(date, slot.number);
     final gap = bell == null ? null : gapLabel(profile, slot.number);
+    final lessonTasks = store.tasksForLesson(date, slot.number);
 
     final info = <Widget>[
       if (bell != null)
@@ -238,6 +241,54 @@ class _LessonSheetState extends State<_LessonSheet> {
               showMarkSheet(host, date, lesson: slot.number, edit: dayMark);
             },
           ),
+        ]),
+        FieldLabel('Задания', top: 16, trailing: lessonTasks.isEmpty ? null : '${lessonTasks.length}'),
+        for (final t in lessonTasks)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(children: [
+              TaskCheck(
+                done: t.done,
+                onTap: () {
+                  Haptics.selection();
+                  store.toggleTask(t.id);
+                },
+              ),
+              Expanded(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    final host = Navigator.of(context).context;
+                    Navigator.of(context).pop();
+                    showTaskSheet(host, edit: t);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      '${t.text} · ${dueText(t.due).toLowerCase()}',
+                      style: context.tt.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        decoration: t.done ? TextDecoration.lineThrough : TextDecoration.none,
+                        color: t.done ? cs.onSurfaceVariant : cs.onSurface,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ]),
+          ),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final hw in const [true, false])
+            FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(minimumSize: const Size(64, 48)),
+              icon: Icon(hw ? Icons.menu_book_rounded : Icons.sticky_note_2_rounded, size: 20),
+              label: Text(hw ? 'Домашнее задание' : 'Заметка'),
+              onPressed: () {
+                final host = Navigator.of(context).context;
+                Navigator.of(context).pop();
+                showTaskSheet(host, lessonDate: date, lesson: slot.number, subject: current, homework: hw);
+              },
+            ),
         ]),
         const SizedBox(height: 4),
       ],

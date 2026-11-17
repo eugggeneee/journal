@@ -12,7 +12,7 @@ import '../kit/animation/reveal.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
 import 'day_actions.dart';
-import 'day_timeline.dart';
+import 'day_agenda.dart';
 import 'marks.dart';
 import 'rest_day.dart';
 
@@ -120,7 +120,7 @@ class _DayViewState extends State<DayView> {
         final status = st.note ?? (st.fromCache ? 'Сохранено на устройстве' : 'Обновлено в ${hhmm(s.fetchedAt)}');
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           DayToolbar(date: date, slots: s.slots, store: store),
-          DayTimeline(date: date, slots: s.slots, store: store),
+          DayAgenda(date: date, slots: s.slots, store: store),
           Padding(
             padding: const EdgeInsets.only(top: 12),
             child: Center(

@@ -7,13 +7,13 @@ import '../../data/store.dart';
 import '../../logic/bells.dart';
 import '../absences/absence_actions.dart';
 import '../kit/animation/reveal.dart';
-import '../kit/components/overview.dart';
 import '../kit/foundation/ctx.dart';
-import 'day_bar.dart';
 import '../schedule/lesson_card.dart';
 import '../schedule/whole_day_split.dart';
+import 'day_bar.dart';
+import 'hero_surface.dart';
 
-/// Главная карточка дня: что идёт сейчас и что дальше, сколько осталось, сколько пар пройдено,
+/// Верх главной (карточка дня на всю ширину): что идёт сейчас и что дальше, сколько осталось, сколько пар пройдено,
 /// когда кончается день и сколько часов пропущено. Для другого дня показывает его сводку.
 /// Внизу действие «Весь день» с меню (сокращённый день, пометка): всё в одном месте и в одно нажатие.
 class DayCard extends StatelessWidget {
@@ -25,6 +25,7 @@ class DayCard extends StatelessWidget {
     required this.store,
     required this.onShortDay,
     required this.onMark,
+    required this.header,
   });
   final DateTime date;
   final List<LessonSlot> slots;
@@ -32,6 +33,9 @@ class DayCard extends StatelessWidget {
   final AppStore store;
   final VoidCallback onShortDay;
   final VoidCallback onMark;
+
+  /// Шапка страницы, которая стоит на самой поверхности (приветствие и настройки).
+  final Widget Function(Color fg) header;
 
   LessonSlot? _slot(int? n) {
     if (n == null) return null;
@@ -346,14 +350,7 @@ class DayCard extends StatelessWidget {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: HeroCard(
-        tone: tone,
-        padding: folded ? const EdgeInsets.fromLTRB(18, 12, 12, 12) : const EdgeInsets.fromLTRB(20, 14, 20, 14),
-        child: Smooth(child: content),
-      ),
-    );
+    return HeroSurface(tone: tone, header: header, child: Smooth(child: content));
   }
 
   List<_Stat> _stats(bool live, int done, int? to, int? from, List<BellSlot> bells, int hours) {

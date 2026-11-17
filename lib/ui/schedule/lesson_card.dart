@@ -55,6 +55,7 @@ class LessonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.cs;
     final absence = store.absenceFor(date, slot.number);
+    final tasks = store.tasksForLesson(date, slot.number);
     final mark = store.markFor(date, slot.number);
     final bell = store.bellFor(date, slot.number);
     final subjectKey = slot.subjects.isEmpty ? '' : slot.subjects.first;
@@ -69,9 +70,14 @@ class LessonCard extends StatelessWidget {
           if (e.teacher.isNotEmpty) (Icons.person_outline_rounded, e.teacher),
         ],
     ].where((x) => x.isNotEmpty).toList();
-    // Идущая пара залита цветом темы, чтобы взгляд находил её сразу.
-    final Color? cardColor = absence != null ? tone.bg.withValues(alpha: 0.55) : (isNow ? cs.primaryContainer : null);
-    final ring = Color.alphaBlend(cardColor ?? cs.surfaceContainerLow, cs.surfaceContainerLow);
+    // Карточка чуть подкрашена цветом предмета и имеет цветную кромку слева. Идущая пара залита цветом темы,
+    // чтобы взгляд находил её сразу, пара с пропуском окрашена в цвет пропуска.
+    final accent = hueAccent(context, subjectHue(subjectKey));
+    final Color cardColor = absence != null
+        ? tone.bg.withValues(alpha: 0.55)
+        : (isNow ? cs.primaryContainer : Color.alphaBlend(accent.withValues(alpha: 0.09), cs.surfaceContainerLow));
+    final edge = absence != null ? absenceAccent(context, excused: absence.excused) : (isNow ? cs.primary : accent);
+    final ring = Color.alphaBlend(cardColor, cs.surfaceContainerLow);
 
     final hasBreak = bell?.hasBreak ?? false;
     return SegmentCard(
@@ -81,9 +87,11 @@ class LessonCard extends StatelessWidget {
       color: cardColor,
       onTap: () => showLessonSheet(context, date, slot),
       onLongPress: () => toggleLessonAbsence(context, store, date, slot),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      child: DecoratedBox(
+        decoration: BoxDecoration(border: Border(left: BorderSide(color: edge, width: 5))),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(14, 12, 4, hasBreak ? 8 : 12),
+          padding: EdgeInsets.fromLTRB(11, 12, 4, hasBreak ? 8 : 12),
           child: Row(children: [
             // Пропуск — плашка с цифрой на верхнем углу номера пары, пометка — на нижнем краю:
             // размер карточки не меняется.
@@ -129,6 +137,30 @@ class LessonCard extends StatelessWidget {
                         ]),
                     ]),
                   ),
+                for (final t in tasks.take(2))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Icon(t.homework ? Icons.menu_book_rounded : Icons.sticky_note_2_rounded, size: 16, color: t.done ? cs.onSurfaceVariant : cs.tertiary),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          t.text,
+                          style: context.tt.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            height: 1.25,
+                            color: t.done ? cs.onSurfaceVariant : cs.onSurface,
+                            decoration: t.done ? TextDecoration.lineThrough : TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ),
+                if (tasks.length > 2)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text('ещё ${tasks.length - 2}', style: context.tt.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                  ),
                 if (phase == LessonPhase.now || phase == LessonPhase.next) _StatusRow(phase: phase, minutes: minutes, progress: progress),
               ]),
             ),
@@ -153,10 +185,11 @@ class LessonCard extends StatelessWidget {
         // Перерыв внутри пары занимает всю ширину карточки: время читается целиком.
         if (bell != null && bell.hasBreak)
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+            padding: const EdgeInsets.fromLTRB(11, 0, 14, 12),
             child: _InnerBreak(bell: bell, active: isNow && _inBreak(bell)),
           ),
-      ]),
+        ]),
+      ),
     );
   }
 }
@@ -180,7 +213,18 @@ class _StatusRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Pill(text, tone: tone, icon: now ? Icons.play_arrow_rounded : Icons.schedule_rounded),
+        if (now)
+          Container(
+            padding: const EdgeInsets.fromLTRB(6, 3, 12, 3),
+            decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(20)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              PulseDot(color: tone.fg, size: 7),
+              const SizedBox(width: 2),
+              Flexible(child: Text(text, style: context.tt.labelLarge?.copyWith(color: tone.fg, fontWeight: FontWeight.w700))),
+            ]),
+          )
+        else
+          Pill(text, tone: tone, icon: Icons.schedule_rounded),
         if (now)
           Padding(
             padding: const EdgeInsets.only(top: 8, right: 8),

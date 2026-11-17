@@ -66,4 +66,58 @@ void main() {
       expect(File('assets/icons/preview/$id.png').existsSync(), isTrue, reason: 'preview/$id.png');
     }
   });
+
+  test('цели, порядок блоков главной и подсказка сохраняются и читаются', () {
+    final s = Settings(
+      goals: {'Математика': 9, 'Физика': 8},
+      homeOrder: [kBlockRecent, kBlockMetrics],
+      homeHidden: [kBlockWeek],
+      weekView: true,
+      tipGestures: true,
+    );
+    final back = Settings.fromJson(s.toJson());
+    expect(back.goals, {'Математика': 9, 'Физика': 8});
+    // недостающие блоки дописываются в конец в обычном порядке
+    expect(back.homeOrder, [kBlockRecent, kBlockMetrics, kBlockTasks, kBlockTomorrow, kBlockWeek]);
+    expect(back.homeHidden, [kBlockWeek]);
+    expect(back.weekView, isTrue);
+    expect(back.tipGestures, isTrue);
+  });
+
+  test('мусор в целях и блоках игнорируется', () {
+    final s = Settings.fromJson({
+      'group': '6312',
+      'goal': {'Математика': 11, 'Физика': 0, '': 8, 'Химия': 7},
+      'ho': ['x', kBlockWeek, kBlockWeek],
+      'hh': ['y', kBlockTasks],
+    });
+    expect(s.goals, {'Химия': 7});
+    expect(s.homeOrder.first, kBlockWeek);
+    expect(s.homeOrder.toSet().length, kHomeBlocks.length);
+    expect(s.homeHidden, [kBlockTasks]);
+  });
+
+  test('по умолчанию все блоки видны в обычном порядке', () {
+    final s = Settings();
+    expect(s.homeOrder, kHomeBlocks);
+    expect(s.homeHidden, isEmpty);
+    expect(s.goals, isEmpty);
+    expect(s.weekView, isFalse);
+    expect(s.tipGestures, isFalse);
+  });
+
+  test('задание: сохранение, чтение и повреждённые записи', () {
+    final t = Task(id: 't1', text: 'Сдать реферат', due: DateTime(2026, 11, 20), subject: 'Физика', date: DateTime(2026, 11, 16), lesson: 2, homework: false, done: true);
+    final back = Task.tryFromJson(t.toJson())!;
+    expect(back.text, 'Сдать реферат');
+    expect(back.due, DateTime(2026, 11, 20));
+    expect(back.subject, 'Физика');
+    expect(back.date, DateTime(2026, 11, 16));
+    expect(back.lesson, 2);
+    expect(back.homework, isFalse);
+    expect(back.done, isTrue);
+    expect(Task.tryFromJson({'t': '', 'due': '2026-11-20'}), isNull);
+    expect(Task.tryFromJson({'t': 'x', 'due': 'вчера'}), isNull);
+    expect(Task.tryFromJson('мусор'), isNull);
+  });
 }

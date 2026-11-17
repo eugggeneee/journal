@@ -6,6 +6,7 @@ import '../kit/animation/reveal.dart';
 import '../kit/components/overview.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
+import 'goal_card.dart';
 import 'grade_sheet.dart';
 import 'grades_page.dart';
 
@@ -95,6 +96,8 @@ class _SubjectPageState extends State<SubjectPage> {
                     Spark(grades: chrono.length > 24 ? chrono.sublist(chrono.length - 24) : chrono, height: 44, barWidth: 9),
                   ]),
                 ),
+                const SizedBox(height: 12),
+                GoalCard(subject: subject, values: [for (final g in grades) g.value], store: store),
                 const SectionHeader('Все оценки'),
                 for (var i = 0; i < grades.length; i++)
                   Reveal(

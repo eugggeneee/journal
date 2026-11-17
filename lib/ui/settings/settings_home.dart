@@ -9,6 +9,7 @@ import '../kit/foundation/ctx.dart';
 import '../kit/inputs/settings_tiles.dart';
 import 'bells_page.dart';
 import 'group_picker.dart';
+import 'home_layout_page.dart';
 import 'settings_pages.dart';
 import '../theme/app_theme.dart';
 import 'theme_page.dart';
@@ -38,6 +39,13 @@ class SettingsHomePage extends StatelessWidget {
         subtitle: '${AppTheme.nameOf(s.themeColor, hasDynamic: AppTheme.dynamicAvailable.value)} · ${modeNames[s.themeMode]}',
         tone: hueTone(context, kHueViolet),
         page: const ThemePage(),
+      ),
+      _Section(
+        icon: Icons.dashboard_customize_rounded,
+        title: 'Главная',
+        subtitle: s.homeHidden.isEmpty ? 'Все блоки показаны' : 'Скрыто блоков: ${s.homeHidden.length}',
+        tone: hueTone(context, 300),
+        page: const HomeLayoutPage(),
       ),
       _Section(
         icon: Icons.calendar_month_rounded,

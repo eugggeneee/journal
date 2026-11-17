@@ -12,6 +12,7 @@ import '../settings/bells_sheet.dart';
 import '../settings/group_picker.dart';
 import '../settings/settings_home.dart';
 import 'day_view.dart';
+import 'week_view.dart';
 
 /// Связывает страницу расписания с оболочкой (выбранная дата нужна кнопке «Добавить»).
 class ScheduleController extends ChangeNotifier {
@@ -106,7 +107,44 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     }
   }
 
+  /// Неделя включена и экран достаточно широк (от 720 dp), иначе всегда один день.
+  bool get _weekMode => mounted && MediaQuery.sizeOf(context).width >= 720 && StoreScope.of(context).settings.weekView;
+
+  void _setWeek(bool v) {
+    final store = StoreScope.of(context);
+    store.setWeekView(v);
+    if (!v) _restoreDayPage();
+  }
+
+  /// После возврата к одному дню страница и лента дат снова ставятся на выбранный день.
+  void _restoreDayPage() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final i = _indexOf(_selected);
+      if (_pc.hasClients) _pc.jumpToPage(i);
+      _centerStrip(i, animate: false);
+    });
+  }
+
+  void _shiftWeek(int weeks) {
+    Haptics.selection();
+    setState(() => _selected = addDays(_selected, 7 * weeks));
+    widget.controller.setSelected(_selected);
+  }
+
+  void _openFromWeek(DateTime d) {
+    setState(() => _selected = dateOnly(d));
+    widget.controller.setSelected(_selected);
+    StoreScope.of(context).setWeekView(false);
+    _restoreDayPage();
+  }
+
   void _jumpTo(DateTime d) {
+    if (_weekMode) {
+      setState(() => _selected = dateOnly(d));
+      widget.controller.setSelected(_selected);
+      return;
+    }
     if (!_pc.hasClients) return;
     final idx = _indexOf(d);
     final cur = (_pc.page ?? idx.toDouble()).round();
@@ -140,17 +178,22 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     final marked = <String>{for (final a in store.absences) ymd(a.date)};
     final noted = <String>{for (final m in store.marks) ymd(m.date)};
     final isToday = sameDay(_selected, today());
+    final wide = MediaQuery.sizeOf(context).width >= 720;
+    final week = wide && store.settings.weekView;
+    final monday = addDays(_selected, -(_selected.weekday - 1));
 
     final header = AppBar(
       toolbarHeight: kHeaderHeight,
       titleSpacing: 20,
       title: Swap(
-        child: PageTitle(
-          relativeDay(_selected),
-          key: ValueKey(ymd(_selected)),
-          // День недели уже в заголовке, если там не «Сегодня», «Завтра» или «Вчера».
-          subtitle: dayDiff(_selected, today()).abs() <= 1 ? '${fullDate(_selected)} · ${weekdayName(_selected)}' : fullDate(_selected),
-        ),
+        child: week
+            ? PageTitle('Неделя', key: ValueKey('week-${ymd(monday)}'), subtitle: '${shortDate(monday)} – ${shortDate(addDays(monday, 5))}')
+            : PageTitle(
+                relativeDay(_selected),
+                key: ValueKey(ymd(_selected)),
+                // День недели уже в заголовке, если там не «Сегодня», «Завтра» или «Вчера».
+                subtitle: dayDiff(_selected, today()).abs() <= 1 ? '${fullDate(_selected)} · ${weekdayName(_selected)}' : fullDate(_selected),
+              ),
       ),
       actions: [
         // Кнопка «Сегодня» выезжает с пружинкой и плавно раздвигает соседние кнопки.
@@ -181,12 +224,22 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
             if (v == 'refresh') StoreScope.repoOf(context).prefetch(force: true);
             if (v == 'group') openGroupPicker(context);
             if (v == 'bells') showBellsSheet(context, _selected);
+            if (v == 'week') _setWeek(!week);
             if (v == 'settings') {
               Haptics.selection();
               Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SettingsHomePage()));
             }
           },
           itemBuilder: (_) => [
+            if (wide)
+              PopupMenuItem(
+                value: 'week',
+                child: ListTile(
+                  leading: Icon(week ? Icons.view_day_rounded : Icons.view_week_rounded),
+                  title: Text(week ? 'Показать день' : 'Показать неделю'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
             const PopupMenuItem(value: 'bells', child: ListTile(leading: Icon(Icons.notifications_active_outlined), title: Text('Звонки на этот день'), contentPadding: EdgeInsets.zero)),
             const PopupMenuItem(value: 'refresh', child: ListTile(leading: Icon(Icons.refresh_rounded), title: Text('Обновить расписание'), contentPadding: EdgeInsets.zero)),
             PopupMenuItem(value: 'group', child: ListTile(leading: const Icon(Icons.groups_rounded), title: const Text('Сменить группу'), subtitle: Text('Сейчас ${store.settings.group}'), contentPadding: EdgeInsets.zero)),
@@ -237,10 +290,14 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     return ContentFrame(
       child: Column(children: [
         header,
-        // Лента дат всегда на виду: прокрутка дня её не трогает.
-        strip,
-        const SizedBox(height: 10),
-        Expanded(child: pages),
+        if (week)
+          Expanded(child: WeekView(selected: _selected, onShift: _shiftWeek, onOpenDay: _openFromWeek))
+        else ...[
+          // Лента дат всегда на виду: прокрутка дня её не трогает.
+          strip,
+          const SizedBox(height: 10),
+          Expanded(child: pages),
+        ],
       ]),
     );
   }

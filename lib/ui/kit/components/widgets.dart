@@ -519,3 +519,20 @@ class _Disc extends StatelessWidget {
   Widget build(BuildContext context) =>
       IgnorePointer(child: Container(width: size, height: size, decoration: BoxDecoration(color: color, shape: BoxShape.circle)));
 }
+
+/// Значок в цветном квадрате: тот же размер и скругление, что у номеров пар и оценок. Основа строк списков.
+class IconBox extends StatelessWidget {
+  const IconBox({super.key, required this.icon, required this.tone, this.size = 46});
+  final IconData icon;
+  final Tone tone;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(size * 0.34)),
+        child: Icon(icon, size: size * 0.52, color: tone.fg),
+      );
+}
