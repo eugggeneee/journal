@@ -68,7 +68,7 @@ class _RevealState extends State<Reveal> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) => SizeTransition(
         sizeFactor: _size,
-        axisAlignment: -1,
+        alignment: Alignment.topCenter,
         child: FadeTransition(opacity: _fade, child: widget.child),
       );
 }
