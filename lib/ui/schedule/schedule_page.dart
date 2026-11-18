@@ -55,9 +55,11 @@ class SchedulePage extends StatefulWidget {
 }
 
 class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver {
-  static const _back = 120;
-  static const _fwd = 90;
-  static const _total = _back + _fwd + 1;
+  static final _first = DateTime(2020);
+  static final _last = DateTime(2100);
+  int get _back => dayDiff(_base, _first);
+  int get _total => dayDiff(_last, _first) + 1;
+  int _refresh = 0;
   static const _chipW = 60.0;
 
   late DateTime _base = today();
@@ -65,8 +67,8 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
   final ScrollController _strip = ScrollController();
   late DateTime _selected = _base;
 
-  DateTime _dateAt(int i) => addDays(_base, i - _back);
-  int _indexOf(DateTime d) => (dayDiff(d, _base) + _back).clamp(0, _total - 1).toInt();
+  DateTime _dateAt(int i) => addDays(_first, i);
+  int _indexOf(DateTime d) => dayDiff(d, _first).clamp(0, _total - 1).toInt();
 
   @override
   void initState() {
@@ -75,7 +77,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     widget.controller.attach(_jumpTo);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.controller.setSelected(_selected);
-      _centerStrip(_back, animate: false);
+      _centerStrip(_indexOf(_selected), animate: false);
     });
   }
 
@@ -102,7 +104,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
       widget.controller.setSelected(_selected);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         old.dispose();
-        _centerStrip(_back, animate: false);
+        _centerStrip(_indexOf(_selected), animate: false);
       });
     }
   }
@@ -128,7 +130,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
 
   void _shiftWeek(int weeks) {
     Haptics.selection();
-    setState(() => _selected = addDays(_selected, 7 * weeks));
+    setState(() => _selected = _dateAt(_indexOf(addDays(_selected, 7 * weeks))));
     widget.controller.setSelected(_selected);
   }
 
@@ -169,7 +171,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
 
   Future<void> _pickDate() async {
     final d = await pickDay(context, _selected);
-    if (d != null) _jumpTo(dateOnly(d));
+    if (mounted && d != null) _jumpTo(dateOnly(d));
   }
 
   @override
@@ -189,15 +191,14 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
         child: week
             ? PageTitle('Неделя', key: ValueKey('week-${ymd(monday)}'), subtitle: '${shortDate(monday)} – ${shortDate(addDays(monday, 5))}')
             : PageTitle(
-                relativeDay(_selected),
+                'Расписание',
                 key: ValueKey(ymd(_selected)),
-                // День недели уже в заголовке, если там не «Сегодня», «Завтра» или «Вчера».
-                subtitle: dayDiff(_selected, today()).abs() <= 1 ? '${fullDate(_selected)} · ${weekdayName(_selected)}' : fullDate(_selected),
+                subtitle: '${store.settings.group} · ${longDate(_selected)}',
               ),
       ),
       actions: [
         // Кнопка «Сегодня» выезжает с пружинкой и плавно раздвигает соседние кнопки.
-        AnimatedSize(
+        MotionSize(
           duration: context.motion(Motion.short),
           curve: Motion.standard,
           alignment: Alignment.centerRight,
@@ -221,7 +222,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
           tooltip: 'Ещё',
           icon: const Icon(Icons.more_vert_rounded),
           onSelected: (v) {
-            if (v == 'refresh') StoreScope.repoOf(context).prefetch(force: true);
+            if (v == 'refresh') setState(() => _refresh++);
             if (v == 'group') openGroupPicker(context);
             if (v == 'bells') showBellsSheet(context, _selected);
             if (v == 'week') _setWeek(!week);
@@ -283,7 +284,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
       },
       itemBuilder: (context, i) {
         final d = _dateAt(i);
-        return DayView(key: ValueKey('${ymd(d)}|${store.settings.group}'), date: d, onJump: _jumpTo);
+        return DayView(key: ValueKey('${ymd(d)}|${store.settings.group}'), date: d, refresh: _refresh, onJump: _jumpTo);
       },
     );
 
@@ -291,7 +292,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
       child: Column(children: [
         header,
         if (week)
-          Expanded(child: WeekView(selected: _selected, onShift: _shiftWeek, onOpenDay: _openFromWeek))
+          Expanded(child: WeekView(refresh: _refresh, selected: _selected, onShift: _shiftWeek, onOpenDay: _openFromWeek))
         else ...[
           // Лента дат всегда на виду: прокрутка дня её не трогает.
           strip,
@@ -334,8 +335,8 @@ class _DayChip extends StatelessWidget {
             width: 52,
             height: 70,
             decoration: BoxDecoration(
-              color: selected ? cs.primary : Colors.transparent,
-              borderRadius: BorderRadius.circular(selected ? 26 : 18),
+              color: selected ? cs.primary : cs.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(selected ? 18 : 24),
               border: isToday && !selected ? Border.all(color: cs.primary, width: 1.5) : null,
             ),
             child: FittedBox(

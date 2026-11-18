@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui' show Rect;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
@@ -10,11 +11,11 @@ class FileIo {
 
   /// Отдаёт текст как файл [name] через системное меню «Поделиться» (там можно сохранить в «Файлы», на диск
   /// или отправить себе). Возвращает false, если системное меню не открылось.
-  static Future<bool> shareText(String name, String content, {String mimeType = 'application/json'}) async {
+  static Future<bool> shareText(String name, String content, {required Rect origin, String mimeType = 'application/json'}) async {
     try {
       final bytes = Uint8List.fromList(utf8.encode(content));
       final file = XFile.fromData(bytes, mimeType: mimeType, name: name);
-      await SharePlus.instance.share(ShareParams(files: [file], fileNameOverrides: [name]));
+      await SharePlus.instance.share(ShareParams(files: [file], fileNameOverrides: [name], sharePositionOrigin: origin));
       return true;
     } catch (_) {
       return false;

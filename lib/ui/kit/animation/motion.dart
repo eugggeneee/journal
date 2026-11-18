@@ -87,3 +87,18 @@ extension MotionContext on BuildContext {
   /// Длительность с учётом отключённых анимаций: тогда смена происходит сразу.
   Duration motion(Duration d) => reduceMotion ? Duration.zero : d;
 }
+
+/// При выключенной анимации размер меняется сразу, без контроллера в фазе layout.
+class MotionSize extends StatelessWidget {
+  const MotionSize({super.key, required this.duration, required this.child,
+    this.curve = Curves.linear, this.alignment = Alignment.center});
+  final Duration duration;
+  final Widget child;
+  final Curve curve;
+  final AlignmentGeometry alignment;
+
+  @override
+  Widget build(BuildContext context) => context.reduceMotion || duration == Duration.zero
+      ? child
+      : AnimatedSize(duration: duration, curve: curve, alignment: alignment, child: child);
+}

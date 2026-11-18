@@ -68,11 +68,10 @@ class _ShellState extends State<Shell> {
     if (_tab != 1) setState(() => _tab = 1);
   }
 
-  /// Одна кнопка на вкладку: главная, расписание и оценки добавляют оценку (на расписании — на выбранную дату),
+  /// Расписание и оценки добавляют оценку (на расписании — на выбранную дату),
   /// пропуски — пропуск.
   Widget _fab(BuildContext context) {
     switch (_tab) {
-      case 0:
       case 2:
         return FloatingActionButton.extended(
           key: const ValueKey('fab-grade'),

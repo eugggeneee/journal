@@ -50,7 +50,7 @@ class WholeDaySplit extends StatelessWidget {
           child: Icon(allMarked ? Icons.event_available_rounded : Icons.event_busy_rounded, key: ValueKey(allMarked), size: 20),
         ),
         // Ширина кнопки меняется вместе с подписью плавно, а не рывком.
-        label: AnimatedSize(
+        label: MotionSize(
           duration: d,
           curve: Motion.standard,
           child: Swap(

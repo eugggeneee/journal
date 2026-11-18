@@ -342,7 +342,11 @@ class DataSettingsPage extends StatelessWidget {
     final messenger = ScaffoldMessenger.of(context);
     final d = DateTime.now();
     final name = 'journal-${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}.json';
-    final ok = await FileIo.shareText(name, store.exportJson());
+    final box = context.findRenderObject()! as RenderBox;
+    final viewport = Offset.zero & MediaQuery.sizeOf(context);
+    final origin = (box.localToGlobal(Offset.zero) & box.size).intersect(viewport);
+    final ok = await FileIo.shareText(name, store.exportJson(), origin: origin);
+    if (!context.mounted) return;
     Haptics.medium();
     if (!ok) showNote(messenger, 'Не удалось открыть меню отправки. Скопируйте копию в буфер обмена.');
   }
@@ -397,20 +401,20 @@ class DataSettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tiles = <(IconData, String, String, VoidCallback)>[
-      (Icons.ios_share_rounded, 'Сохранить в файл', 'Файл .json: оценки, пропуски, пометки, задания и звонки', () => _exportFile(context)),
-      (Icons.folder_open_rounded, 'Восстановить из файла', 'Выбрать файл .json с копией', () => _importFile(context)),
-      (Icons.content_copy_rounded, 'Скопировать в буфер обмена', 'Копия текстом, если файл не подходит', () => _exportClipboard(context)),
-      (Icons.content_paste_rounded, 'Вставить из буфера обмена', 'Восстановить из скопированного текста', () => _importClipboard(context)),
+    final tiles = <(IconData, String, String, ValueChanged<BuildContext>)>[
+      (Icons.ios_share_rounded, 'Сохранить в файл', 'Файл .json: оценки, пропуски, пометки, задания и звонки', _exportFile),
+      (Icons.folder_open_rounded, 'Восстановить из файла', 'Выбрать файл .json с копией', _importFile),
+      (Icons.content_copy_rounded, 'Скопировать в буфер обмена', 'Копия текстом, если файл не подходит', _exportClipboard),
+      (Icons.content_paste_rounded, 'Вставить из буфера обмена', 'Восстановить из скопированного текста', _importClipboard),
     ];
     return SettingsScaffold(title: 'Данные', children: [
         for (var i = 0; i < tiles.length; i++)
-          SegmentCard(
+          Builder(builder: (rowContext) => SegmentCard(
             index: i,
             count: tiles.length,
-            onTap: tiles[i].$4,
+            onTap: () => tiles[i].$4(rowContext),
             child: SettingsTile(icon: tiles[i].$1, title: tiles[i].$2, subtitle: tiles[i].$3),
-          ),
+          )),
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 16, 12, 0),
           child: Text(

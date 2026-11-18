@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
@@ -13,7 +12,6 @@ import '../../logic/stats.dart';
 import '../app/scope.dart';
 import '../grades/grade_sheet.dart';
 import '../kit/animation/reveal.dart';
-import '../kit/animation/motion.dart';
 import '../kit/components/gesture_guide.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
@@ -21,6 +19,7 @@ import '../kit/sheets/sheet.dart';
 import '../schedule/day_actions.dart';
 import '../schedule/marks.dart';
 import '../settings/settings_button.dart';
+import '../settings/group_picker.dart';
 import '../tasks/task_sheet.dart';
 import '../tasks/task_tile.dart';
 import '../tasks/tasks_page.dart';
@@ -45,7 +44,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   DayState? _st;
-  bool _started = false;
+  String? _loadedGroup;
   int _gen = 0;
   Timer? _tick;
   late DateTime _day = today();
@@ -58,7 +57,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _tick = Timer.periodic(const Duration(seconds: 30), (_) {
       if (!mounted) return;
       if (!sameDay(_day, today())) {
-        _day = today();
+        setState(() { _day = today(); _st = null; });
         _load();
       } else {
         setState(() {});
@@ -76,15 +75,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_started) return;
-    _started = true;
+    final group = StoreScope.of(context).settings.group;
+    if (_loadedGroup == group) return;
+    _loadedGroup = group;
+    _st = null;
     _load();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed || !mounted) return;
-    _day = today();
+    if (!sameDay(_day, today())) setState(() { _day = today(); _st = null; });
     _load();
   }
 
@@ -100,35 +101,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     setState(() => _st = st);
   }
 
-  static String _greeting(int hour) {
-    if (hour < 5) return 'Доброй ночи';
-    if (hour < 12) return 'Доброе утро';
-    if (hour < 18) return 'Добрый день';
-    return 'Добрый вечер';
-  }
-
-  /// Шапка на цветном блоке: приветствие, дата и настройки. Слишком длинный текст уменьшается, а не обрезается.
   Widget _header(BuildContext context, Color fg, DateTime now) {
-    final tt = context.tt;
-    final day = dateOnly(now);
     return Row(children: [
-      Expanded(
-        child: Semantics(
-          header: true,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(_greeting(now.hour), maxLines: 1, softWrap: false, style: tt.headlineMedium?.copyWith(color: fg, fontWeight: FontWeight.w800)),
-            ),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text('${weekdayName(day)}, ${fullDate(day)}', maxLines: 1, softWrap: false, style: tt.bodyMedium?.copyWith(color: fg.withValues(alpha: 0.85))),
-            ),
-          ]),
-        ),
-      ),
+      Expanded(child: Semantics(header: true, child: Text(longDate(now),
+        style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w700)))),
+      const SizedBox(width: 8),
+      TextButton(
+        style: TextButton.styleFrom(foregroundColor: fg, backgroundColor: fg.withValues(alpha: .1)),
+        onPressed: () => openGroupPicker(context),
+        child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 76),
+          child: Text(StoreScope.of(context).settings.group, style: context.tt.labelLarge?.copyWith(color: fg)))),
+      IconButton(tooltip: 'Добавить оценку', color: fg, icon: const Icon(Icons.add_rounded),
+        onPressed: () => showGradeSheet(context)),
       SettingsButton(color: fg),
     ]);
   }
@@ -142,6 +126,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     // Блоки идут в порядке, который выбрал пользователь, скрытые пропускаются. Между блоками тонкая линия.
     final shown = [for (final b in store.settings.homeOrder) if (!store.settings.homeHidden.contains(b)) b];
+    final heroMetrics = _st?.status == DayStatus.ok && shown.firstOrNull == kBlockMetrics;
+    if (heroMetrics) shown.removeAt(0);
     Widget block(String id) => switch (id) {
           kBlockMetrics => _Metrics(store: store, onTab: widget.onTab),
           kBlockTasks => _TasksBlock(store: store),
@@ -165,7 +151,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         if (i > 0) const _Hairline(),
         block(shown[i]),
       ],
-      if (shown.isEmpty)
+      if (shown.isEmpty && !heroMetrics)
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 24),
           child: Text(
@@ -176,22 +162,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         ),
     ];
 
-    final dark = context.isDark;
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      // Строка состояния стоит на цветном блоке: значки подбираются под тему, а не под прошлый экран.
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
-        statusBarBrightness: dark ? Brightness.dark : Brightness.light,
-      ),
-      child: ContentFrame(
+    return ContentFrame(
       child: RefreshIndicator(
         onRefresh: () => _load(force: true),
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(
-              child: Smooth(child: KeyedSubtree(key: ValueKey('hero-${_st?.status.name}'), child: _hero(context, store, day, now))),
+              child: Smooth(child: KeyedSubtree(key: ValueKey('hero-${_st?.status.name}'), child: _hero(context, store, day, now, heroMetrics))),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, kFabClearance),
@@ -204,11 +182,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           ],
         ),
       ),
-      ),
     );
   }
 
-  Widget _hero(BuildContext context, AppStore store, DateTime day, DateTime now) {
+  Widget _hero(BuildContext context, AppStore store, DateTime day, DateTime now, bool heroMetrics) {
     final cs = context.cs;
     final tt = context.tt;
     Widget hdr(Color fg) => _header(context, fg, now);
@@ -223,7 +200,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
     if (st.status == DayStatus.ok) {
       return DayCard(
-        date: day,
+        now: now,
+        onOpenDay: () => widget.onDay(day),
+        metrics: heroMetrics ? _Metrics(store: store, onTab: widget.onTab) : null,
         slots: st.schedule!.slots,
         profile: store.bellProfileFor(day),
         store: store,
@@ -334,7 +313,7 @@ class _FlatRow extends StatelessWidget {
   }
 }
 
-/// Два показателя рядом, разделённые линией: средний балл и пропуски месяца. Цвет акцента по состоянию дел.
+/// Быстрые переходы к данным журнала; порядок самого блока задаётся в настройках.
 class _Metrics extends StatelessWidget {
   const _Metrics({required this.store, required this.onTab});
   final AppStore store;
@@ -344,82 +323,31 @@ class _Metrics extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.cs;
     final avg = GradeStats.of(store.grades).average;
-    final hours = monthUnexcusedHours(store.absences, DateTime.now());
-    final level = limitLevel(hours, warnFrom: kMonthWarnFrom, limit: kMonthLimit);
-    final absAccent = switch (level) {
-      LimitLevel.ok => hueAccent(context, kHueGreen),
-      LimitLevel.near => hueAccent(context, kHueAmber),
-      LimitLevel.reached => hueAccent(context, 4),
-    };
-    final gradeAccentColor = avg == null ? hueAccent(context, kHueBlue) : gradeAccent(context, avg);
-    return Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Expanded(
-        child: _Metric(
-          accent: gradeAccentColor,
-          icon: Icons.star_rounded,
-          label: 'Средний балл',
-          value: avg == null ? '—' : fmtAvg(avg),
-          sub: store.grades.isEmpty ? 'Оценок пока нет' : gradesText(store.grades.length),
-          progress: avg == null ? 0 : avg / 10,
-          onTap: () => onTab(2),
-        ),
-      ),
-      Container(width: 1, margin: const EdgeInsets.symmetric(vertical: 8), color: cs.outlineVariant.withValues(alpha: 0.6)),
-      Expanded(
-        child: _Metric(
-          accent: absAccent,
-          icon: Icons.event_busy_rounded,
-          label: 'Пропуски',
-          value: '$hours из $kMonthLimit ч',
-          sub: hours == 0 ? 'Пропусков нет' : (hours >= kMonthLimit ? 'Лимит достигнут' : 'До лимита ${kMonthLimit - hours} ч'),
-          progress: hours / kMonthLimit,
-          onTap: () => onTab(3),
-        ),
-      ),
-    ]);
-  }
-}
-
-class _Metric extends StatelessWidget {
-  const _Metric({required this.accent, required this.icon, required this.label, required this.value, required this.sub, required this.progress, required this.onTap});
-  final Color accent;
-  final IconData icon;
-  final String label;
-  final String value;
-  final String sub;
-  final double progress;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.cs;
-    final tt = context.tt;
-    return InkWell(
-      onTap: () {
-        Haptics.selection();
-        onTap();
-      },
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(4, 12, 16, 12),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(icon, size: 18, color: accent),
-            const SizedBox(width: 6),
-            Expanded(child: Text(label, style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600))),
-          ]),
-          const SizedBox(height: 6),
-          Text(value, style: tt.headlineSmall?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w800, height: 1.1)),
-          Text(sub, style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
-          const SizedBox(height: 10),
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(end: progress.clamp(0.0, 1.0).toDouble()),
-            duration: context.motion(Motion.long),
-            curve: Motion.standard,
-            builder: (context, v, _) => Bar(value: v, color: accent, height: 8, track: accent.withValues(alpha: 0.18)),
-          ),
-        ]),
-      ),
-    );
+    final hours = monthUnexcusedHours(store.absences, today());
+    final open = store.openTasks;
+    final tomorrow = open.where((t) => sameDay(t.due, addDays(today(), 1))).length;
+    final items = <(String, String, String, VoidCallback)>[
+      ('Средний балл', avg == null ? '—' : fmtAvg(avg), gradesText(store.grades.length), () => onTab(2)),
+      ('Пропуски', '$hours ч', 'из $kMonthLimit ч', () => onTab(3)),
+      ('Задания', '${open.length}', tomorrow == 0 ? 'к сдаче' : 'завтра $tomorrow', () {
+        Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TasksPage()));
+      }),
+    ];
+    return IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      for (var i = 0; i < items.length; i++) ...[
+        if (i > 0) const SizedBox(width: 4),
+        Expanded(child: Material(color: cs.onPrimary, clipBehavior: Clip.antiAlias,
+          borderRadius: BorderRadius.horizontal(left: Radius.circular(i == 0 ? 24 : 8), right: Radius.circular(i == 2 ? 24 : 8)),
+          child: InkWell(onTap: items[i].$4, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(items[i].$1, style: context.tt.labelMedium?.copyWith(color: cs.primary)),
+              const Spacer(),
+              Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: FittedBox(fit: BoxFit.scaleDown,
+                child: Text(items[i].$2, style: context.tt.headlineMedium?.copyWith(color: cs.primary, height: 1, fontWeight: FontWeight.w800)))),
+              Text(items[i].$3, style: context.tt.labelSmall?.copyWith(color: cs.primary)),
+            ]))))),
+      ],
+    ]));
   }
 }
 
@@ -441,7 +369,7 @@ class _Tomorrow extends StatelessWidget {
       sub = 'Пар нет, можно отдохнуть';
     } else if (sched == null || sched.slots.isEmpty) {
       title = 'Завтра · ${weekdayName(date).toLowerCase()}';
-      sub = 'Расписание ещё не опубликовано';
+      sub = 'Расписание ещё не загружено';
     } else {
       final profile = store.bellProfileFor(date);
       final first = [...sched.slots]..sort((a, b) => a.number.compareTo(b.number));
@@ -678,13 +606,7 @@ class _TasksBlock extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             onTap: () => showTaskSheet(context, edit: task),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              TaskCheck(
-                done: task.done,
-                onTap: () {
-                  Haptics.selection();
-                  store.toggleTask(task.id);
-                },
-              ),
+              TaskCheck(task: task, store: store),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(0, 10, 0, 8),

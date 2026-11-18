@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -18,7 +19,6 @@ import layers  # noqa: E402
 import version  # noqa: E402
 
 ROOT = layers.ROOT
-SKIP_DIRS = {'.git', '.dart_tool', 'build', 'android', 'ios', 'node_modules'}
 TEXT_SUFFIXES = {'.html', '.css', '.js', '.md', '.yml', '.yaml', '.py', '.dart', '.sh', '.json', '.txt', '.gitignore', '.gitattributes', '.editorconfig'}
 EMOJI_RE = re.compile('[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF\uFE0F\u200D]')
 JUNK_NAMES = {'.DS_Store', 'Thumbs.db', 'pubspec.lock', '.metadata'}
@@ -27,15 +27,12 @@ FORBIDDEN_TEXT = ('mgtek', 'by.mgtek')
 
 
 def files() -> list[Path]:
-    out = []
-    for p in sorted(ROOT.rglob('*')):
-        if not p.is_file():
-            continue
-        rel = p.relative_to(ROOT)
-        if set(rel.parts) & SKIP_DIRS or '__pycache__' in rel.parts:
-            continue
-        out.append(p)
-    return out
+    # Flutter создаёт игнорируемые локальные файлы даже при обычном запуске тестов.
+    # Отслеживаемый мусор при этом всё равно попадает в проверку.
+    names = subprocess.check_output(
+        ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '-z'], cwd=ROOT
+    ).decode('utf-8').split('\0')
+    return [ROOT / name for name in names if name and (ROOT / name).is_file()]
 
 
 def is_text(p: Path) -> bool:

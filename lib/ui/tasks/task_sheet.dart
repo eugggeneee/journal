@@ -102,6 +102,7 @@ class _TaskFormState extends State<_TaskForm> {
     final cs = context.cs;
     final editing = widget.edit != null;
     final lessonDate = widget.edit?.date ?? widget.lessonDate;
+    final lesson = widget.edit?.lesson ?? widget.lesson;
     final sched = lessonDate == null ? null : store.cachedSchedule(store.settings.group, lessonDate);
     final suggested = <String>[if (sched != null) for (final s in sched.slots) ...s.subjects];
     final t = today();
@@ -109,7 +110,7 @@ class _TaskFormState extends State<_TaskForm> {
 
     return SheetScaffold(
       title: editing ? 'Изменить задание' : 'Новое задание',
-      subtitle: widget.lesson > 0 && lessonDate != null ? '${widget.lesson} пара · ${shortDate(lessonDate)}' : 'Со сроком и напоминанием на главной',
+      subtitle: lesson > 0 && lessonDate != null ? '$lesson пара · ${shortDate(lessonDate)}' : 'Со сроком и напоминанием на главной',
       leading: IconBox(icon: homework ? Icons.menu_book_rounded : Icons.sticky_note_2_rounded, tone: Tone(cs.primaryContainer, cs.onPrimaryContainer), size: 52),
       trailing: editing
           ? IconButton(tooltip: 'Удалить задание', icon: Icon(Icons.delete_outline_rounded, color: cs.error), onPressed: _delete)

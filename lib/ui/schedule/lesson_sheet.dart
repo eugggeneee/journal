@@ -200,14 +200,13 @@ class _LessonSheetState extends State<_LessonSheet> {
               ? Padding(
                   key: const ValueKey('absence-actions'),
                   padding: const EdgeInsets.only(top: 8),
-                  child: Row(children: [
+                  child: Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, children: [
                     TextButton.icon(
                       style: TextButton.styleFrom(foregroundColor: cs.error),
                       icon: const Icon(Icons.event_available_rounded),
                       label: const Text('Снять пропуск'),
                       onPressed: remove,
                     ),
-                    const Spacer(),
                     TextButton(
                       onPressed: () {
                         final host = Navigator.of(context).context;
@@ -247,13 +246,7 @@ class _LessonSheetState extends State<_LessonSheet> {
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Row(children: [
-              TaskCheck(
-                done: t.done,
-                onTap: () {
-                  Haptics.selection();
-                  store.toggleTask(t.id);
-                },
-              ),
+              TaskCheck(task: t, store: store),
               Expanded(
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),

@@ -12,14 +12,15 @@ import '../kit/animation/reveal.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
 import 'day_actions.dart';
-import 'day_agenda.dart';
+import 'day_timeline.dart';
 import 'marks.dart';
 import 'rest_day.dart';
 
 /// Один день расписания: панель дня, лента пар и состояния без пар.
 class DayView extends StatefulWidget {
-  const DayView({super.key, required this.date, required this.onJump});
+  const DayView({super.key, required this.date, this.refresh = 0, required this.onJump});
   final DateTime date;
+  final int refresh;
 
   /// Открыть другой день (например, ближайший учебный из карточки выходного).
   final ValueChanged<DateTime> onJump;
@@ -43,6 +44,12 @@ class _DayViewState extends State<DayView> {
         if (mounted) setState(() {});
       });
     }
+  }
+
+  @override
+  void didUpdateWidget(DayView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.refresh != oldWidget.refresh) _load(force: true);
   }
 
   @override
@@ -120,7 +127,7 @@ class _DayViewState extends State<DayView> {
         final status = st.note ?? (st.fromCache ? 'Сохранено на устройстве' : 'Обновлено в ${hhmm(s.fetchedAt)}');
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           DayToolbar(date: date, slots: s.slots, store: store),
-          DayAgenda(date: date, slots: s.slots, store: store),
+          DayTimeline(date: date, slots: s.slots, store: store, now: DateTime.now()),
           Padding(
             padding: const EdgeInsets.only(top: 12),
             child: Center(
