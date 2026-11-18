@@ -224,7 +224,7 @@ class FilterButton extends StatelessWidget {
           onTap();
         },
         // Длинное название предмета плавно растягивает кнопку, а не переставляет её рывком.
-        child: AnimatedSize(
+        child: MotionSize(
           duration: context.motion(Motion.short),
           curve: Motion.standard,
           alignment: Alignment.centerLeft,

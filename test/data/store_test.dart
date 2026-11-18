@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:journal/data/models.dart';
 import 'package:journal/data/store.dart';
@@ -62,6 +64,27 @@ void main() {
     expect(st.bySubjectCount['P'], 1);
     expect(st.lastBySubject['M'], DateTime(2026, 10, 30));
     expect(st.lastBySubject['P'], DateTime(2026, 10, 29));
+  });
+
+  test('неполная или неподдерживаемая копия сохраняет прежние данные', () {
+    store.setGroup('43');
+    store.saveGrade(Grade(id: 'before', subject: 'Физика', value: 9, date: day));
+    final before = store.exportJson();
+    for (final broken in [
+      {'app': 'journal'},
+      {...store.exportMap(), 'version': 99},
+      {...store.exportMap(), 'settings': {'group': '12'}, 'tasks': 'ошибка'},
+      {...store.exportMap(), 'grades': [{'v': 100}]},
+    ]) {
+      expect(store.importJson(jsonEncode(broken)), isNotNull);
+      expect(store.exportJson(), before);
+    }
+  });
+
+  test('копия версии 2 восстанавливается без раздела заданий', () {
+    final legacy = store.exportMap()..remove('tasks');
+    legacy['version'] = 2;
+    expect(store.importJson(jsonEncode(legacy)), isNull);
   });
 
   test('резервная копия переживает экспорт и импорт', () {

@@ -47,14 +47,26 @@ class AppStore extends ChangeNotifier {
     }
   }
 
-  void _applyBackup(Object? decoded) {
+  void _applyBackup(Object? decoded, {bool strict = false}) {
     final j = Map<String, dynamic>.from(decoded as Map);
-    settings = Settings.fromJson(j['settings']);
-    grades = ((j['grades'] as List?) ?? const []).map(Grade.tryFromJson).whereType<Grade>().toList();
-    absences =
-        ((j['absences'] as List?) ?? const []).map(Absence.tryFromJson).whereType<Absence>().toList();
-    marks = ((j['marks'] as List?) ?? const []).map(DayMark.tryFromJson).whereType<DayMark>().toList();
-    tasks = ((j['tasks'] as List?) ?? const []).map(Task.tryFromJson).whereType<Task>().toList();
+    List<T> records<T>(String key, T? Function(Object?) parse) {
+      final raw = (j[key] as List?) ?? const [];
+      final result = raw.map(parse).whereType<T>().toList();
+      if (strict && result.length != raw.length) throw FormatException(key);
+      return result;
+    }
+
+    // Сначала разбираем всю копию: ошибка в последнем разделе не меняет предыдущие.
+    final restoredSettings = Settings.fromJson(j['settings'], strict: strict);
+    final restoredGrades = records('grades', Grade.tryFromJson);
+    final restoredAbsences = records('absences', Absence.tryFromJson);
+    final restoredMarks = records('marks', DayMark.tryFromJson);
+    final restoredTasks = records('tasks', Task.tryFromJson);
+    settings = restoredSettings;
+    grades = restoredGrades;
+    absences = restoredAbsences;
+    marks = restoredMarks;
+    tasks = restoredTasks;
   }
 
   void _readCache() {
@@ -477,7 +489,13 @@ class AppStore extends ChangeNotifier {
       if (decoded is! Map || (decoded['app'] != _kBackupId)) {
         return 'Это не резервная копия приложения';
       }
-      _applyBackup(decoded);
+      final version = decoded['version'];
+      if (version is! int || version < 1 || version > 3) return 'Неподдерживаемая версия резервной копии';
+      final requiredLists = ['grades', 'absences', if (version >= 2) 'marks', if (version >= 3) 'tasks'];
+      if (decoded['settings'] is! Map || requiredLists.any((key) => decoded[key] is! List)) {
+        return 'В резервной копии отсутствуют данные';
+      }
+      _applyBackup(decoded, strict: true);
       _changed();
       return null;
     } catch (_) {

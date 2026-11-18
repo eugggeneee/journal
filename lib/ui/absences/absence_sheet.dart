@@ -419,7 +419,7 @@ class _AbsenceFormState extends State<_AbsenceForm> {
             )
           : null,
       footer: Column(mainAxisSize: MainAxisSize.min, children: [
-        AnimatedSize(
+        MotionSize(
           duration: Motion.ms(200),
           child: _canSave
               ? const SizedBox(width: double.infinity)

@@ -51,39 +51,34 @@ class DayToolbar extends StatelessWidget {
     final hours = marked.fold<int>(0, (a, s) => a + (store.absenceFor(date, s.number)?.hours ?? 0));
     final allMarked = slots.isNotEmpty && marked.length == slots.length;
     final shortDay = store.markFor(date, 0)?.label == kShortDayMark;
-    final sub = [
-      if (shortDay) 'Сокращённый день',
-      hours > 0 ? 'пропущено ${hoursText(hours)}' : 'без пропусков',
-    ].join(' · ');
-
+    final sorted = [...bells]..sort((a, b) => a.start.compareTo(b.start));
+    var breaks = bells.fold<int>(0, (sum, b) => sum + b.breakMinutes);
+    for (var i = 1; i < sorted.length; i++) {
+      final gap = sorted[i].start - sorted[i - 1].end;
+      if (gap > 0) breaks += gap;
+    }
+    final details = [
+      pairsText(slots.length), ?range,
+      if (breaks > 0) 'перерывы ${spanText(breaks)}',
+      if (hours > 0) 'пропущено ${hoursText(hours)}',
+      if (shortDay) kShortDayMark,
+    ];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 0, 14),
-      child: Row(children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(
-              [pairsText(slots.length), if (range != null) range].join(' · '),
-              style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, fontFeatures: const [FontFeature.tabularFigures()]),
-            ),
-            Text(sub, style: tt.bodyMedium?.copyWith(color: shortDay ? cs.tertiary : cs.onSurfaceVariant, fontWeight: shortDay ? FontWeight.w600 : null)),
-          ]),
-        ),
-        const SizedBox(width: 12),
-        SizedBox(
-          width: 196,
-          child: WholeDaySplit(
-            fg: cs.primary,
-            allMarked: allMarked,
-            shortDay: shortDay,
-            enabled: slots.isNotEmpty,
-            onWholeDay: () => toggleWholeDay(context, store, date, slots),
-            onShortDay: () => toggleShortDay(context, store, date),
-            onMark: () {
-              Haptics.selection();
-              showMarkSheet(context, date);
-            },
-          ),
-        ),
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Wrap(spacing: 4, runSpacing: 4, children: [
+          for (final detail in details) Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(color: cs.surfaceContainerHigh, borderRadius: BorderRadius.circular(16)),
+            child: Text(detail, style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant))),
+        ]),
+        const SizedBox(height: 8),
+        ConstrainedBox(constraints: const BoxConstraints(maxWidth: 240), child: WholeDaySplit(
+          fg: cs.primary, allMarked: allMarked, shortDay: shortDay, enabled: slots.isNotEmpty,
+          onWholeDay: () => toggleWholeDay(context, store, date, slots),
+          onShortDay: () => toggleShortDay(context, store, date),
+          onMark: () { Haptics.selection(); showMarkSheet(context, date); },
+        )),
       ]),
     );
   }

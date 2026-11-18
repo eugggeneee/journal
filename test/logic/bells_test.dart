@@ -295,6 +295,10 @@ void dayClockTests() {
     expect(dayClock(profile, const [], 600).phase, DayPhase.none);
   });
 
+  test('время за пределами суток не попадает в профиль из копии', () {
+    expect(BellSlot.tryFromJson([1430, 1600]), isNull);
+  });
+
   test('промежуток времени читается по-человечески', () {
     expect(spanText(45), '45 мин');
     expect(spanText(120), '2 ч');

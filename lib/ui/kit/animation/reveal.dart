@@ -85,7 +85,7 @@ class Smooth extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final d = context.motion(duration ?? Motion.short);
-    return AnimatedSize(
+    return MotionSize(
       duration: d,
       curve: Motion.decelerate,
       alignment: Alignment.topCenter,
@@ -281,65 +281,6 @@ class _PressScaleState extends State<PressScale> {
         curve: _down ? Curves.easeOut : Motion.release,
         child: widget.child,
       ),
-    );
-  }
-}
-
-/// Мягко «дышащая» точка: показывает, что что-то происходит прямо сейчас (идущая пара). При выключенных
-/// анимациях просто стоит на месте.
-class PulseDot extends StatefulWidget {
-  const PulseDot({super.key, required this.color, this.size = 8});
-  final Color color;
-  final double size;
-
-  @override
-  State<PulseDot> createState() => _PulseDotState();
-}
-
-class _PulseDotState extends State<PulseDot> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400));
-  bool _started = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final off = Motion.off;
-    if (off && _started) {
-      _c.stop();
-      _c.value = 0;
-      _started = false;
-    } else if (!off && !_started) {
-      _started = true;
-      _c.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final curve = _c.drive(CurveTween(curve: Curves.easeInOut));
-    return AnimatedBuilder(
-      animation: curve,
-      builder: (context, _) {
-        final t = curve.value;
-        return SizedBox(
-          width: widget.size * 2.2,
-          height: widget.size * 2.2,
-          child: Stack(alignment: Alignment.center, children: [
-            Container(
-              width: widget.size * (1 + 1.2 * t),
-              height: widget.size * (1 + 1.2 * t),
-              decoration: BoxDecoration(shape: BoxShape.circle, color: widget.color.withValues(alpha: 0.35 * (1 - t))),
-            ),
-            Container(width: widget.size, height: widget.size, decoration: BoxDecoration(shape: BoxShape.circle, color: widget.color)),
-          ]),
-        );
-      },
     );
   }
 }

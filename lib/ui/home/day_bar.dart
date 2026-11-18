@@ -1,115 +1,176 @@
+import 'dart:math' as math;
+
 import 'package:material_ui/material_ui.dart';
 
-import '../kit/animation/motion.dart';
+import '../../core/dates.dart';
+import '../../data/models.dart';
 
-/// Полоса дня: каждая пара (и каждая половина пары с перерывом внутри) рисуется своим закруглённым
-/// отрезком, а перерывы, обед и окна остаются промежутками между ними. Цветом заливается то, что уже прошло.
-/// Отрезки расположены по времени, поэтому длинный обед виден широким промежутком, а короткий перерыв узким.
+/// Номера пар, перерывы и метка часов используют одну шкалу в минутах.
 class DayBar extends StatelessWidget {
   const DayBar({
     super.key,
-    required this.segments,
+    required this.slots,
+    required this.profile,
     required this.minute,
-    required this.fill,
-    required this.track,
-    this.marker,
-    this.height = 10,
+    required this.fg,
+    required this.bg,
+    this.compact = false,
   });
-
-  /// Отрезки в минутах от полуночи: (начало, конец), по возрастанию и без пересечений.
-  final List<(int, int)> segments;
-
-  /// Текущая минута: меньше начала дня — ничего не залито, больше конца — залито всё.
+  final List<LessonSlot> slots;
+  final BellProfile profile;
   final int minute;
-  final Color fill;
-  final Color track;
-
-  /// Цвет метки «сейчас»; без него метка не рисуется.
-  final Color? marker;
-  final double height;
+  final Color fg;
+  final Color bg;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    if (segments.isEmpty) return SizedBox(height: height);
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(end: minute.toDouble()),
-      duration: context.motion(Motion.long),
-      curve: Motion.standard,
-      builder: (context, value, _) => SizedBox(
-        height: height + 6,
-        width: double.infinity,
-        child: CustomPaint(
-          painter: _DayBarPainter(
-            segments: segments,
-            minute: value,
-            fill: fill,
-            track: track,
-            marker: marker,
-            height: height,
-          ),
-        ),
+    final numbers = slots.map((s) => s.number).where((n) => profile[n] != null).toList()
+      ..sort((a, b) => profile[a]!.start.compareTo(profile[b]!.start));
+    if (numbers.isEmpty) return const SizedBox.shrink();
+    final start = profile[numbers.first]!.start;
+    final end = numbers.map((n) => profile[n]!.end).reduce(math.max);
+    final active = minute >= start && minute < end;
+    final height = compact ? 8.0 : 38.0;
+    final top = !compact && active ? 28.0 : 0.0;
+    return Semantics(
+      label: 'Ход дня, с ${fmtMin(start)} до ${fmtMin(end)}${active ? ', сейчас ${fmtMin(minute)}' : ''}',
+      excludeSemantics: true,
+      child: LayoutBuilder(
+        builder: (context, box) {
+          double x(int m) => (m - start) / (end - start) * box.maxWidth;
+          final badgeWidth = math.min(54.0, box.maxWidth);
+          final markerX = x(minute).clamp(0.0, box.maxWidth).toDouble();
+          final children = <Widget>[];
+          for (var i = 0; i < numbers.length; i++) {
+            final n = numbers[i];
+            final b = profile[n]!;
+            final left = x(b.start);
+            final width = math.max(1.0, x(b.end) - left - 1);
+            final done = ((minute - b.start) / b.minutes).clamp(0.0, 1.0).toDouble();
+            children.add(
+              Positioned(
+                left: left,
+                width: width,
+                top: top,
+                height: height,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(compact ? 4 : 14),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ColoredBox(color: fg.withValues(alpha: .16)),
+                      FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: done,
+                        child: ColoredBox(color: fg),
+                      ),
+                      if (b.hasBreak)
+                        Positioned(
+                          left: (b.breakStart! - b.start) / b.minutes * width,
+                          width: b.breakMinutes / b.minutes * width,
+                          top: 0,
+                          bottom: 0,
+                          child: ColoredBox(color: bg.withValues(alpha: .65)),
+                        ),
+                      if (!compact && width >= 18)
+                        Center(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(color: done >= .5 ? fg : bg, shape: BoxShape.circle),
+                            child: Padding(
+                              padding: const EdgeInsets.all(3),
+                              child: Text(
+                                '$n',
+                                style: TextStyle(
+                                  color: done >= .5 ? bg : fg,
+                                  fontSize: 14,
+                                  height: 1,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+            if (!compact && width >= 32)
+              children.add(
+                Positioned(
+                  left: left,
+                  width: width,
+                  top: top + height + 4,
+                  height: 16,
+                  child: FittedBox(
+                    alignment: Alignment.centerLeft,
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      fmtMin(b.start),
+                      style: TextStyle(fontSize: 12, color: fg, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              );
+            if (!compact && i + 1 < numbers.length) {
+              final next = profile[numbers[i + 1]]!;
+              final gap = x(next.start) - x(b.end);
+              if (gap >= 4)
+                children.add(
+                  Positioned(
+                    left: x(b.end),
+                    width: gap,
+                    top: top,
+                    height: height,
+                    child: Center(
+                      child: Icon(
+                        profile.isLunchAfter(n) ? Icons.circle_outlined : Icons.circle,
+                        size: math.min(gap, profile.isLunchAfter(n) ? 9.0 : 4.0),
+                        color: fg,
+                      ),
+                    ),
+                  ),
+                );
+            }
+          }
+          if (active && !compact) {
+            children.add(
+              Positioned(
+                left: markerX.clamp(0.0, math.max(0.0, box.maxWidth - 2)),
+                top: 18,
+                height: 12,
+                width: 2,
+                child: ColoredBox(color: fg),
+              ),
+            );
+            children.add(
+              Positioned(
+                left: (markerX - badgeWidth / 2).clamp(0.0, box.maxWidth - badgeWidth),
+                top: 0,
+                width: badgeWidth,
+                height: 22,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: fg, borderRadius: BorderRadius.circular(12)),
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        fmtMin(minute),
+                        style: TextStyle(color: bg, fontSize: 13, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+          return SizedBox(
+            height: top + height + (compact ? 0 : 20),
+            child: Stack(children: children),
+          );
+        },
       ),
     );
   }
-}
-
-class _DayBarPainter extends CustomPainter {
-  const _DayBarPainter({
-    required this.segments,
-    required this.minute,
-    required this.fill,
-    required this.track,
-    required this.marker,
-    required this.height,
-  });
-  final List<(int, int)> segments;
-  final double minute;
-  final Color fill;
-  final Color track;
-  final Color? marker;
-  final double height;
-
-  /// Минимальный видимый промежуток между отрезками.
-  static const double _gap = 3;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final start = segments.first.$1;
-    final end = segments.last.$2;
-    final span = (end - start).toDouble();
-    if (span <= 0 || size.width <= 0) return;
-    final top = (size.height - height) / 2;
-    final radius = Radius.circular(height / 2);
-    final trackPaint = Paint()..color = track;
-    final fillPaint = Paint()..color = fill;
-    double x(num m) => (m - start) / span * size.width;
-
-    for (final s in segments) {
-      var left = x(s.$1);
-      var right = x(s.$2);
-      // Соседние отрезки разделяет промежуток не уже _gap, даже если перерыв короткий.
-      if (s.$1 > start) left += _gap / 2;
-      if (s.$2 < end) right -= _gap / 2;
-      if (right - left < height) right = left + height;
-      final rrect = RRect.fromLTRBR(left, top, right, top + height, radius);
-      canvas.drawRRect(rrect, trackPaint);
-      final done = ((minute - s.$1) / (s.$2 - s.$1)).clamp(0.0, 1.0).toDouble();
-      if (done > 0) {
-        canvas.save();
-        canvas.clipRRect(rrect);
-        canvas.drawRect(Rect.fromLTRB(left, top, left + (right - left) * done, top + height), fillPaint);
-        canvas.restore();
-      }
-    }
-
-    final m = marker;
-    if (m != null && minute >= start && minute <= end) {
-      final cx = x(minute).clamp(height / 2, size.width - height / 2).toDouble();
-      canvas.drawCircle(Offset(cx, size.height / 2), height * 0.8, Paint()..color = m);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DayBarPainter old) =>
-      old.minute != minute || old.fill != fill || old.track != track || old.marker != marker || old.height != height || old.segments != segments;
 }

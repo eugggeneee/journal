@@ -267,7 +267,7 @@ class BellSlot {
   static BellSlot? tryFromJson(Object? raw) {
     try {
       final l = (raw as List).map((e) => _int(e, -1)).toList();
-      if (l.length < 2 || l[0] < 0 || l[1] <= l[0]) return null;
+      if (l.length < 2 || l[0] < 0 || l[1] > 24 * 60 || l[1] <= l[0]) return null;
       final hasBreak = l.length >= 4 && l[2] >= 0 && l[3] > l[2];
       final slot = BellSlot(start: l[0], end: l[1], breakStart: hasBreak ? l[2] : null, breakEnd: hasBreak ? l[3] : null);
       return slot.valid ? slot : slot.withoutBreak();
@@ -591,7 +591,7 @@ class Settings {
         'dis': dismissed,
       };
 
-  factory Settings.fromJson(Object? raw) {
+  factory Settings.fromJson(Object? raw, {bool strict = false}) {
     try {
       final j = Map<String, dynamic>.from(raw as Map);
       final group = _str(j['group']).trim();
@@ -632,6 +632,7 @@ class Settings {
         },
       );
     } catch (_) {
+      if (strict) rethrow;
       return Settings();
     }
   }

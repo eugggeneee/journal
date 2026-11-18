@@ -31,20 +31,29 @@ Tone dueTone(BuildContext context, Task t) {
 
 /// Круглая отметка «сделано»: нажатие переключает, сама зона нажатия 48 на 48.
 class TaskCheck extends StatelessWidget {
-  const TaskCheck({super.key, required this.done, required this.onTap});
-  final bool done;
-  final VoidCallback onTap;
+  const TaskCheck({super.key, required this.task, required this.store});
+  final Task task;
+  final AppStore store;
 
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
+    final done = task.done;
+    void toggle() {
+      Haptics.selection();
+      store.toggleTask(task.id);
+      showUndo(ScaffoldMessenger.of(context), done ? 'Задание снова открыто' : 'Задание выполнено',
+            () => store.saveTask(task));
+    }
     return Semantics(
+      container: true,
       button: true,
+      onTap: toggle,
       checked: done,
       label: done ? 'Вернуть в невыполненные' : 'Отметить выполненным',
       excludeSemantics: true,
       child: InkResponse(
-        onTap: onTap,
+        onTap: toggle,
         radius: 28,
         child: SizedBox(
           width: 48,
@@ -103,13 +112,7 @@ class TaskTile extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(6, 6, 14, 6),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          TaskCheck(
-            done: t.done,
-            onTap: () {
-              Haptics.selection();
-              store.toggleTask(t.id);
-            },
-          ),
+          TaskCheck(task: t, store: store),
           const SizedBox(width: 2),
           Expanded(
             child: Padding(

@@ -70,7 +70,7 @@ class TasksPage extends StatelessWidget {
                 Appear(index: 1, child: group('Сегодня', todayList)),
                 Appear(index: 2, child: group('Завтра', tomorrow)),
                 Appear(index: 3, child: group('Позже', later)),
-                Appear(index: 4, child: group('Выполнено', done.take(20).toList(), trailing: '${done.length}')),
+                Appear(index: 4, child: group('Выполнено', done)),
               ]),
             const SliverToBoxAdapter(child: SizedBox(height: kFabClearance)),
           ],

@@ -200,41 +200,6 @@ class _MarkSheetState extends State<_MarkSheet> {
   }
 }
 
-/// Маленькая плашка с названием пометки: садится на нижний край номера пары, размер карточки не меняется.
-class MarkTag extends StatelessWidget {
-  const MarkTag({super.key, required this.label, required this.ringColor});
-  final String label;
-  final Color ringColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final tone = markTone(context);
-    return Semantics(
-      label: 'Пометка: $label',
-      excludeSemantics: true,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 62),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: tone.bg,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: ringColor, width: 2),
-        ),
-        // Длинное название уменьшается, а не обрезается: плашка остаётся одного размера.
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            label,
-            maxLines: 1,
-            softWrap: false,
-            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: tone.fg, height: 1.2),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Пометки дня: на весь день и на пары, которых нет в расписании (или расписания нет совсем).
 /// Пометки на пары из расписания видны плашкой на самой карточке пары.
 class MarksSection extends StatelessWidget {

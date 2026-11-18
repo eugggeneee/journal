@@ -15,8 +15,9 @@ import 'lesson_sheet.dart';
 /// Неделя на широком экране: шесть колонок (пн–сб), в каждой пары дня с временем, названием и аудиторией.
 /// Нажатие на заголовок дня открывает его целиком, нажатие на пару открывает подробности.
 class WeekView extends StatelessWidget {
-  const WeekView({super.key, required this.selected, required this.onShift, required this.onOpenDay});
+  const WeekView({super.key, required this.refresh, required this.selected, required this.onShift, required this.onOpenDay});
   final DateTime selected;
+  final int refresh;
   final ValueChanged<int> onShift;
   final ValueChanged<DateTime> onOpenDay;
 
@@ -54,7 +55,7 @@ class WeekView extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 3),
                   child: Appear(
                     index: i,
-                    child: _WeekDay(key: ValueKey('${ymd(addDays(monday, i))}|${store.settings.group}'), date: addDays(monday, i), onOpen: onOpenDay),
+                    child: _WeekDay(refresh: refresh, key: ValueKey('${ymd(addDays(monday, i))}|${store.settings.group}'), date: addDays(monday, i), onOpen: onOpenDay),
                   ),
                 ),
               ),
@@ -66,9 +67,10 @@ class WeekView extends StatelessWidget {
 }
 
 class _WeekDay extends StatefulWidget {
-  const _WeekDay({super.key, required this.date, required this.onOpen});
+  const _WeekDay({super.key, required this.refresh, required this.date, required this.onOpen});
   final DateTime date;
   final ValueChanged<DateTime> onOpen;
+  final int refresh;
   @override
   State<_WeekDay> createState() => _WeekDayState();
 }
@@ -76,19 +78,31 @@ class _WeekDay extends StatefulWidget {
 class _WeekDayState extends State<_WeekDay> {
   DayState? _st;
   bool _started = false;
+  int _generation = 0;
+
+  @override
+  void didUpdateWidget(_WeekDay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.refresh != oldWidget.refresh) _load(force: true);
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_started) return;
     _started = true;
+    _load();
+  }
+
+  void _load({bool force = false}) {
+    final generation = ++_generation;
     final store = StoreScope.of(context);
     final cached = store.cachedSchedule(store.settings.group, widget.date);
     if (cached != null) _st = DayState(DayStatus.ok, schedule: cached, fromCache: true);
-    StoreScope.repoOf(context).load(widget.date).then((s) {
-      if (mounted) setState(() => _st = s);
+    StoreScope.repoOf(context).load(widget.date, force: force).then((s) {
+      if (mounted && generation == _generation) setState(() => _st = s);
     }).catchError((_) {
-      if (mounted) setState(() => _st = const DayState(DayStatus.error));
+      if (mounted && generation == _generation) setState(() => _st = const DayState(DayStatus.error));
     });
   }
 

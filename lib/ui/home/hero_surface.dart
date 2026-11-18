@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:material_ui/material_ui.dart';
 
 import '../kit/animation/motion.dart';
@@ -17,19 +18,28 @@ class HeroSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
-    return AnimatedContainer(
-      duration: context.motion(Motion.long),
-      curve: Motion.standard,
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(20, top + 6, 20, 20),
-      decoration: BoxDecoration(color: tone.bg, borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32))),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (header != null) ...[header!(tone.fg), const SizedBox(height: 14)],
-          child,
-        ],
+    final dark = ThemeData.estimateBrightnessForColor(tone.bg) == Brightness.dark;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark).copyWith(
+        statusBarColor: Colors.transparent,
+      ),
+      child: AnimatedContainer(
+        duration: context.motion(Motion.long),
+        curve: Motion.standard,
+        width: double.infinity,
+        padding: EdgeInsets.fromLTRB(20, top + 6, 20, 20),
+        decoration: BoxDecoration(
+          color: tone.bg,
+          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (header != null) ...[header!(tone.fg), const SizedBox(height: 14)],
+            child,
+          ],
+        ),
       ),
     );
   }

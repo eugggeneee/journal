@@ -312,7 +312,7 @@ class Pill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[Icon(icon, size: 14, color: tone.fg), const SizedBox(width: 4)],
-            Text(text, style: context.tt.labelMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w700)),
+            Flexible(child: Text(text, style: context.tt.labelMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w700))),
           ],
         ),
       );
@@ -366,6 +366,7 @@ class SegmentCard extends StatefulWidget {
     this.color,
     this.onTap,
     this.onLongPress,
+    this.borderRadius,
     this.dismissKey,
     this.onDelete,
     this.onSwipeRight,
@@ -378,6 +379,7 @@ class SegmentCard extends StatefulWidget {
   final Color? color;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
+  final BorderRadius? borderRadius;
   final Key? dismissKey;
   final VoidCallback? onDelete;
   final VoidCallback? onSwipeRight;
@@ -422,7 +424,7 @@ class _SegmentCardState extends State<SegmentCard> {
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
-    final r = segmentRadius(widget.index, widget.count);
+    final r = widget.borderRadius ?? segmentRadius(widget.index, widget.count);
     final d = context.motion(Motion.short);
     Widget inner = InkWell(onTap: widget.onTap, child: widget.child);
     final onLong = widget.onLongPress;
