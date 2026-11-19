@@ -138,7 +138,7 @@ class DayCard extends StatelessWidget {
           ),
           if (!folded && reason.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 18),
+              padding: const EdgeInsets.only(top: 16, bottom: 4),
               child: Semantics(
                 label: '$left мин $reason в ${fmtMin(minute + left)}',
                 excludeSemantics: true,
@@ -154,7 +154,7 @@ class DayCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 148,
                             height: .93,
-                            letterSpacing: -8,
+                            letterSpacing: -5,
                             fontWeight: FontWeight.w900,
                             color: fg,
                             fontFeatures: const [FontFeature.tabularFigures()],
@@ -166,7 +166,7 @@ class DayCard extends StatelessWidget {
                     Flexible(
                       flex: 2,
                       child: Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.only(bottom: 8),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -194,7 +194,7 @@ class DayCard extends StatelessWidget {
             const SizedBox(height: 12),
             if (!folded)
               Padding(
-                padding: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.only(bottom: 8),
                 child: Wrap(
                   alignment: WrapAlignment.spaceBetween,
                   spacing: 8,
@@ -236,26 +236,47 @@ class DayCard extends StatelessWidget {
                 ),
               ),
             if (inLesson && next != null) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               Material(
                 color: fg.withValues(alpha: .10),
-                borderRadius: BorderRadius.circular(20),
-                child: ListTile(
-                  onTap: onOpenDay,
-                  textColor: fg,
-                  iconColor: fg,
-                  leading: Text(
-                    profile[next.number] == null ? '${next.number}' : fmtMin(profile[next.number]!.start),
-                    style: tt.titleLarge?.copyWith(color: fg, fontWeight: FontWeight.w800),
+                borderRadius: BorderRadius.circular(16),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => showLessonSheet(context, now, next),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                [
+                                  'Следующая пара',
+                                  if (profile[next.number] case final upcoming?) fmtMin(upcoming.start),
+                                ].join(' · '),
+                                style: tt.labelMedium?.copyWith(color: fg),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _title(next),
+                                style: tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w700),
+                              ),
+                              if (_place(next).isNotEmpty) Text(_place(next), style: tt.bodySmall?.copyWith(color: fg)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(Icons.chevron_right_rounded, color: fg),
+                      ],
+                    ),
                   ),
-                  title: Text(_title(next)),
-                  subtitle: Text(['Дальше', _place(next)].where((s) => s.isNotEmpty).join(' · ')),
-                  trailing: const Icon(Icons.chevron_right_rounded),
                 ),
               ),
             ],
           ],
-          if (metrics != null) ...[const SizedBox(height: 14), metrics!],
+          if (metrics != null) ...[const SizedBox(height: 16), metrics!],
         ],
       ),
     );
@@ -308,12 +329,12 @@ class _LessonActions extends StatelessWidget {
                 child: InkWell(
                   onTap: actions[i].$3,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(actions[i].$1, color: fg, size: 20),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 4),
                         Text(
                           actions[i].$2,
                           textAlign: TextAlign.center,

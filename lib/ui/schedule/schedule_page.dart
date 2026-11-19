@@ -13,6 +13,7 @@ import '../../data/models.dart';
 import '../absences/absence_actions.dart';
 import '../grades/grade_sheet.dart';
 import '../kit/sheets/select_sheet.dart';
+import 'calendar_grid.dart';
 import 'day_actions.dart';
 import 'marks.dart';
 import 'day_view.dart';
@@ -286,7 +287,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     );
 
     final strip = SizedBox(
-      height: 62,
+      height: 64,
       child: PageView.builder(
         controller: _strip,
         itemCount: _weekIndex(_total - 1) + 1,
@@ -306,12 +307,10 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
                       final index = w * 7 + i - (_first.weekday - 1);
                       if (index < 0 || index >= _total) return const SizedBox.shrink();
                       final d = _dateAt(index);
-                      return _DayChip(
+                      return CalendarDate(
                         date: d,
                         selected: sameDay(d, _selected),
-                        isToday: sameDay(d, today()),
-                        marked: marked.contains(ymd(d)),
-                        noted: noted.contains(ymd(d)),
+                        marked: marked.contains(ymd(d)) || noted.contains(ymd(d)),
                         onTap: () => _jumpTo(d),
                       );
                     },
@@ -339,6 +338,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     );
 
     return ContentFrame(
+      maxWidth: week ? 1440 : 840,
       child: Column(
         children: [
           header,
@@ -349,81 +349,10 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
           else ...[
             // Лента дат всегда на виду: прокрутка дня её не трогает.
             strip,
-            const SizedBox(height: 10),
+            Divider(height: 1, color: cs.outlineVariant.withValues(alpha: .6)),
             Expanded(child: pages),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _DayChip extends StatelessWidget {
-  const _DayChip({
-    required this.date,
-    required this.selected,
-    required this.isToday,
-    required this.marked,
-    required this.noted,
-    required this.onTap,
-  });
-  final DateTime date;
-  final bool selected;
-  final bool isToday;
-  final bool marked;
-  final bool noted;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.cs;
-    final sunday = date.weekday == DateTime.sunday;
-    final fg = selected
-        ? cs.onPrimary
-        : (isToday ? cs.primary : (sunday ? cs.error.withValues(alpha: 0.8) : cs.onSurface));
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: longDate(date),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: Material(
-          color: selected ? cs.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: Center(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      weekdayShort(date),
-                      style: context.tt.labelSmall?.copyWith(color: selected ? fg : cs.onSurfaceVariant),
-                    ),
-                    Text(
-                      '${date.day}',
-                      style: context.tt.titleLarge?.copyWith(
-                        color: fg,
-                        fontWeight: selected || isToday ? FontWeight.w800 : FontWeight.w500,
-                      ),
-                    ),
-                    Container(
-                      width: isToday ? 12 : 4,
-                      height: 3,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(4),
-                        color: marked || noted || isToday ? fg : Colors.transparent,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

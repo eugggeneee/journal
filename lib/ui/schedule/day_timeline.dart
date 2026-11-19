@@ -6,6 +6,7 @@ import '../../data/store.dart';
 import '../../logic/bells.dart';
 import '../kit/foundation/ctx.dart';
 import 'lesson_card.dart';
+import 'calendar_grid.dart';
 
 class DayTimeline extends StatelessWidget {
   const DayTimeline({super.key, required this.date, required this.slots, required this.store, required this.now});
@@ -26,103 +27,35 @@ class DayTimeline extends StatelessWidget {
     for (var i = 0; i < timed.length; i++) {
       final slot = timed[i];
       final bell = profile[slot.number]!;
-      if (i > 0) {
-        final prev = timed[i - 1];
-        final gap = gapBetween(profile, prev.number, slot.number);
-        if (gap != null) {
-          final during = minute != null && minute >= profile[prev.number]!.end && minute < bell.start;
-          rows.add(
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 4, 8, 4),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 62,
-                    child: during
-                        ? Text(fmtMin(minute), style: context.tt.labelLarge?.copyWith(color: context.cs.primary))
-                        : null,
-                  ),
-                  Expanded(
-                    child: Text(
-                      gap,
-                      style: context.tt.labelMedium?.copyWith(
-                        color: during ? context.cs.primary : context.cs.onSurfaceVariant,
-                      ),
+      final previous = i > 0 ? timed[i - 1] : null;
+      final from = previous == null ? bell.start ~/ 60 * 60 : profile[previous.number]!.end;
+      if (from < bell.start) {
+        final gap = previous == null ? null : gapBetween(profile, previous.number, slot.number);
+        rows.add(
+          CalendarBand(
+            start: from,
+            end: bell.start,
+            minute: minute,
+            child: gap == null
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(gap, style: context.tt.labelSmall?.copyWith(color: context.cs.onSurfaceVariant)),
                     ),
                   ),
-                ],
-              ),
-            ),
-          );
-        }
+          ),
+        );
       }
-      final live = minute != null && minute >= bell.start && minute < bell.end;
       rows.add(
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 62,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 12, right: 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          fmtMin(bell.start),
-                          style: context.tt.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: live ? context.cs.primary : context.cs.onSurface,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                      ),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          fmtMin(bell.end),
-                          style: context.tt.labelMedium?.copyWith(
-                            color: context.cs.onSurfaceVariant,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                      ),
-                      if (live)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: context.cs.primary,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  fmtMin(minute),
-                                  semanticsLabel: 'Сейчас ${fmtMin(minute)}',
-                                  style: context.tt.labelMedium?.copyWith(
-                                    color: context.cs.onPrimary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: LessonCard(slot: slot, date: date, store: store, minute: minute, next: slot == next),
-              ),
-            ],
+        CalendarBand(
+          start: bell.start,
+          end: bell.end,
+          minute: minute,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 2, 0, 2),
+            child: LessonCard(slot: slot, date: date, store: store, minute: minute, next: slot == next),
           ),
         ),
       );

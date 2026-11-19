@@ -86,7 +86,7 @@ class DayBar extends StatelessWidget {
                           height: compact ? height : 4,
                           child: ColoredBox(color: fg),
                         ),
-                      if (b.hasBreak && !compact)
+                      if (b.hasBreak && !compact && done < 1)
                         Positioned(
                           left: (b.breakStart! - b.start) / b.minutes * width,
                           width: math.max(2.0, b.breakMinutes / b.minutes * width),
@@ -111,7 +111,7 @@ class DayBar extends StatelessWidget {
                                   ),
                                 ),
                                 if (width >= 32) ...[
-                                  const SizedBox(height: 3),
+                                  const SizedBox(height: 4),
                                   Text(
                                     fmtMin(b.start),
                                     style: TextStyle(

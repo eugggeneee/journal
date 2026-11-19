@@ -62,12 +62,12 @@ class DayToolbar extends StatelessWidget {
       if (shortDay) kShortDayMark,
     ];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 6, 4, 16),
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(longDate(date), style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 3),
+          const SizedBox(height: 4),
           Text(details.join(' · '), style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
         ],
       ),

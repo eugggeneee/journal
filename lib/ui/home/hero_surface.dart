@@ -27,7 +27,7 @@ class HeroSurface extends StatelessWidget {
         duration: context.motion(Motion.long),
         curve: Motion.standard,
         width: double.infinity,
-        padding: EdgeInsets.fromLTRB(20, top + 6, 20, 20),
+        padding: EdgeInsets.fromLTRB(20, top + 8, 20, 20),
         decoration: BoxDecoration(
           color: tone.bg,
           borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
@@ -36,7 +36,7 @@ class HeroSurface extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (header != null) ...[header!(tone.fg), const SizedBox(height: 14)],
+            if (header != null) ...[header!(tone.fg), const SizedBox(height: 16)],
             child,
           ],
         ),

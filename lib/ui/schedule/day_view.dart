@@ -94,7 +94,7 @@ class _DayViewState extends State<DayView> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          MarksSection(date: widget.date, store: store, slots: slots),
+          if (st?.status != DayStatus.ok) MarksSection(date: widget.date, store: store, slots: slots),
           Smooth(child: content),
         ],
       ),
@@ -111,6 +111,7 @@ class _DayViewState extends State<DayView> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DayToolbar(date: date, slots: s.slots, store: store),
+            MarksSection(date: date, store: store, slots: s.slots),
             DayTimeline(date: date, slots: s.slots, store: store, now: DateTime.now()),
             Padding(
               padding: const EdgeInsets.only(top: 12),

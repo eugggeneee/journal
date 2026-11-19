@@ -14,6 +14,7 @@ import 'package:journal/ui/absences/absence_actions.dart';
 import 'package:journal/core/dates.dart';
 import 'package:journal/ui/home/home_page.dart';
 import 'package:journal/ui/schedule/day_timeline.dart';
+import 'package:journal/ui/schedule/week_view.dart';
 import 'package:journal/ui/schedule/schedule_page.dart';
 import 'package:journal/ui/tasks/tasks_page.dart';
 import 'package:journal/ui/theme/app_theme.dart';
@@ -263,6 +264,44 @@ void main() {
     expect(find.text(longDate(selected)), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     controller.dispose();
+  });
+
+  testWidgets('в недельной сетке время общее для разных профилей звонков', (tester) async {
+    final monday = DateTime(2031, 3, 3);
+    store.setBellProfile(kBellWeek, const BellProfile(slots: {1: BellSlot(start: 480, end: 540)}));
+    store.setBellProfile(kBellSat, const BellProfile(slots: {1: BellSlot(start: 540, end: 600)}));
+    for (var i = 0; i < 6; i++) {
+      final date = addDays(monday, i);
+      store.putSchedule(
+        DaySchedule(
+          date: date,
+          fetchedAt: now,
+          group: store.settings.group,
+          slots: [
+            LessonSlot(
+              number: 1,
+              entries: [LessonEntry(subject: 'Курс $i', room: '214', teacher: '')],
+            ),
+          ],
+        ),
+      );
+    }
+    store.saveMark(DayMark(id: 'all', date: monday, lesson: 0, label: 'Практика'));
+    await screen(
+      tester,
+      WeekView(refresh: 0, selected: monday, onShift: (_) {}, onOpenDay: (_) {}),
+      width: 960,
+      scroll: false,
+    );
+    Rect event(String name) => tester.getRect(find.ancestor(of: find.text(name), matching: find.byType(InkWell)).first);
+    expect(event('Курс 0').top, event('Курс 1').top);
+    final hour = tester.getTopLeft(find.text('09:00')).dy - tester.getTopLeft(find.text('08:00')).dy;
+    expect(event('Курс 5').top - event('Курс 0').top, closeTo(hour, .01));
+    expect(find.text('Практика'), findsOneWidget);
+    await tester.tap(find.text('Курс 5'));
+    await tester.pumpAndSettle();
+    expect(find.text('Добавить оценку по предмету'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
   });
 
   testWidgets('таймлайн показывает данные подгрупп и все привязанные записи', (tester) async {

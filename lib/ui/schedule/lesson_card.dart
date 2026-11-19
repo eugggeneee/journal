@@ -42,7 +42,9 @@ class LessonCard extends StatelessWidget {
     final fg = live ? cs.onPrimaryContainer : cs.onSurface;
     final muted = live ? cs.onPrimaryContainer : cs.onSurfaceVariant;
     final chip = live ? Tone(cs.primary, cs.onPrimary) : Tone(cs.secondaryContainer, cs.onSecondaryContainer);
-    final info = '${slot.number} пара';
+    final info = [if (bell != null) shortRange(bell.start, bell.end), '${slot.number} пара'].join(' · ');
+    final accent = hueAccent(context, subjectHue(slot.subjects.firstOrNull ?? ''));
+    final eventColor = Color.alphaBlend(accent.withValues(alpha: past ? .10 : .18), cs.surfaceContainerLow);
     final state = inner
         ? 'Сейчас ${innerBreakWord(bell)}'
         : live
@@ -55,12 +57,12 @@ class LessonCard extends StatelessWidget {
       index: 0,
       count: 1,
       appear: false,
-      borderRadius: BorderRadius.circular(live ? 22 : 16),
-      color: live ? cs.primaryContainer : (past ? cs.surfaceContainerLow : cs.surfaceContainer),
+      borderRadius: BorderRadius.circular(live ? 20 : 14),
+      color: live ? cs.primaryContainer : eventColor,
       onTap: () => showLessonSheet(context, date, slot),
       onLongPress: () => toggleLessonAbsence(context, store, date, slot),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 4, 6, 14),
+        padding: const EdgeInsets.fromLTRB(12, 0, 4, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
