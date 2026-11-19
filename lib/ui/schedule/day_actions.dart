@@ -5,11 +5,8 @@ import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../logic/bells.dart';
-import '../absences/absence_actions.dart';
 import '../kit/components/feedback.dart';
 import '../kit/foundation/ctx.dart';
-import 'marks.dart';
-import 'whole_day_split.dart';
 
 /// Пометка «Сокращённый день» на весь день: ставится одним нажатием, повторное нажатие снимает.
 /// Вместе с пометкой день переходит на сокращённые звонки (пары по часу): они подставляются сами.
@@ -27,8 +24,6 @@ void toggleShortDay(BuildContext context, AppStore store, DateTime date) {
   }
 }
 
-/// Тонкая панель дня над лентой: сколько пар и во сколько, сколько часов пропущено, и действие «Весь день»
-/// с меню (сокращённый день, пометка). Вместо большой карточки: ленте остаётся больше места.
 class DayToolbar extends StatelessWidget {
   const DayToolbar({super.key, required this.date, required this.slots, required this.store});
   final DateTime date;
@@ -47,9 +42,11 @@ class DayToolbar extends StatelessWidget {
       final to = bells.map((b) => b.end).reduce((a, b) => a > b ? a : b);
       range = shortRange(from, to);
     }
-    final marked = [for (final s in slots) if (store.absenceFor(date, s.number) != null) s];
+    final marked = [
+      for (final s in slots)
+        if (store.absenceFor(date, s.number) != null) s,
+    ];
     final hours = marked.fold<int>(0, (a, s) => a + (store.absenceFor(date, s.number)?.hours ?? 0));
-    final allMarked = slots.isNotEmpty && marked.length == slots.length;
     final shortDay = store.markFor(date, 0)?.label == kShortDayMark;
     final sorted = [...bells]..sort((a, b) => a.start.compareTo(b.start));
     var breaks = bells.fold<int>(0, (sum, b) => sum + b.breakMinutes);
@@ -58,28 +55,22 @@ class DayToolbar extends StatelessWidget {
       if (gap > 0) breaks += gap;
     }
     final details = [
-      pairsText(slots.length), ?range,
+      pairsText(slots.length),
+      ?range,
       if (breaks > 0) 'перерывы ${spanText(breaks)}',
       if (hours > 0) 'пропущено ${hoursText(hours)}',
       if (shortDay) kShortDayMark,
     ];
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Wrap(spacing: 4, runSpacing: 4, children: [
-          for (final detail in details) Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: cs.surfaceContainerHigh, borderRadius: BorderRadius.circular(16)),
-            child: Text(detail, style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant))),
-        ]),
-        const SizedBox(height: 8),
-        ConstrainedBox(constraints: const BoxConstraints(maxWidth: 240), child: WholeDaySplit(
-          fg: cs.primary, allMarked: allMarked, shortDay: shortDay, enabled: slots.isNotEmpty,
-          onWholeDay: () => toggleWholeDay(context, store, date, slots),
-          onShortDay: () => toggleShortDay(context, store, date),
-          onMark: () { Haptics.selection(); showMarkSheet(context, date); },
-        )),
-      ]),
+      padding: const EdgeInsets.fromLTRB(4, 6, 4, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(longDate(date), style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 3),
+          Text(details.join(' · '), style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+        ],
+      ),
     );
   }
 }

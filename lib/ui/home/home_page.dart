@@ -16,7 +16,6 @@ import '../kit/components/gesture_guide.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
 import '../kit/sheets/sheet.dart';
-import '../schedule/day_actions.dart';
 import '../schedule/marks.dart';
 import '../settings/settings_button.dart';
 import '../settings/group_picker.dart';
@@ -47,6 +46,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   String? _loadedGroup;
   int _gen = 0;
   Timer? _tick;
+  final _scroll = ScrollController();
   late DateTime _day = today();
 
   @override
@@ -57,7 +57,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _tick = Timer.periodic(const Duration(seconds: 30), (_) {
       if (!mounted) return;
       if (!sameDay(_day, today())) {
-        setState(() { _day = today(); _st = null; });
+        setState(() {
+          _day = today();
+          _st = null;
+        });
         _load();
       } else {
         setState(() {});
@@ -67,6 +70,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _scroll.dispose();
     _tick?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -85,7 +89,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed || !mounted) return;
-    if (!sameDay(_day, today())) setState(() { _day = today(); _st = null; });
+    if (!sameDay(_day, today()))
+      setState(() {
+        _day = today();
+        _st = null;
+      });
     _load();
   }
 
@@ -101,20 +109,37 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     setState(() => _st = st);
   }
 
-  Widget _header(BuildContext context, Color fg, DateTime now) {
-    return Row(children: [
-      Expanded(child: Semantics(header: true, child: Text(longDate(now),
-        style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w700)))),
-      const SizedBox(width: 8),
-      TextButton(
-        style: TextButton.styleFrom(foregroundColor: fg, backgroundColor: fg.withValues(alpha: .1)),
-        onPressed: () => openGroupPicker(context),
-        child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 76),
-          child: Text(StoreScope.of(context).settings.group, style: context.tt.labelLarge?.copyWith(color: fg)))),
-      IconButton(tooltip: 'Добавить оценку', color: fg, icon: const Icon(Icons.add_rounded),
-        onPressed: () => showGradeSheet(context)),
-      SettingsButton(color: fg),
-    ]);
+  Widget _header(BuildContext context, Color fg, DateTime now, {bool hasLessonActions = false}) {
+    return Row(
+      children: [
+        Expanded(
+          child: Semantics(
+            header: true,
+            child: Text(
+              longDate(now),
+              style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        TextButton(
+          style: TextButton.styleFrom(foregroundColor: fg, backgroundColor: fg.withValues(alpha: .1)),
+          onPressed: () => openGroupPicker(context),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 76),
+            child: Text(StoreScope.of(context).settings.group, style: context.tt.labelLarge?.copyWith(color: fg)),
+          ),
+        ),
+        if (!hasLessonActions)
+          IconButton(
+            tooltip: 'Добавить оценку',
+            color: fg,
+            icon: const Icon(Icons.add_rounded),
+            onPressed: () => showGradeSheet(context),
+          ),
+        SettingsButton(color: fg),
+      ],
+    );
   }
 
   @override
@@ -125,20 +150,26 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final slots = _st?.schedule?.slots ?? const <LessonSlot>[];
 
     // Блоки идут в порядке, который выбрал пользователь, скрытые пропускаются. Между блоками тонкая линия.
-    final shown = [for (final b in store.settings.homeOrder) if (!store.settings.homeHidden.contains(b)) b];
+    final shown = [
+      for (final b in store.settings.homeOrder)
+        if (!store.settings.homeHidden.contains(b)) b,
+    ];
     final heroMetrics = _st?.status == DayStatus.ok && shown.firstOrNull == kBlockMetrics;
     if (heroMetrics) shown.removeAt(0);
     Widget block(String id) => switch (id) {
-          kBlockMetrics => _Metrics(store: store, onTab: widget.onTab),
-          kBlockTasks => _TasksBlock(store: store),
-          kBlockTomorrow => _Tomorrow(store: store, date: addDays(day, 1), onDay: widget.onDay),
-          kBlockWeek => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              const _Heading('Эта неделя'),
-              _Week(store: store, today: day, onDay: widget.onDay),
-              const SizedBox(height: 8),
-            ]),
-          _ => _Recent(store: store, onTab: widget.onTab),
-        };
+      kBlockMetrics => _Metrics(store: store, onTab: widget.onTab),
+      kBlockTasks => _TasksBlock(store: store),
+      kBlockTomorrow => _Tomorrow(store: store, date: addDays(day, 1), onDay: widget.onDay),
+      kBlockWeek => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _Heading('Эта неделя'),
+          _Week(store: store, today: day, onDay: widget.onDay),
+          const SizedBox(height: 8),
+        ],
+      ),
+      _ => _Recent(store: store, onTab: widget.onTab),
+    };
     final sections = <Widget>[
       Smooth(
         child: store.settings.tipGestures
@@ -147,10 +178,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       ),
       MarksSection(date: day, store: store, slots: slots),
       _LimitNote(store: store, onTab: widget.onTab),
-      for (var i = 0; i < shown.length; i++) ...[
-        if (i > 0) const _Hairline(),
-        block(shown[i]),
-      ],
+      for (var i = 0; i < shown.length; i++) ...[if (i > 0) const _Hairline(), block(shown[i])],
       if (shown.isEmpty && !heroMetrics)
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 24),
@@ -163,23 +191,28 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     ];
 
     return ContentFrame(
-      child: RefreshIndicator(
-        onRefresh: () => _load(force: true),
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: Smooth(child: KeyedSubtree(key: ValueKey('hero-${_st?.status.name}'), child: _hero(context, store, day, now, heroMetrics))),
+      child: CustomPaint(
+        painter: _PullFill(_scroll, _st?.status == DayStatus.ok ? context.cs.primary : context.cs.primaryContainer),
+        child: RefreshIndicator(
+          onRefresh: () => _load(force: true),
+          child: ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
+            child: CustomScrollView(
+              controller: _scroll,
+              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              slivers: [
+                SliverToBoxAdapter(child: _hero(context, store, day, now, heroMetrics)),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, kFabClearance),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      for (var i = 0; i < sections.length; i++) Appear(index: i + 1, child: sections[i]),
+                    ]),
+                  ),
+                ),
+              ],
             ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, kFabClearance),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  for (var i = 0; i < sections.length; i++) Appear(index: i + 1, child: sections[i]),
-                ]),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -195,7 +228,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       return HeroSurface(
         tone: calm,
         header: hdr,
-        child: SizedBox(height: 140, child: Center(child: CircularProgressIndicator(color: calm.fg))),
+        child: SizedBox(
+          height: 140,
+          child: Center(child: CircularProgressIndicator(color: calm.fg)),
+        ),
       );
     }
     if (st.status == DayStatus.ok) {
@@ -206,42 +242,83 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         slots: st.schedule!.slots,
         profile: store.bellProfileFor(day),
         store: store,
-        header: hdr,
-        onShortDay: () => toggleShortDay(context, store, day),
-        onMark: () {
-          Haptics.selection();
-          showMarkSheet(context, day);
-        },
+        header: (fg, active) => _header(context, fg, now, hasLessonActions: active),
       );
     }
     final (IconData icon, String title, String message, bool retry) = switch (st.status) {
       DayStatus.sunday => (Icons.wb_sunny_rounded, 'Сегодня выходной', 'Пар нет, можно отдохнуть.', false),
-      DayStatus.noGroup => (Icons.search_off_rounded, 'Расписание не найдено', 'Для группы ${store.settings.group} на сегодня занятий нет.', false),
-      DayStatus.notPublished => (Icons.hourglass_empty_rounded, 'Расписание пока отсутствует', 'Колледж публикует расписание только на ближайшие дни. Потяните вниз, чтобы проверить ещё раз.', false),
-      DayStatus.offline => (Icons.wifi_off_rounded, 'Не удалось загрузить', st.note ?? 'Проверьте подключение и попробуйте ещё раз.', true),
-      _ => (Icons.error_outline_rounded, 'Не удалось загрузить', st.note ?? 'Что-то пошло не так. Попробуйте ещё раз.', true),
+      DayStatus.noGroup => (
+        Icons.search_off_rounded,
+        'Расписание не найдено',
+        'Для группы ${store.settings.group} на сегодня занятий нет.',
+        false,
+      ),
+      DayStatus.notPublished => (
+        Icons.hourglass_empty_rounded,
+        'Расписание пока отсутствует',
+        'Колледж публикует расписание только на ближайшие дни. Потяните вниз, чтобы проверить ещё раз.',
+        false,
+      ),
+      DayStatus.offline => (
+        Icons.wifi_off_rounded,
+        'Не удалось загрузить',
+        st.note ?? 'Проверьте подключение и попробуйте ещё раз.',
+        true,
+      ),
+      _ => (
+        Icons.error_outline_rounded,
+        'Не удалось загрузить',
+        st.note ?? 'Что-то пошло не так. Попробуйте ещё раз.',
+        true,
+      ),
     };
     return HeroSurface(
       tone: calm,
       header: hdr,
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        CookieIcon(icon: icon, size: 56, bg: cs.primary, fg: cs.onPrimary),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: tt.titleLarge?.copyWith(color: calm.fg, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text(message, style: tt.bodyMedium?.copyWith(color: calm.fg.withValues(alpha: 0.85), height: 1.3)),
-            if (retry)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: FilledButton.tonal(onPressed: () => _load(force: true), child: const Text('Повторить')),
-              ),
-          ]),
-        ),
-      ]),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CookieIcon(icon: icon, size: 56, bg: cs.primary, fg: cs.onPrimary),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: tt.titleLarge?.copyWith(color: calm.fg, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 4),
+                Text(message, style: tt.bodyMedium?.copyWith(color: calm.fg.withValues(alpha: 0.85), height: 1.3)),
+                if (retry)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: FilledButton.tonal(onPressed: () => _load(force: true), child: const Text('Повторить')),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
+
+/// Открытый над шапкой участок красится в том же кадре, в котором движется viewport.
+class _PullFill extends CustomPainter {
+  _PullFill(this.scroll, this.color) : super(repaint: scroll);
+  final ScrollController scroll;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (!scroll.hasClients || scroll.offset >= 0) return;
+    final depth = (-scroll.offset + 1).clamp(0.0, size.height);
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, depth), Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(_PullFill old) => old.scroll != scroll || old.color != color;
 }
 
 /// Тонкая разделительная линия между блоками главной.
@@ -585,7 +662,7 @@ class _TasksBlock extends StatelessWidget {
       trailing = 'Сегодня: $dueToday';
       trailingColor = hueAccent(context, kHueAmber);
     } else {
-      trailing = store.tasks.isEmpty ? 'Добавить' : 'Все задания';
+      trailing = 'Все задания';
     }
 
     final Widget body;
@@ -631,7 +708,8 @@ class _TasksBlock extends StatelessWidget {
     }
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _Heading('Задания', trailing: trailing, trailingColor: trailingColor, onTap: () => store.tasks.isEmpty ? showTaskSheet(context) : _openAll(context)),
+      _Heading('Задания', trailing: store.tasks.isEmpty ? null : trailing, trailingColor: trailingColor,
+        onTap: store.tasks.isEmpty ? null : () => _openAll(context)),
       body,
     ]);
   }

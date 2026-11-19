@@ -181,15 +181,6 @@ class AppTheme {
         insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      popupMenuTheme: PopupMenuThemeData(
-        color: s.surfaceContainerHigh,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: s.outlineVariant),
-        ),
-      ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: s.primary,
         refreshBackgroundColor: s.surfaceContainerHigh,

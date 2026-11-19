@@ -186,15 +186,7 @@ class _LessonSheetState extends State<_LessonSheet> {
           ),
         ),
         const SizedBox(height: 12),
-        Row(children: [
-          Expanded(
-            child: ExcuseTile(excused: false, selected: absence != null && !absence.excused, onTap: () => mark(excused: false)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ExcuseTile(excused: true, selected: absence != null && absence.excused, onTap: () => mark(excused: true)),
-          ),
-        ]),
+        ExcuseChoices(selected: absence?.excused, onChoice: (value) => mark(excused: value)),
         Smooth(
           child: absence != null
               ? Padding(

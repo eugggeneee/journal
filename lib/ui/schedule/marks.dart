@@ -15,17 +15,26 @@ import '../kit/sheets/sheet.dart';
 
 /// Пометка к дате: «ОКР», «Зачёт», «Практика» или своя. Можно на весь день или на конкретную пару —
 /// и на любую дату, даже если расписания на неё нет.
-Future<void> showMarkSheet(BuildContext context, DateTime date, {int? lesson, DayMark? edit}) =>
-    showAdaptiveSheet<void>(context, (_) => _MarkSheet(date: date, lesson: lesson, edit: edit));
+Future<void> showMarkSheet(
+  BuildContext context,
+  DateTime date, {
+  int? lesson,
+  DayMark? edit,
+  bool customEntry = false,
+}) => showAdaptiveSheet<void>(
+  context,
+  (_) => _MarkSheet(date: date, lesson: lesson, edit: edit, customEntry: customEntry),
+);
 
 IconData markIcon(String label) => label == kShortDayMark ? Icons.timelapse_rounded : Icons.bookmark_rounded;
 
 Tone markTone(BuildContext context) => Tone(context.cs.tertiaryContainer, context.cs.onTertiaryContainer);
 
 class _MarkSheet extends StatefulWidget {
-  const _MarkSheet({required this.date, this.lesson, this.edit});
+  const _MarkSheet({required this.date, this.lesson, this.edit, required this.customEntry});
   final DateTime date;
   final int? lesson;
+  final bool customEntry;
   final DayMark? edit;
   @override
   State<_MarkSheet> createState() => _MarkSheetState();
@@ -34,9 +43,9 @@ class _MarkSheet extends StatefulWidget {
 class _MarkSheetState extends State<_MarkSheet> {
   late DateTime date = widget.edit?.date ?? widget.date;
   late int lesson = widget.edit?.lesson ?? widget.lesson ?? 0;
-  late bool custom = widget.edit != null && !kMarkPresets.contains(widget.edit!.label);
+  late bool custom = widget.customEntry || (widget.edit != null && !kMarkPresets.contains(widget.edit!.label));
   late String preset = (widget.edit != null && !custom) ? widget.edit!.label : kMarkPresets.first;
-  late final TextEditingController _c = TextEditingController(text: custom ? widget.edit!.label : '');
+  late final TextEditingController _c = TextEditingController(text: custom ? widget.edit?.label ?? '' : '');
 
   @override
   void dispose() {
@@ -47,7 +56,7 @@ class _MarkSheetState extends State<_MarkSheet> {
   String get label => custom ? _c.text.trim() : preset;
 
   /// «Сокращённый день» всегда относится ко всему дню: по нему подставляются сокращённые звонки.
-  bool get _isShortDay => label == kShortDayMark;
+  bool get _isShortDay => !widget.customEntry && label == kShortDayMark;
 
   void _save() {
     final text = label;
@@ -96,7 +105,7 @@ class _MarkSheetState extends State<_MarkSheet> {
 
     return SheetScaffold(
       title: editing ? 'Изменить пометку' : 'Новая пометка',
-      subtitle: dayCaption(date),
+      subtitle: widget.customEntry ? '${widget.lesson} пара · ${dayCaption(date)}' : dayCaption(date),
       leading: CookieIcon(icon: Icons.bookmark_rounded, size: 52, bg: tone.bg, fg: tone.fg),
       trailing: editing
           ? IconButton(
@@ -114,29 +123,37 @@ class _MarkSheetState extends State<_MarkSheet> {
         ),
       ),
       children: [
-        FieldLabel('Дата', top: 8, trailing: dayCaption(date)),
-        DayChips(date: date, onChanged: (d) => setState(() => date = d)),
-        const FieldLabel('Что это'),
-        Wrap(spacing: 8, runSpacing: 8, children: [
-          for (final p in kMarkPresets)
-            ChoiceTag(
-              label: p,
-              icon: p == kShortDayMark ? Icons.timelapse_rounded : Icons.bookmark_outline_rounded,
-              selected: !custom && preset == p,
-              onTap: () => setState(() {
-                custom = false;
-                preset = p;
-                // «Сокращённый день» — всегда пометка на весь день
-                if (p == kShortDayMark) lesson = 0;
-              }),
-            ),
-          ChoiceTag(
-            label: 'Своя',
-            icon: Icons.edit_rounded,
-            selected: custom,
-            onTap: () => setState(() => custom = true),
+        if (!widget.customEntry) ...[
+          FieldLabel('Дата', top: 8, trailing: dayCaption(date)),
+          DayChips(date: date, onChanged: (d) => setState(() => date = d)),
+        ],
+        if (!widget.customEntry) ...[
+          const FieldLabel('Что это'),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final p in kMarkPresets)
+                ChoiceTag(
+                  label: p,
+                  icon: p == kShortDayMark ? Icons.timelapse_rounded : Icons.bookmark_outline_rounded,
+                  selected: !custom && preset == p,
+                  onTap: () => setState(() {
+                    custom = false;
+                    preset = p;
+                    // «Сокращённый день» — всегда пометка на весь день
+                    if (p == kShortDayMark) lesson = 0;
+                  }),
+                ),
+              ChoiceTag(
+                label: 'Своя',
+                icon: Icons.edit_rounded,
+                selected: custom,
+                onTap: () => setState(() => custom = true),
+              ),
+            ],
           ),
-        ]),
+        ],
         Smooth(
           child: custom
               ? Padding(
@@ -144,11 +161,12 @@ class _MarkSheetState extends State<_MarkSheet> {
                   padding: const EdgeInsets.only(top: 12),
                   child: TextField(
                     controller: _c,
-                    autofocus: widget.edit == null || !kMarkPresets.contains(widget.edit!.label),
+                    autofocus: widget.customEntry || widget.edit == null || !kMarkPresets.contains(widget.edit!.label),
                     textCapitalization: TextCapitalization.sentences,
                     textInputAction: TextInputAction.done,
                     inputFormatters: [LengthLimitingTextInputFormatter(24)],
                     onChanged: (_) => setState(() {}),
+                    onSubmitted: (_) => _save(),
                     decoration: const InputDecoration(
                       labelText: 'Название пометки',
                       hintText: 'Например, Консультация',
@@ -158,26 +176,33 @@ class _MarkSheetState extends State<_MarkSheet> {
                 )
               : const SizedBox.shrink(key: ValueKey('custom-none')),
         ),
-        const FieldLabel('К чему относится'),
-        Wrap(spacing: 12, runSpacing: 12, crossAxisAlignment: WrapCrossAlignment.center, children: [
-          ChoiceTag(
-            label: 'Весь день',
-            icon: Icons.today_rounded,
-            selected: lesson == 0,
-            onTap: () => setState(() => lesson = 0),
+        if (!widget.customEntry) ...[
+          const FieldLabel('К чему относится'),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              ChoiceTag(
+                label: 'Весь день',
+                icon: Icons.today_rounded,
+                selected: lesson == 0,
+                onTap: () => setState(() => lesson = 0),
+              ),
+              for (var n = 1; n <= kMaxPairs; n++)
+                ChoiceSquare(
+                  label: '$n',
+                  semantics: '$n пара',
+                  size: 44,
+                  selected: lesson == n,
+                  marked: store.markFor(date, n) != null,
+                  tone: Tone(cs.secondaryContainer, cs.onSecondaryContainer),
+                  accent: cs.primary,
+                  onTap: () => setState(() => lesson = n),
+                ),
+            ],
           ),
-          for (var n = 1; n <= kMaxPairs; n++)
-            ChoiceSquare(
-              label: '$n',
-              semantics: '$n пара',
-              size: 44,
-              selected: lesson == n,
-              marked: store.markFor(date, n) != null,
-              tone: Tone(cs.secondaryContainer, cs.onSecondaryContainer),
-              accent: cs.primary,
-              onTap: () => setState(() => lesson = n),
-            ),
-        ]),
+        ],
         Smooth(
           child: (lessonName != null || replaces || shortHint)
               ? Padding(
@@ -211,16 +236,22 @@ class MarksSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final numbers = {for (final s in slots) s.number};
-    final list = [for (final m in store.marksOn(date)) if (m.wholeDay || !numbers.contains(m.lesson)) m];
+    final list = [
+      for (final m in store.marksOn(date))
+        if (m.wholeDay || !numbers.contains(m.lesson)) m,
+    ];
     return Smooth(
       child: list.isEmpty
           ? const SizedBox(key: ValueKey('marks-none'), width: double.infinity)
           : Padding(
               key: ValueKey('marks-${list.map((m) => m.id).join(',')}'),
               padding: const EdgeInsets.only(bottom: 12),
-              child: Column(children: [
-                for (var i = 0; i < list.length; i++) _MarkTile(mark: list[i], store: store, index: i, count: list.length),
-              ]),
+              child: Column(
+                children: [
+                  for (var i = 0; i < list.length; i++)
+                    _MarkTile(mark: list[i], store: store, index: i, count: list.length),
+                ],
+              ),
             ),
     );
   }
@@ -253,26 +284,31 @@ class _MarkTile extends StatelessWidget {
       onTap: () => showMarkSheet(context, m.date, edit: m),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: Row(children: [
-          Container(
-            width: 46,
-            height: 46,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(46 * 0.34)),
-            child: Icon(markIcon(m.label), color: tone.fg, size: 24),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(m.label, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-              Text(
-                m.wholeDay ? 'Весь день' : '${m.lesson} пара',
-                style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(46 * 0.34)),
+              child: Icon(markIcon(m.label), color: tone.fg, size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(m.label, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  Text(
+                    m.wholeDay ? 'Весь день' : '${m.lesson} пара',
+                    style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                ],
               ),
-            ]),
-          ),
-          Icon(Icons.edit_outlined, size: 20, color: cs.onSurfaceVariant),
-        ]),
+            ),
+            Icon(Icons.edit_outlined, size: 20, color: cs.onSurfaceVariant),
+          ],
+        ),
       ),
     );
   }
