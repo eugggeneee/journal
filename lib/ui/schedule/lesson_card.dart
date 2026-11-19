@@ -7,6 +7,7 @@ import '../../logic/bells.dart';
 import '../absences/absence_actions.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
+import '../kit/foundation/lesson_colors.dart';
 import 'lesson_sheet.dart';
 
 /// Содержимое растёт вместе с подгруппами, пометками и системным шрифтом.
@@ -29,22 +30,19 @@ class LessonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.cs;
     final tt = context.tt;
     final bell = store.bellFor(date, slot.number);
     final m = minute;
     final live = m != null && bell != null && m >= bell.start && m < bell.end;
     final inner = live && bell.hasBreak && m >= bell.breakStart! && m < bell.breakEnd!;
-    final past = bell != null && m != null && m >= bell.end;
+    final colors = LessonColors.of(context, store, slot);
     final absence = store.absenceFor(date, slot.number);
     final mark = store.markFor(date, slot.number);
     final tasks = store.tasksForLesson(date, slot.number);
-    final fg = live ? cs.onPrimaryContainer : cs.onSurface;
-    final muted = live ? cs.onPrimaryContainer : cs.onSurfaceVariant;
-    final chip = live ? Tone(cs.primary, cs.onPrimary) : Tone(cs.secondaryContainer, cs.onSecondaryContainer);
+    final fg = colors.ink;
+    final muted = colors.ink;
+    final chip = Tone(Color.alphaBlend(colors.edge.withValues(alpha: .13), colors.fill), colors.ink);
     final info = [if (bell != null) shortRange(bell.start, bell.end), '${slot.number} пара'].join(' · ');
-    final accent = hueAccent(context, subjectHue(slot.subjects.firstOrNull ?? ''));
-    final eventColor = Color.alphaBlend(accent.withValues(alpha: past ? .10 : .18), cs.surfaceContainerLow);
     final state = inner
         ? 'Сейчас ${innerBreakWord(bell)}'
         : live
@@ -58,10 +56,16 @@ class LessonCard extends StatelessWidget {
       count: 1,
       appear: false,
       borderRadius: BorderRadius.circular(live ? 20 : 14),
-      color: live ? cs.primaryContainer : eventColor,
+      color: colors.fill,
       onTap: () => showLessonSheet(context, date, slot),
       onLongPress: () => toggleLessonAbsence(context, store, date, slot),
-      child: Padding(
+      child: Container(
+        foregroundDecoration: live
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: colors.edge, width: 2),
+              )
+            : null,
         padding: const EdgeInsets.fromLTRB(12, 0, 4, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,10 +85,7 @@ class LessonCard extends StatelessWidget {
                       if (state != null)
                         Text(
                           state,
-                          style: tt.labelMedium?.copyWith(
-                            color: live ? cs.onPrimaryContainer : cs.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: tt.labelMedium?.copyWith(color: colors.ink, fontWeight: FontWeight.w600),
                         ),
                     ],
                   ),

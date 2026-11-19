@@ -10,6 +10,7 @@ import '../../logic/bells.dart';
 import '../../logic/schedule/schedule_service.dart';
 import '../app/scope.dart';
 import '../kit/foundation/ctx.dart';
+import '../kit/foundation/lesson_colors.dart';
 import 'calendar_grid.dart';
 import 'lesson_card.dart';
 import 'lesson_sheet.dart';
@@ -269,7 +270,6 @@ class _WeekEvent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.cs;
     final bell = store.bellFor(date, slot.number)!;
     final absence = store.absenceFor(date, slot.number);
     final mark = store.markFor(date, slot.number);
@@ -277,9 +277,9 @@ class _WeekEvent extends StatelessWidget {
     final name = slot.subjects.map(store.subjectName).join(' / ');
     final time = shortRange(bell.start, bell.end);
     final rooms = slot.entries.map((e) => LessonCard.roomText(e.room)).where((r) => r.isNotEmpty).toSet().join(' / ');
-    final accent = hueAccent(context, subjectHue(slot.subjects.firstOrNull ?? ''));
-    final bg = live ? cs.primaryContainer : Color.alphaBlend(accent.withValues(alpha: .16), cs.surfaceContainerLow);
-    final fg = live ? cs.onPrimaryContainer : cs.onSurface;
+    final colors = LessonColors.of(context, store, slot);
+    final bg = colors.fill;
+    final fg = colors.ink;
     final details = [
       time,
       if (rooms.isNotEmpty) rooms,
@@ -299,7 +299,9 @@ class _WeekEvent extends StatelessWidget {
           onTap: () => showLessonSheet(context, date, slot),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              border: Border(left: BorderSide(color: live ? cs.primary : accent, width: 3)),
+              border: live
+                  ? Border.all(color: colors.edge, width: 2)
+                  : Border(left: BorderSide(color: colors.edge, width: 3)),
             ),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(8, 5, 4, 4),
