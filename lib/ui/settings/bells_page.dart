@@ -288,7 +288,7 @@ class _PairRow extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 14, 12),
           child: Row(children: [
-            NumberBadge('$n', tone: hueTone(context, kSubjectHues[(n - 1) % kSubjectHues.length]), size: 46, round: false),
+            NumberBadge('$n', tone: neutralTone(context), size: 46, round: false),
             const SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -387,7 +387,7 @@ class _PairSheet extends StatelessWidget {
     return SheetScaffold(
       title: '$n пара',
       subtitle: '${bellTitle(bellKey)} · ${spanText(s.minutes)}',
-      leading: NumberBadge('$n', tone: hueTone(context, kSubjectHues[(n - 1) % kSubjectHues.length]), size: 52, round: false),
+      leading: NumberBadge('$n', tone: neutralTone(context), size: 52, round: false),
       trailing: IconButton(
         tooltip: 'Удалить пару',
         icon: Icon(Icons.delete_outline_rounded, color: cs.error),

@@ -9,15 +9,15 @@ import 'package:journal/ui/app/scope.dart';
 import 'package:journal/ui/home/day_card.dart';
 import 'package:journal/ui/home/day_bar.dart';
 import 'package:journal/ui/kit/inputs/pickers.dart';
-import 'package:journal/ui/kit/foundation/lesson_colors.dart';
-import 'package:journal/ui/kit/components/widgets.dart';
-import 'package:journal/ui/schedule/lesson_card.dart';
 import 'package:journal/ui/kit/sheets/select_sheet.dart';
 import 'package:journal/ui/absences/absence_actions.dart';
 import 'package:journal/core/dates.dart';
 import 'package:journal/ui/home/home_page.dart';
 import 'package:journal/ui/schedule/day_timeline.dart';
 import 'package:journal/ui/schedule/week_view.dart';
+import 'package:journal/ui/schedule/calendar_grid.dart';
+import 'package:journal/ui/schedule/lesson_card.dart';
+import 'package:journal/ui/kit/components/widgets.dart';
 import 'package:journal/ui/schedule/schedule_page.dart';
 import 'package:journal/ui/tasks/tasks_page.dart';
 import 'package:journal/ui/theme/app_theme.dart';
@@ -105,36 +105,6 @@ void main() {
     header: (fg, _) => Text('Среда, 18 ноября', style: TextStyle(color: fg)),
     onOpenDay: () {},
   );
-
-  test('первые 72 цвета различимы по RGB и сохраняют контраст текста', () {
-    for (final brightness in Brightness.values) {
-      final backgrounds = <int>{};
-      for (var i = 0; i < 72; i++) {
-        final colors = LessonColors.forId(i, brightness);
-        backgrounds.add(colors.fill.toARGB32());
-        final levels = [colors.ink.computeLuminance(), colors.fill.computeLuminance()]..sort();
-        expect((levels.last + .05) / (levels.first + .05), greaterThanOrEqualTo(4.5));
-      }
-      expect(backgrounds, hasLength(72));
-    }
-  });
-
-  testWidgets('заливка пары совпадает на главной и в календаре до, во время и после занятия', (tester) async {
-    store.putSchedule(DaySchedule(date: now, group: store.settings.group, slots: slots, fetchedAt: now));
-    final color = LessonColors.forId(store.lessonColorId(slots.first), Brightness.dark).fill;
-    await screen(tester, hero(now));
-    expect(
-      find.descendant(
-        of: find.byType(DayBar),
-        matching: find.byWidgetPredicate((w) => w is ColoredBox && w.color == color),
-      ),
-      findsOneWidget,
-    );
-    for (final hour in [7, 12, 16]) {
-      await screen(tester, LessonCard(date: now, slot: slots.first, store: store, minute: hour * 60));
-      expect(tester.widget<SegmentCard>(find.byType(SegmentCard)).color, color);
-    }
-  });
 
   testWidgets('отсчёт до внутреннего перерыва, во время перерыва и после занятий', (tester) async {
     await screen(tester, hero(now));
@@ -236,7 +206,10 @@ void main() {
     expect(result, 'test');
   });
 
-  testWidgets('фон главной заполняет открывшуюся область во время жеста обновления', (tester) async {
+  testWidgets('цвет шапки доходит до верхнего края iPhone при прокрутке в обе стороны', (tester) async {
+    const inset = 59.0;
+    tester.view.padding = const FakeViewPadding(top: inset);
+    tester.view.viewPadding = const FakeViewPadding(top: inset);
     final key = GlobalKey();
     await screen(
       tester,
@@ -246,29 +219,66 @@ void main() {
       ),
       scroll: false,
     );
+    final context = tester.element(find.byType(HomePage));
+    final hero = Theme.of(context).colorScheme.primary.toARGB32();
+    final rgba = ((hero & 0xffffff) << 8) | 0xff;
+    Future<void> check(List<int> ys) async {
+      final samples = await tester.runAsync(() async {
+        final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        final image = await boundary.toImage();
+        try {
+          final pixels = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
+          return [for (final y in ys) pixels.getUint32((y * image.width + 5) * 4)];
+        } finally {
+          image.dispose();
+        }
+      });
+      expect(samples, everyElement(rgba));
+    }
+
+    await check([0, 32, 58, 60]);
     final gesture = await tester.startGesture(const Offset(80, 160));
     await gesture.moveBy(const Offset(0, 32));
     await tester.pump();
     await gesture.moveBy(const Offset(0, 220));
     await tester.pump();
-    final view = tester.widget<CustomScrollView>(find.byType(CustomScrollView));
-    expect(view.controller!.offset, lessThan(-30));
-    final want = Theme.of(tester.element(find.byType(HomePage))).colorScheme.primary.toARGB32();
-    final sample = await tester.runAsync(() async {
-      final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-      final image = await boundary.toImage();
-      try {
-        final pixels = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
-        return pixels.getUint32((10 * image.width + 10) * 4);
-      } finally {
-        image.dispose();
-      }
-    });
-    expect(sample, ((want & 0xffffff) << 8) | 0xff);
+    final position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+    expect(position.pixels, lessThan(-30));
+    await check([0, 32, 58, 60, 80]);
     await gesture.up();
     await tester.pumpAndSettle();
     expect(repo.refreshed, isNotEmpty);
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -680));
+    await tester.pumpAndSettle();
+    expect(position.pixels, greaterThan(0));
+    await check([0, 32, 58]);
     await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('в календаре тон меняется только при смене предмета', (tester) async {
+    LessonSlot slot(int n, List<String> names) => LessonSlot(
+      number: n,
+      entries: [for (final name in names) LessonEntry(subject: name, room: '$n', teacher: 'Преподаватель $n')],
+    );
+    final day = [
+      slot(1, ['АнглЯз']),
+      slot(2, ['Английский язык']),
+      slot(3, ['Физика', 'Химия']),
+      slot(4, ['химия', 'Физика']),
+      slot(5, ['АнглЯз']),
+    ];
+    expect(darkerLessons(day.reversed, store), {3, 4});
+    await screen(tester, DayTimeline(date: now, slots: day, store: store, now: now));
+    final fills = {
+      for (final element in find.byType(LessonCard).evaluate())
+        (element.widget as LessonCard).slot.number: tester
+            .widget<SegmentCard>(find.descendant(of: find.byWidget(element.widget), matching: find.byType(SegmentCard)))
+            .color,
+    };
+    expect(fills[1], fills[2]);
+    expect(fills[1], fills[5]);
+    expect(fills[3], fills[4]);
+    expect(fills[3], isNot(fills[2]));
   });
 
   testWidgets('свайп недели и смена ширины сохраняют выбранный день', (tester) async {

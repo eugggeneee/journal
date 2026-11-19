@@ -1,11 +1,44 @@
+import 'package:flutter/foundation.dart' show listEquals;
+
 import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
+import '../../data/models.dart';
+import '../../data/store.dart';
 import '../kit/foundation/ctx.dart';
 
 const double calendarGutter = 48;
+
+/// Чередование начинается заново в каждом дне. Смена кабинета или порядка
+/// подгрупп не меняет тон двух одинаковых занятий подряд.
+Set<int> darkerLessons(Iterable<LessonSlot> slots, AppStore store) {
+  final ordered = slots.toList()..sort((a, b) => a.number.compareTo(b.number));
+  List<String>? previous;
+  var darker = false;
+  final result = <int>{};
+  for (final slot in ordered) {
+    final subjects =
+        slot.subjects
+            .map(
+              (s) =>
+                  store.subjectName(s.trim()).toLowerCase().replaceAll('ё', 'е').replaceAll(RegExp(r'\s+'), ' ').trim(),
+            )
+            .toSet()
+            .toList()
+          ..sort();
+    if (previous != null && !listEquals(previous, subjects)) darker = !darker;
+    if (darker) result.add(slot.number);
+    previous = subjects;
+  }
+  return result;
+}
+
+Color lessonSurface(BuildContext context, bool darker) {
+  final base = context.cs.surfaceContainerHigh;
+  return darker ? Color.lerp(base, Colors.black, context.isDark ? .16 : .035)! : base;
+}
 
 /// Часы, события и текущее время привязаны к одним координатам. В режиме дня
 /// интервал растёт с содержимым, в режиме недели шкала общая у всех колонок.

@@ -60,7 +60,13 @@ class AppTheme {
     return t;
   }
 
-  static ThemeData build(ColorScheme s) {
+  static ThemeData build(ColorScheme source) {
+    // Сохраняем цвет выбранной темы и тон соответствующих on-ролей.
+    final s = source.copyWith(
+      primary: Color.lerp(source.primary, source.secondary, .16),
+      tertiary: Color.lerp(source.tertiary, source.secondary, .12),
+      error: Color.lerp(source.error, source.onErrorContainer, .08),
+    );
     final shape24 = RoundedRectangleBorder(borderRadius: BorderRadius.circular(24));
     return ThemeData(
       colorScheme: s,

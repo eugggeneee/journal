@@ -8,7 +8,6 @@ import '../../logic/bells.dart';
 import '../absences/absence_actions.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
-import '../kit/foundation/lesson_colors.dart';
 import '../schedule/lesson_card.dart';
 import '../schedule/lesson_sheet.dart';
 import '../grades/grade_sheet.dart';
@@ -97,8 +96,6 @@ class DayCard extends StatelessWidget {
     final remaining = bells.where((b) => minute < b.end).length;
     final end = bells.isEmpty ? null : bells.map((b) => b.end).reduce((a, b) => a > b ? a : b);
     final folded = store.settings.dayCardFolded;
-    final nextColors = next == null ? null : LessonColors.of(context, store, next);
-    final focusColors = focus == null ? null : LessonColors.of(context, store, focus);
 
     return HeroSurface(
       tone: tone,
@@ -111,10 +108,10 @@ class DayCard extends StatelessWidget {
               if (focus != null) ...[
                 CookieIcon(
                   size: 54,
-                  bg: focusColors!.fill,
+                  bg: fg,
                   glyph: Text(
                     '${focus.number}',
-                    style: tt.headlineSmall?.copyWith(color: focusColors.ink, fontWeight: FontWeight.w900),
+                    style: tt.headlineSmall?.copyWith(color: tone.bg, fontWeight: FontWeight.w900),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -227,7 +224,6 @@ class DayCard extends StatelessWidget {
                 ),
               ),
             DayBar(
-              store: store,
               slots: slots,
               profile: profile,
               minute: minute,
@@ -253,7 +249,7 @@ class DayCard extends StatelessWidget {
             if (inLesson && next != null) ...[
               const SizedBox(height: 16),
               Material(
-                color: nextColors!.fill,
+                color: fg.withValues(alpha: .10),
                 borderRadius: BorderRadius.circular(16),
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
@@ -271,20 +267,19 @@ class DayCard extends StatelessWidget {
                                   'Следующая пара',
                                   if (profile[next.number] case final upcoming?) fmtMin(upcoming.start),
                                 ].join(' · '),
-                                style: tt.labelMedium?.copyWith(color: nextColors.ink),
+                                style: tt.labelMedium?.copyWith(color: fg),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 _title(next),
-                                style: tt.titleMedium?.copyWith(color: nextColors.ink, fontWeight: FontWeight.w700),
+                                style: tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w700),
                               ),
-                              if (_place(next).isNotEmpty)
-                                Text(_place(next), style: tt.bodySmall?.copyWith(color: nextColors.ink)),
+                              if (_place(next).isNotEmpty) Text(_place(next), style: tt.bodySmall?.copyWith(color: fg)),
                             ],
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Icon(Icons.chevron_right_rounded, color: nextColors.ink),
+                        Icon(Icons.chevron_right_rounded, color: fg),
                       ],
                     ),
                   ),

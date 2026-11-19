@@ -23,6 +23,7 @@ class DayTimeline extends StatelessWidget {
     final timed = numbered.where((s) => profile[s.number] != null).toList()
       ..sort((a, b) => profile[a.number]!.start.compareTo(profile[b.number]!.start));
     final next = timed.where((s) => minute != null && profile[s.number]!.start > minute).firstOrNull;
+    final darker = darkerLessons(slots, store);
     final rows = <Widget>[];
     for (var i = 0; i < timed.length; i++) {
       final slot = timed[i];
@@ -55,7 +56,14 @@ class DayTimeline extends StatelessWidget {
           minute: minute,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(8, 2, 0, 2),
-            child: LessonCard(slot: slot, date: date, store: store, minute: minute, next: slot == next),
+            child: LessonCard(
+              slot: slot,
+              date: date,
+              store: store,
+              darker: darker.contains(slot.number),
+              minute: minute,
+              next: slot == next,
+            ),
           ),
         ),
       );
@@ -75,7 +83,7 @@ class DayTimeline extends StatelessWidget {
       rows.add(
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 3),
-          child: LessonCard(slot: slot, date: date, store: store),
+          child: LessonCard(slot: slot, date: date, store: store, darker: darker.contains(slot.number)),
         ),
       );
     }

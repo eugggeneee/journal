@@ -10,7 +10,6 @@ import '../../logic/bells.dart';
 import '../../logic/schedule/schedule_service.dart';
 import '../app/scope.dart';
 import '../kit/foundation/ctx.dart';
-import '../kit/foundation/lesson_colors.dart';
 import 'calendar_grid.dart';
 import 'lesson_card.dart';
 import 'lesson_sheet.dart';
@@ -98,6 +97,7 @@ class _WeekViewState extends State<WeekView> {
     final todayIndex = days.indexWhere((d) => sameDay(d, now));
     final minute = now.hour * 60 + now.minute;
     final slots = [for (final d in days) _states[d]?.schedule?.slots ?? <LessonSlot>[]];
+    final darker = [for (final day in slots) darkerLessons(day, store)];
     final bells = [
       for (var i = 0; i < days.length; i++)
         for (final s in slots[i]) ?store.bellFor(days[i], s.number),
@@ -121,6 +121,7 @@ class _WeekViewState extends State<WeekView> {
                   child: _WeekEvent(
                     date: days[i],
                     slot: slot,
+                    darker: darker[i].contains(slot.number),
                     store: store,
                     live: i == todayIndex && minute >= bell.start && minute < bell.end,
                   ),
@@ -142,10 +143,10 @@ class _WeekViewState extends State<WeekView> {
         DayStatus.error => 'Ошибка загрузки',
         _ => null,
       };
-      Widget entry(String label, VoidCallback tap, {bool marked = false}) => Padding(
+      Widget entry(String label, VoidCallback tap, {bool marked = false, Color? background}) => Padding(
         padding: const EdgeInsets.all(2),
         child: Material(
-          color: marked ? cs.tertiaryContainer : cs.surfaceContainer,
+          color: background ?? (marked ? cs.tertiaryContainer : cs.surfaceContainer),
           borderRadius: BorderRadius.circular(8),
           child: InkWell(
             onTap: tap,
@@ -174,6 +175,7 @@ class _WeekViewState extends State<WeekView> {
           entry(
             '${s.number} · ${s.subjects.map(store.subjectName).join(' / ')}',
             () => showLessonSheet(context, date, s),
+            background: lessonSurface(context, darker[i].contains(s.number)),
           ),
       ];
     }
@@ -262,11 +264,18 @@ class _WeekViewState extends State<WeekView> {
 }
 
 class _WeekEvent extends StatelessWidget {
-  const _WeekEvent({required this.date, required this.slot, required this.store, required this.live});
+  const _WeekEvent({
+    required this.date,
+    required this.slot,
+    required this.store,
+    required this.live,
+    required this.darker,
+  });
   final DateTime date;
   final LessonSlot slot;
   final AppStore store;
   final bool live;
+  final bool darker;
 
   @override
   Widget build(BuildContext context) {
@@ -277,9 +286,8 @@ class _WeekEvent extends StatelessWidget {
     final name = slot.subjects.map(store.subjectName).join(' / ');
     final time = shortRange(bell.start, bell.end);
     final rooms = slot.entries.map((e) => LessonCard.roomText(e.room)).where((r) => r.isNotEmpty).toSet().join(' / ');
-    final colors = LessonColors.of(context, store, slot);
-    final bg = colors.fill;
-    final fg = colors.ink;
+    final bg = lessonSurface(context, darker);
+    final fg = context.cs.onSurface;
     final details = [
       time,
       if (rooms.isNotEmpty) rooms,
@@ -298,11 +306,7 @@ class _WeekEvent extends StatelessWidget {
         child: InkWell(
           onTap: () => showLessonSheet(context, date, slot),
           child: DecoratedBox(
-            decoration: BoxDecoration(
-              border: live
-                  ? Border.all(color: colors.edge, width: 2)
-                  : Border(left: BorderSide(color: colors.edge, width: 3)),
-            ),
+            decoration: BoxDecoration(border: live ? Border.all(color: context.cs.outline, width: 2) : null),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(8, 5, 4, 4),
               child: LayoutBuilder(

@@ -4,15 +4,12 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
 import '../../data/models.dart';
-import '../../data/store.dart';
-import '../kit/foundation/lesson_colors.dart';
 
 /// Номера пар, перерывы и метка часов используют одну шкалу в минутах.
 class DayBar extends StatelessWidget {
   const DayBar({
     super.key,
     required this.slots,
-    required this.store,
     required this.profile,
     required this.minute,
     required this.fg,
@@ -21,7 +18,6 @@ class DayBar extends StatelessWidget {
     this.compact = false,
   });
   final List<LessonSlot> slots;
-  final AppStore store;
   final BellProfile profile;
   final int minute;
   final Color fg;
@@ -52,7 +48,6 @@ class DayBar extends StatelessWidget {
             final n = numbers[i];
             final b = profile[n]!;
             final slot = slots.firstWhere((s) => s.number == n);
-            final colors = LessonColors.of(context, store, slot);
             final left = x(b.start);
             final width = math.max(1.0, x(b.end) - left - 1);
             final done = ((minute - b.start) / b.minutes).clamp(0.0, 1.0).toDouble();
@@ -82,14 +77,14 @@ class DayBar extends StatelessWidget {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      ColoredBox(color: colors.fill),
+                      ColoredBox(color: fg.withValues(alpha: .12)),
                       if (done > 0)
                         Positioned(
                           left: 0,
                           bottom: 0,
                           width: width * done,
                           height: compact ? 3 : 4,
-                          child: ColoredBox(color: colors.edge),
+                          child: ColoredBox(color: fg),
                         ),
                       if (b.hasBreak && !compact && done < 1)
                         Positioned(
@@ -97,7 +92,7 @@ class DayBar extends StatelessWidget {
                           width: math.max(2.0, b.breakMinutes / b.minutes * width),
                           height: 4,
                           bottom: 0,
-                          child: ColoredBox(color: colors.edge.withValues(alpha: .45)),
+                          child: ColoredBox(color: fg.withValues(alpha: .35)),
                         ),
                       if (!compact && width >= 16)
                         Center(
@@ -109,7 +104,7 @@ class DayBar extends StatelessWidget {
                                 Text(
                                   '$n',
                                   style: TextStyle(
-                                    color: colors.ink,
+                                    color: fg,
                                     fontWeight: FontWeight.w800,
                                     fontSize: 18,
                                     height: 1,
@@ -123,7 +118,7 @@ class DayBar extends StatelessWidget {
                                       fontSize: 11,
                                       fontFeatures: const [FontFeature.tabularFigures()],
                                       fontWeight: FontWeight.w600,
-                                      color: colors.ink,
+                                      color: fg,
                                     ),
                                   ),
                                 ],

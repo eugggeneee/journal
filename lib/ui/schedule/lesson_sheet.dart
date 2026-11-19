@@ -11,7 +11,6 @@ import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
-import '../kit/foundation/lesson_colors.dart';
 import '../kit/inputs/pickers.dart';
 import '../kit/sheets/select_sheet.dart';
 import '../kit/sheets/sheet.dart';
@@ -135,7 +134,7 @@ class _LessonSheetState extends State<_LessonSheet> {
           ),
     ];
 
-    final tone = LessonColors.of(context, store, slot).tone;
+    final tone = neutralTone(context);
 
     return SheetScaffold(
       title: slot.subjects.map(store.subjectName).join(' / '),
