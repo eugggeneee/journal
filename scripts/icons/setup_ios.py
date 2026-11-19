@@ -1,64 +1,15 @@
 #!/usr/bin/env python3
-"""Добавляет в сгенерированный iOS-проект альтернативные значки приложения.
-
-Запускается в CI после `flutter create` и `dart run flutter_launcher_icons`:
-  1) для каждой темы создаётся набор значков Icon_<id>.appiconset в Assets.xcassets;
-     в каждом наборе три варианта iOS 18+: обычный, тёмный и тонированный (оттенки серого);
-  2) обычный AppIcon заменяется таким же набором из трёх вариантов;
-  3) в настройки сборки добавляется ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES;
-  4) в AppDelegate.swift регистрируется канал `eugggeneee.journal/app_icon`.
-Если какой-то шаг не удаётся, скрипт печатает предупреждение и не ломает сборку.
-"""
+"""Подключает наборы Icon Composer к ресурсам Runner и системному выбору значка."""
+import hashlib
 import json
 import os
 import re
 import shutil
-import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ICONS = os.path.join(ROOT, 'assets', 'icons')
 RUNNER = os.path.join(ROOT, 'ios', 'Runner')
 PBX = os.path.join(ROOT, 'ios', 'Runner.xcodeproj', 'project.pbxproj')
-
-CONTENTS = '''{
-  "images" : [
-    {
-      "filename" : "icon.png",
-      "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "dark"
-        }
-      ],
-      "filename" : "icon_dark.png",
-      "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "tinted"
-        }
-      ],
-      "filename" : "icon_tinted.png",
-      "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
-    }
-  ],
-  "info" : {
-    "author" : "xcode",
-    "version" : 1
-  }
-}
-'''
 
 SWIFT = '''
 
@@ -93,51 +44,46 @@ final class AppIconChannel {
 '''
 
 
-def warn(msg):
-    print(f'::warning::{msg}')
-
-
-def write_set(folder, icon_id):
-    """Набор значков из трёх вариантов: обычный, тёмный и тонированный."""
-    os.makedirs(folder, exist_ok=True)
-    for name in os.listdir(folder):
-        if name.endswith('.png'):
-            os.remove(os.path.join(folder, name))
-    src = os.path.join(ICONS, icon_id)
-    shutil.copy(os.path.join(src, 'ios.png'), os.path.join(folder, 'icon.png'))
-    shutil.copy(os.path.join(src, 'ios_dark.png'), os.path.join(folder, 'icon_dark.png'))
-    shutil.copy(os.path.join(src, 'ios_tinted.png'), os.path.join(folder, 'icon_tinted.png'))
-    with open(os.path.join(folder, 'Contents.json'), 'w', encoding='utf-8') as f:
-        f.write(CONTENTS)
-
-
-def make_sets(ids):
-    names = []
-    cat = os.path.join(RUNNER, 'Assets.xcassets')
-    if not os.path.isdir(cat):
-        return None
-    for icon_id in ids:
-        if icon_id == 'default':
-            # обычный значок: заменяем набор flutter_launcher_icons, чтобы появились тёмный и тонированный варианты
-            write_set(os.path.join(cat, 'AppIcon.appiconset'), 'default')
+def install_icons(ids):
+    source = os.path.join(ICONS, 'ios')
+    names = ['AppIcon' if i == 'default' else 'Icon_' + i for i in ids]
+    for name in names:
+        folder = name + '.icon'
+        shutil.copytree(os.path.join(source, folder), os.path.join(RUNNER, folder), dirs_exist_ok=True)
+    # Этот каталог с одним стандартным значком создаёт flutter create.
+    legacy = os.path.join(RUNNER, 'Assets.xcassets', 'AppIcon.appiconset')
+    if os.path.isdir(legacy):
+        shutil.rmtree(legacy)
+    with open(PBX, encoding='utf-8') as f:
+        project = f.read()
+    # Привязываем значки к той же группе и фазе ресурсов, что и Assets.xcassets.
+    for name in names:
+        resource = name + '.icon'
+        ref, build = [hashlib.sha256((resource + k).encode()).hexdigest()[:24].upper() for k in ('ref', 'build')]
+        if f'{build} /* {resource} in Resources */,' in project:
             continue
-        name = f'Icon_{icon_id}'
-        write_set(os.path.join(cat, f'{name}.appiconset'), icon_id)
-        names.append(name)
-    return names
-
-
-def patch_pbx(names):
-    s = open(PBX, encoding='utf-8').read()
-    if 'ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES' in s:
-        return True
-    pat = re.compile(r'^(\s*)ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;$', re.M)
-    if not pat.search(s):
-        return False
-    value = ' '.join(names)
-    s = pat.sub(lambda m: f'{m.group(0)}\n{m.group(1)}ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "{value}";', s)
-    open(PBX, 'w', encoding='utf-8').write(s)
-    return True
+        entries = [
+            ('/* End PBXFileReference section */', f'\t\t{ref} /* {resource} */ = {{isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = {resource}; sourceTree = "<group>"; }};'),
+            ('/* End PBXBuildFile section */', f'\t\t{build} /* {resource} in Resources */ = {{isa = PBXBuildFile; fileRef = {ref} /* {resource} */; }};'),
+        ]
+        for comment, entry in [('Assets.xcassets', f'{ref} /* {resource} */,'), ('Assets.xcassets in Resources', f'{build} /* {resource} in Resources */,')]:
+            anchor = re.search(r'^\s*[0-9A-F]{24} /\* ' + re.escape(comment) + r' \*/,\s*$', project, re.M)
+            if not anchor:
+                raise ValueError('Не найдена группа Runner: ' + comment)
+            entries.append((anchor.group(0), '\t\t\t\t' + entry))
+        for anchor, entry in entries:
+            if project.count(anchor) != 1:
+                raise ValueError('Неоднозначная структура проекта: ' + anchor)
+            project = project.replace(anchor, entry + '\n' + anchor)
+    key = 'ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES'
+    project = re.sub(r'^[ \t]*' + key + r' = .*?;\n', '', project, flags=re.M)
+    pattern = r'^([ \t]*)ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;$'
+    alternatives = ' '.join(n for n in names if n != 'AppIcon')
+    project, count = re.subn(pattern, lambda m: m[0] + '\n' + m[1] + key + ' = "' + alternatives + '";', project, flags=re.M)
+    if not count:
+        raise ValueError('Не найдена настройка основного значка Runner')
+    with open(PBX, 'w', encoding='utf-8') as f:
+        f.write(project)
 
 
 def patch_delegate():
@@ -158,23 +104,11 @@ def patch_delegate():
 
 
 def main():
-    if not os.path.isdir(RUNNER):
-        warn('Папка ios/Runner не найдена (сначала flutter create)')
-        return 0
-    ids = json.load(open(os.path.join(ICONS, 'icons.json'), encoding='utf-8'))
-    names = make_sets(ids)
-    if not names:
-        warn('Assets.xcassets не найден — альтернативные значки не добавлены')
-        return 0
-    if not patch_pbx(names):
-        warn('Не удалось прописать альтернативные значки в project.pbxproj — смена значка не заработает')
-        return 0
+    with open(os.path.join(ICONS, 'icons.json'), encoding='utf-8') as f:
+        install_icons(json.load(f))
     if not patch_delegate():
-        warn('Не удалось подключить канал в AppDelegate.swift — смена значка не заработает')
-        return 0
-    print(f'Альтернативные значки добавлены: {len(names)}')
-    return 0
+        raise RuntimeError('Не удалось подключить канал в AppDelegate.swift')
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    main()

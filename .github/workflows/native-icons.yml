@@ -1,0 +1,95 @@
+name: Native icons
+on:
+  pull_request:
+    paths:
+      - 'assets/icons/ios/**'
+      - 'assets/icons/android/**'
+      - 'scripts/icons/**'
+      - '.github/workflows/native-icons.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  iphone:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Собрать и установить на iPhone
+        run: |
+          set -euo pipefail
+          flutter create --platforms=ios --org eugggeneee --project-name journal .
+          python3 scripts/icons/setup_ios.py
+          device=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; ds=json.load(sys.stdin)["devices"]; print(next(d["udid"] for runtime in reversed(list(ds)) for d in ds[runtime] if "iPhone" in d["name"]))')
+          xcrun simctl boot "$device"
+          flutter build ios --simulator --debug
+          app=build/ios/iphonesimulator/Runner.app
+          python3 - "$app" <<'PY'
+          import json, pathlib, plistlib, sys
+          bundle = pathlib.Path(sys.argv[1])
+          info = plistlib.loads((bundle/'Info.plist').read_bytes())
+          icons = info['CFBundleIcons']
+          expected = {'Icon_' + k for k in json.loads(pathlib.Path('assets/icons/icons.json').read_text()) if k != 'default'}
+          assert icons['CFBundlePrimaryIcon']['CFBundleIconName'] == 'AppIcon'
+          assert set(icons['CFBundleAlternateIcons']) == expected
+          PY
+          xcrun simctl bootstatus "$device" -b
+          xcrun simctl install "$device" "$app"
+          xcrun simctl launch "$device" eugggeneee.journal
+          xcrun simctl terminate "$device" eugggeneee.journal
+          mkdir -p build/icon-review/preview
+          for appearance in light dark; do
+            xcrun simctl ui "$device" appearance "$appearance"
+            sleep 2
+            xcrun simctl io "$device" screenshot "build/icon-review/iphone-$appearance.png"
+          done
+          ictool="$(xcode-select -p)/../Applications/Icon Composer.app/Contents/Executables/ictool"
+          for icon in assets/icons/ios/*.icon; do
+            name=$(basename "$icon" .icon)
+            id=${name#Icon_}
+            if [[ $name == AppIcon ]]; then id=default; fi
+            "$ictool" "$icon" --export-image --output-file "build/icon-review/preview/$id.png" --platform iOS --rendition Default --width 128 --height 128 --scale 1
+          done
+          "$ictool" assets/icons/ios/AppIcon.icon --export-image --output-file build/icon-review/logo.png --platform iOS --rendition Default --width 1024 --height 1024 --scale 1
+      - uses: actions/upload-artifact@v5
+        with:
+          name: iphone-icons
+          path: build/icon-review/
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Собрать приложение
+        run: |
+          flutter create --platforms=android --org eugggeneee --project-name journal .
+          python3 scripts/icons/setup_android.py
+          flutter build apk --debug
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: bash scripts/icons/check_launcher.sh
+      - uses: actions/upload-artifact@v5
+        with:
+          name: android-icons
+          path: build/icon-review/

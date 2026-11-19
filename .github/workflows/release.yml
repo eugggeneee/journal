@@ -98,7 +98,6 @@ jobs:
           PY
 
       - run: flutter pub get
-      - run: dart run flutter_launcher_icons
 
       - name: Значки под каждую тему (смена значка)
         run: python3 scripts/icons/setup_android.py
@@ -175,7 +174,6 @@ jobs:
 
       - run: xcodebuild -version
       - run: flutter pub get
-      - run: dart run flutter_launcher_icons
 
       - name: Значки под каждую тему (смена значка)
         run: python3 scripts/icons/setup_ios.py

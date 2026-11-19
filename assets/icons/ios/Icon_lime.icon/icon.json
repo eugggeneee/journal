@@ -1,0 +1,46 @@
+{
+  "fill": {
+    "solid": "srgb:0.17647,0.18431,0.09412,1.00000"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "glass": true,
+          "image-name": "bell.png",
+          "name": "bell"
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.35
+      }
+    },
+    {
+      "layers": [
+        {
+          "image-name": "plates.png",
+          "name": "plates"
+        }
+      ],
+      "shadow": {
+        "kind": "none",
+        "opacity": 0
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0
+      }
+    }
+  ],
+  "supported-platforms": {
+    "circles": [
+      "watchOS"
+    ],
+    "squares": "shared"
+  }
+}
