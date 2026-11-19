@@ -9,6 +9,9 @@ import 'package:journal/ui/app/scope.dart';
 import 'package:journal/ui/home/day_card.dart';
 import 'package:journal/ui/home/day_bar.dart';
 import 'package:journal/ui/kit/inputs/pickers.dart';
+import 'package:journal/ui/kit/foundation/lesson_colors.dart';
+import 'package:journal/ui/kit/components/widgets.dart';
+import 'package:journal/ui/schedule/lesson_card.dart';
 import 'package:journal/ui/kit/sheets/select_sheet.dart';
 import 'package:journal/ui/absences/absence_actions.dart';
 import 'package:journal/core/dates.dart';
@@ -102,6 +105,36 @@ void main() {
     header: (fg, _) => Text('Среда, 18 ноября', style: TextStyle(color: fg)),
     onOpenDay: () {},
   );
+
+  test('первые 72 цвета различимы по RGB и сохраняют контраст текста', () {
+    for (final brightness in Brightness.values) {
+      final backgrounds = <int>{};
+      for (var i = 0; i < 72; i++) {
+        final colors = LessonColors.forId(i, brightness);
+        backgrounds.add(colors.fill.toARGB32());
+        final levels = [colors.ink.computeLuminance(), colors.fill.computeLuminance()]..sort();
+        expect((levels.last + .05) / (levels.first + .05), greaterThanOrEqualTo(4.5));
+      }
+      expect(backgrounds, hasLength(72));
+    }
+  });
+
+  testWidgets('заливка пары совпадает на главной и в календаре до, во время и после занятия', (tester) async {
+    store.putSchedule(DaySchedule(date: now, group: store.settings.group, slots: slots, fetchedAt: now));
+    final color = LessonColors.forId(store.lessonColorId(slots.first), Brightness.dark).fill;
+    await screen(tester, hero(now));
+    expect(
+      find.descendant(
+        of: find.byType(DayBar),
+        matching: find.byWidgetPredicate((w) => w is ColoredBox && w.color == color),
+      ),
+      findsOneWidget,
+    );
+    for (final hour in [7, 12, 16]) {
+      await screen(tester, LessonCard(date: now, slot: slots.first, store: store, minute: hour * 60));
+      expect(tester.widget<SegmentCard>(find.byType(SegmentCard)).color, color);
+    }
+  });
 
   testWidgets('отсчёт до внутреннего перерыва, во время перерыва и после занятий', (tester) async {
     await screen(tester, hero(now));

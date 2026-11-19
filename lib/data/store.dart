@@ -25,6 +25,7 @@ class AppStore extends ChangeNotifier {
   List<DayMark> marks = [];
   List<Task> tasks = [];
   final Map<String, DaySchedule> _cache = {}; // 'группа|yyyy-MM-dd'
+  final Map<String, int> _lessonColors = {};
   bool get hasGroup => settings.group.isNotEmpty;
 
   static Future<AppStore> load() async {
@@ -32,6 +33,7 @@ class AppStore extends ChangeNotifier {
     final s = AppStore._(prefs);
     s._readData();
     s._readCache();
+    if (s._registerLessonColors(s._cache.values)) s._saveData();
     return s;
   }
 
@@ -62,6 +64,20 @@ class AppStore extends ChangeNotifier {
     final restoredAbsences = records('absences', Absence.tryFromJson);
     final restoredMarks = records('marks', DayMark.tryFromJson);
     final restoredTasks = records('tasks', Task.tryFromJson);
+    final rawColors = j['lessonColors'];
+    final restoredColors = <String, int>{};
+    final used = <int>{};
+    if (rawColors is Map) {
+      for (final entry in rawColors.entries) {
+        final id = entry.value;
+        if (entry.key is String && id is int && id >= 0 && id <= 0x7fffffff && used.add(id)) {
+          restoredColors[entry.key as String] = id;
+        }
+      }
+    }
+    if (rawColors is Map) {
+      _lessonColors..clear()..addAll(restoredColors);
+    }
     settings = restoredSettings;
     grades = restoredGrades;
     absences = restoredAbsences;
@@ -90,6 +106,7 @@ class AppStore extends ChangeNotifier {
         'absences': absences.map((a) => a.toJson()).toList(),
         'marks': marks.map((m) => m.toJson()).toList(),
         'tasks': tasks.map((t) => t.toJson()).toList(),
+        'lessonColors': Map<String, int>.of(_lessonColors),
       };
 
   void _saveData() => _prefs.setString(_kData, jsonEncode(exportMap()));
@@ -116,6 +133,7 @@ class AppStore extends ChangeNotifier {
         _cache.remove(entries[i].key);
       }
     }
+    if (_registerLessonColors([s])) _saveData();
     _saveCache();
     notifyListeners();
   }
@@ -457,6 +475,40 @@ class AppStore extends ChangeNotifier {
 
   String subjectName(String key) => builtinSubjectNames[key] ?? key;
 
+  // Отображаемое полное название объединяет известные варианты сокращений колледжа.
+  // Порядок подгрупп, кабинет и время занятия на идентификатор не влияют.
+  String _lessonKey(LessonSlot slot) {
+    final names = slot.subjects
+        .map((s) => subjectName(s.trim()).toLowerCase().replaceAll('ё', 'е').replaceAll(RegExp(r'\s+'), ' ').trim())
+        .where((s) => s.isNotEmpty)
+        .toSet()
+        .toList()..sort();
+    return jsonEncode(names);
+  }
+
+  bool _registerLessonColors(Iterable<DaySchedule> schedules) {
+    final keys = {for (final day in schedules) for (final slot in day.slots) _lessonKey(slot)}
+      ..removeAll(_lessonColors.keys);
+    if (keys.isEmpty) return false;
+    final used = _lessonColors.values.toSet();
+    var id = 0;
+    for (final key in keys.toList()..sort()) {
+      while (used.contains(id)) {
+        id++;
+      }
+      _lessonColors[key] = id++;
+    }
+    return true;
+  }
+
+  int lessonColorId(LessonSlot slot) {
+    final key = _lessonKey(slot);
+    final saved = _lessonColors[key];
+    if (saved != null) return saved;
+    // Предпросмотр или незакэшированный день: не записываем настройки во время build.
+    return key.codeUnits.fold<int>(0, (h, u) => (31 * h + u) & 0x7fffffff);
+  }
+
   /// Все известные предметы: из расписания, оценок, пропусков и добавленные вручную.
   List<String> knownSubjects() {
     final set = <String>{};
@@ -496,6 +548,7 @@ class AppStore extends ChangeNotifier {
         return 'В резервной копии отсутствуют данные';
       }
       _applyBackup(decoded, strict: true);
+      _registerLessonColors(_cache.values);
       _changed();
       return null;
     } catch (_) {
