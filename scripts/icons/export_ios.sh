@@ -11,6 +11,9 @@ if "$ictool" "$src/AppIcon.icon" --export-preview iOS Light 1024 1024 1 "$out/lo
     if [[ $id == AppIcon ]]; then id=default; fi
     "$ictool" "$icon" --export-preview iOS Light 128 128 1 "$out/preview/$id.png"
   done
+  "$ictool" "$src/AppIcon.icon" --export-preview iOS Dark 128 128 1 "$out/dark.png"
+  "$ictool" "$src/AppIcon.icon" --export-preview iOS Tinted 128 128 1 "$out/tinted.png" ||
+    "$ictool" "$src/AppIcon.icon" --export-preview iOS TintedLight 128 128 1 "$out/tinted.png"
 else
   # На виртуальных Mac без подходящего Metal-драйвера используем растры iPhone из actool.
   compiled=$(mktemp -d)
