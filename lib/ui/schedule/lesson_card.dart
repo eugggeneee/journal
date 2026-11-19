@@ -69,9 +69,24 @@ class LessonCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    [info, ?state].join(' · '),
-                    style: tt.labelLarge?.copyWith(color: muted, fontWeight: FontWeight.w700),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 2,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        info,
+                        style: tt.labelLarge?.copyWith(color: muted, fontWeight: FontWeight.w700),
+                      ),
+                      if (state != null)
+                        Text(
+                          state,
+                          style: tt.labelMedium?.copyWith(
+                            color: live ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 IconButton(

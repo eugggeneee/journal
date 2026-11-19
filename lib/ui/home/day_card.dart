@@ -36,9 +36,20 @@ class DayCard extends StatelessWidget {
   final Widget? metrics;
 
   String _title(LessonSlot slot) => slot.subjects.map(store.subjectName).join(' / ');
-  String _place(LessonSlot slot) => [
-    for (final e in slot.entries) [LessonCard.roomText(e.room), e.teacher].where((v) => v.isNotEmpty).join(' · '),
-  ].where((v) => v.isNotEmpty).join(' / ');
+  String _place(LessonSlot slot) {
+    final rooms = <String, Set<String>>{};
+    for (final entry in slot.entries) {
+      final teachers = rooms.putIfAbsent(LessonCard.roomText(entry.room), () => <String>{});
+      if (entry.teacher.isNotEmpty) teachers.add(entry.teacher);
+    }
+    return rooms.entries
+        .map(
+          (entry) =>
+              [if (entry.key.isNotEmpty) entry.key, if (entry.value.isNotEmpty) entry.value.join(', ')].join(' · '),
+        )
+        .where((text) => text.isNotEmpty)
+        .join(' / ');
+  }
 
   @override
   Widget build(BuildContext context) {
