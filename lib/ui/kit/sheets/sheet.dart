@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../core/dates.dart';
 import '../animation/motion.dart';
 import '../foundation/ctx.dart';
+import '../components/widgets.dart';
 
 const double _wideBreakpoint = 700;
 
@@ -146,15 +147,7 @@ class FieldLabel extends StatelessWidget {
   final double top;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.only(top: top, bottom: 10),
-        child: Row(
-          children: [
-            Expanded(child: Text(text, style: context.tt.titleSmall?.copyWith(fontWeight: FontWeight.w700))),
-            if (trailing != null) Text(trailing!, style: context.tt.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant)),
-          ],
-        ),
-      );
+  Widget build(BuildContext context) => SectionHeader(text, trailing: trailing, top: top);
 }
 
 Future<bool> confirmDialog(

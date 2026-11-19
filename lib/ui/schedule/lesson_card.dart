@@ -9,6 +9,8 @@ import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
 import 'calendar_grid.dart';
 import 'lesson_sheet.dart';
+import 'marks.dart';
+import '../tasks/task_tile.dart';
 
 /// Содержимое растёт вместе с подгруппами, пометками и системным шрифтом.
 class LessonCard extends StatelessWidget {
@@ -43,7 +45,6 @@ class LessonCard extends StatelessWidget {
     final tasks = store.tasksForLesson(date, slot.number);
     final fg = cs.onSurface;
     final muted = cs.onSurfaceVariant;
-    final chip = Tone(cs.secondaryContainer, cs.onSecondaryContainer);
     final info = [if (bell != null) shortRange(bell.start, bell.end), '${slot.number} пара'].join(' · ');
     final state = inner
         ? 'Сейчас ${innerBreakWord(bell)}'
@@ -121,7 +122,7 @@ class LessonCard extends StatelessWidget {
                   spacing: 4,
                   runSpacing: 4,
                   children: [
-                    if (mark != null) Pill(mark.label, tone: chip, icon: Icons.bookmark_rounded),
+                    if (mark != null) MarkPill(mark),
                     if (absence != null)
                       Pill(
                         '${absence.hours} ч · ${absence.excused ? 'по уважительной' : 'без уважительной'}',
@@ -145,40 +146,7 @@ class LessonCard extends StatelessWidget {
                 ),
               ),
             for (final task in tasks)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      task.done
-                          ? Icons.check_circle_outline_rounded
-                          : (task.homework ? Icons.menu_book_rounded : Icons.sticky_note_2_rounded),
-                      size: 18,
-                      color: muted,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${task.homework ? 'Задание' : 'Заметка'} · до ${shortDate(task.due)}${task.done ? ' · выполнено' : ''}',
-                            style: tt.labelMedium?.copyWith(color: muted),
-                          ),
-                          Text(
-                            task.text,
-                            style: tt.bodyMedium?.copyWith(
-                              color: fg,
-                              decoration: task.done ? TextDecoration.lineThrough : null,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              TaskSummary(task: task, store: store, showKind: true),
           ],
         ),
       ),

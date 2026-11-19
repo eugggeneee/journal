@@ -42,9 +42,13 @@ class TaskCheck extends StatelessWidget {
     void toggle() {
       Haptics.selection();
       store.toggleTask(task.id);
-      showUndo(ScaffoldMessenger.of(context), done ? 'Задание снова открыто' : 'Задание выполнено',
-            () => store.saveTask(task));
+      showUndo(
+        ScaffoldMessenger.of(context),
+        done ? 'Задание снова открыто' : 'Задание выполнено',
+        () => store.saveTask(task),
+      );
     }
+
     return Semantics(
       container: true,
       button: true,
@@ -93,11 +97,7 @@ class TaskTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.cs;
-    final tt = context.tt;
     final t = task;
-    final due = dueTone(context, t);
-    final kind = t.homework ? Tone(cs.primaryContainer, cs.onPrimaryContainer) : Tone(cs.tertiaryContainer, cs.onTertiaryContainer);
     return SegmentCard(
       index: index,
       count: count,
@@ -109,35 +109,62 @@ class TaskTile extends StatelessWidget {
         showUndo(messenger, 'Задание удалено', () => store.saveTask(t));
       },
       onTap: () => showTaskSheet(context, edit: t),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(6, 6, 14, 6),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          TaskCheck(task: t, store: store),
-          const SizedBox(width: 2),
+      child: TaskSummary(task: t, store: store, showKind: true),
+    );
+  }
+}
+
+/// Содержимое задания на главной, в журнале и в расписании.
+class TaskSummary extends StatelessWidget {
+  const TaskSummary({super.key, required this.task, required this.store, this.showKind = false});
+  final Task task;
+  final AppStore store;
+  final bool showKind;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TaskCheck(task: task, store: store),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(top: 10, bottom: 6),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                AnimatedDefaultTextStyle(
-                  duration: context.motion(Motion.short),
-                  style: (tt.titleMedium ?? const TextStyle()).copyWith(
-                    fontWeight: FontWeight.w700,
-                    height: 1.25,
-                    decoration: t.done ? TextDecoration.lineThrough : TextDecoration.none,
-                    color: t.done ? cs.onSurfaceVariant : cs.onSurface,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    task.text,
+                    style: context.tt.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      height: 1.25,
+                      color: task.done ? cs.onSurfaceVariant : cs.onSurface,
+                      decoration: task.done ? TextDecoration.lineThrough : null,
+                    ),
                   ),
-                  child: Text(t.text),
-                ),
-                const SizedBox(height: 6),
-                Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                  Pill(t.homework ? 'Домашнее задание' : 'Заметка', tone: kind, icon: t.homework ? Icons.menu_book_rounded : Icons.sticky_note_2_rounded),
-                  if (t.subject.isNotEmpty) Text(store.subjectName(t.subject), style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-                  Pill(dueText(t.due), tone: due, icon: Icons.event_rounded),
-                ]),
-              ]),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Pill(dueText(task.due), tone: dueTone(context, task), icon: Icons.event_rounded),
+                      if (showKind) Text(task.homework ? 'Домашнее задание' : 'Заметка', style: context.tt.labelMedium),
+                      if (task.subject.isNotEmpty)
+                        Text(
+                          store.subjectName(task.subject),
+                          style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-        ]),
+        ],
       ),
     );
   }

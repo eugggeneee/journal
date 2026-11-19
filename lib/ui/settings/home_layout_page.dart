@@ -14,7 +14,7 @@ class HomeLayoutPage extends StatelessWidget {
   const HomeLayoutPage({super.key});
 
   static const _info = {
-    kBlockMetrics: (Icons.insights_rounded, 'Показатели', 'Средний балл и пропуски месяца', kHueBlue),
+    kBlockMetrics: (Icons.insights_rounded, 'Показатели', 'Балл, пропуски и задания в карточке дня', kHueBlue),
     kBlockTasks: (Icons.task_alt_rounded, 'Задания', 'Домашнее задание и заметки со сроком', kHueTeal),
     kBlockTomorrow: (Icons.event_rounded, 'Завтра', 'Сколько пар и когда начало', kHueViolet),
     kBlockWeek: (Icons.view_week_rounded, 'Эта неделя', 'Число пар по дням', kHueGreen),
@@ -26,12 +26,12 @@ class HomeLayoutPage extends StatelessWidget {
     final store = StoreScope.of(context);
     final cs = context.cs;
     final tt = context.tt;
-    final order = store.settings.homeOrder;
+    final order = [kBlockMetrics, ...store.settings.homeOrder.where((id) => id != kBlockMetrics)];
     final hidden = store.settings.homeHidden;
 
     void move(int i, int delta) {
       final j = i + delta;
-      if (j < 0 || j >= order.length) return;
+      if (i == 0 || j < 1 || j >= order.length) return;
       Haptics.selection();
       final next = [...order];
       final item = next.removeAt(i);
@@ -88,12 +88,12 @@ class HomeLayoutPage extends StatelessWidget {
                         Column(mainAxisSize: MainAxisSize.min, children: [
                           SettingsSwitch(value: visible, onChanged: (v) => toggle(id, v)),
                         ]),
-                        Column(mainAxisSize: MainAxisSize.min, children: [
+                        if (id != kBlockMetrics) Column(mainAxisSize: MainAxisSize.min, children: [
                           IconButton(
                             tooltip: 'Выше',
                             visualDensity: VisualDensity.compact,
                             icon: const Icon(Icons.keyboard_arrow_up_rounded),
-                            onPressed: i == 0 ? null : () => move(i, -1),
+                            onPressed: i == 1 ? null : () => move(i, -1),
                           ),
                           IconButton(
                             tooltip: 'Ниже',

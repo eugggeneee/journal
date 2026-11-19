@@ -33,11 +33,11 @@ class DayBar extends StatelessWidget {
     final start = profile[numbers.first]!.start;
     final end = numbers.map((n) => profile[n]!.end).reduce(math.max);
     final active = minute >= start && minute < end;
-    final height = compact ? 8.0 : 50.0;
+    final height = compact ? 48.0 : 50.0;
     final top = !compact && active ? 28.0 : 0.0;
     return Semantics(
       label: 'Ход дня, с ${fmtMin(start)} до ${fmtMin(end)}${active ? ', сейчас ${fmtMin(minute)}' : ''}',
-      excludeSemantics: compact,
+      container: true,
       child: LayoutBuilder(
         builder: (context, box) {
           double x(int m) => (m - start) / (end - start) * box.maxWidth;
@@ -94,7 +94,7 @@ class DayBar extends StatelessWidget {
                           bottom: 0,
                           child: ColoredBox(color: fg.withValues(alpha: .35)),
                         ),
-                      if (!compact && width >= 16)
+                      if (width >= 16)
                         Center(
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
@@ -103,14 +103,9 @@ class DayBar extends StatelessWidget {
                               children: [
                                 Text(
                                   '$n',
-                                  style: TextStyle(
-                                    color: fg,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 18,
-                                    height: 1,
-                                  ),
+                                  style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 18, height: 1),
                                 ),
-                                if (width >= 32) ...[
+                                if (!compact && width >= 32) ...[
                                   const SizedBox(height: 4),
                                   Text(
                                     fmtMin(b.start),
@@ -126,17 +121,16 @@ class DayBar extends StatelessWidget {
                             ),
                           ),
                         ),
-                      if (!compact)
-                        Positioned.fill(
-                          child: Semantics(
-                            button: true,
-                            label: '${slot.number} пара, ${slot.subjects.join(' / ')}, ${fmtMin(b.start)}',
-                            child: Material(
-                              type: MaterialType.transparency,
-                              child: InkWell(onTap: () => onOpen(slot)),
-                            ),
+                      Positioned.fill(
+                        child: Semantics(
+                          button: true,
+                          label: '${slot.number} пара, ${slot.subjects.join(' / ')}, ${fmtMin(b.start)}',
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: InkWell(onTap: () => onOpen(slot)),
                           ),
                         ),
+                      ),
                     ],
                   ),
                 ),

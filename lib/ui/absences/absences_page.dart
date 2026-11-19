@@ -97,15 +97,15 @@ class _AbsencesPageState extends State<AbsencesPage> with WidgetsBindingObserver
             ]
           : [
               Inset(children: [
-                LimitBanners(monthHours: monthHours, semesterHours: semesterHours, semester: semester),
-                AbsencesHero(stats: stats),
-                const SizedBox(height: 12),
                 LimitCounters(
                   monthHours: monthHours,
                   semesterHours: semesterHours,
                   semester: semester,
                   onSemesterTap: () => _openSemester(context, semester, semesterHours),
                 ),
+                const SizedBox(height: 12),
+                LimitBanners(monthHours: monthHours, semesterHours: semesterHours, semester: semester),
+                AbsencesHero(stats: stats),
                 const SizedBox(height: 12),
                 AbsenceHeatmap(store: store),
                 const SizedBox(height: 16),
@@ -236,7 +236,7 @@ class AbsencesHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tone = absenceTone(context, excused: false);
+    final tone = Tone(context.cs.surfaceContainerLow, context.cs.onSurface);
     final fg = tone.fg;
     final unex = stats.unexcusedHours;
     final ex = stats.excusedHours;
@@ -249,18 +249,9 @@ class AbsencesHero extends StatelessWidget {
     return HeroCard(
       tone: tone,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        HeroHeader(
-          caption: 'Всего за всё время',
-          fg: fg,
-          value: AnimatedNumber(
-            value: stats.totalHours.toDouble(),
-            format: (v) => '${v.round()}',
-            style: context.tt.displayMedium?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1.05),
-          ),
-          unit: plural(stats.totalHours, 'час', 'часа', 'часов'),
-          aside: [pairs],
-        ),
-        const SizedBox(height: 18),
+        Text('По причинам', style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w700)),
+        Text('${hoursText(stats.totalHours)} за всё время · $pairs', style: context.tt.bodyMedium?.copyWith(color: fg)),
+        const SizedBox(height: 12),
         _SplitBar(unexcused: unex, excused: ex, unexColor: unexColor, exColor: exColor, gapColor: tone.bg, emptyColor: fg.withValues(alpha: 0.2)),
         const SizedBox(height: 14),
         Row(children: [

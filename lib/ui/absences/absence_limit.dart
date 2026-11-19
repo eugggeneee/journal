@@ -10,7 +10,7 @@ import '../app/scope.dart';
 import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
-import '../kit/components/widgets.dart';
+import '../kit/components/overview.dart';
 import '../kit/foundation/ctx.dart';
 
 /// Предупреждения о лимитах над счётчиками.
@@ -36,39 +36,35 @@ class LimitBanners extends StatelessWidget {
 
     final items = <Widget>[];
 
-    // Месяц: «близко» без крестика (его нельзя скрыть), «достигнут» — со скрытием.
-    if (monthLevel == LimitLevel.near) {
-      items.add(_Banner(
-        key: ValueKey('m-near-$monthHours'),
-        kind: _BannerKind.near,
-        title: 'Лимит месяца близко',
-        text: 'За ${_monthName(now)} осталось ${hoursText(kMonthLimit - monthHours)} без уважительной причины',
-      ));
-    } else if (monthLevel == LimitLevel.reached && store.dismissedLevel(monthKeyStr) < LimitLevel.reached.index) {
-      items.add(_Banner(
-        key: ValueKey('m-reached-$monthHours'),
-        kind: _BannerKind.reached,
-        title: 'Лимит месяца',
-        text: monthHours == kMonthLimit
-            ? 'Набрано ${hoursText(monthHours)} без уважительной причины за ${_monthName(now)}'
-            : 'Набрано ${hoursText(monthHours)} без уважительной причины — лимит $kMonthLimit ч превышен',
-        onClose: () => _dismiss(context, store, monthKeyStr, LimitLevel.reached.index),
-      ));
+    if (monthLevel == LimitLevel.reached && store.dismissedLevel(monthKeyStr) < LimitLevel.reached.index) {
+      items.add(
+        _Banner(
+          key: ValueKey('m-reached-$monthHours'),
+          kind: _BannerKind.reached,
+          title: 'Лимит месяца',
+          text: monthHours == kMonthLimit
+              ? 'Набрано ${hoursText(monthHours)} без уважительной причины за ${_monthName(now)}'
+              : 'Набрано ${hoursText(monthHours)} без уважительной причины — лимит $kMonthLimit ч превышен',
+          onClose: () => _dismiss(context, store, monthKeyStr, LimitLevel.reached.index),
+        ),
+      );
     }
 
     if (semLevel != LimitLevel.ok && !semester.upcoming && store.dismissedLevel(semKeyStr) < semLevel.index) {
       final reached = semLevel == LimitLevel.reached;
-      items.add(_Banner(
-        key: ValueKey('s-${semLevel.name}-$semesterHours'),
-        kind: reached ? _BannerKind.reached : _BannerKind.near,
-        title: reached ? 'Лимит семестра' : 'Лимит семестра близко',
-        text: reached
-            ? (semesterHours == kSemesterLimit
-                ? 'Набрано ${hoursText(semesterHours)} без уважительной причины за ${semester.title.toLowerCase()}'
-                : 'Набрано ${hoursText(semesterHours)} без уважительной причины — лимит $kSemesterLimit ч превышен')
-            : 'За ${semester.title.toLowerCase()} осталось ${hoursText(kSemesterLimit - semesterHours)} без уважительной причины',
-        onClose: () => _dismiss(context, store, semKeyStr, semLevel.index),
-      ));
+      items.add(
+        _Banner(
+          key: ValueKey('s-${semLevel.name}-$semesterHours'),
+          kind: reached ? _BannerKind.reached : _BannerKind.near,
+          title: reached ? 'Лимит семестра' : 'Лимит семестра близко',
+          text: reached
+              ? (semesterHours == kSemesterLimit
+                    ? 'Набрано ${hoursText(semesterHours)} без уважительной причины за ${semester.title.toLowerCase()}'
+                    : 'Набрано ${hoursText(semesterHours)} без уважительной причины — лимит $kSemesterLimit ч превышен')
+              : 'За ${semester.title.toLowerCase()} осталось ${hoursText(kSemesterLimit - semesterHours)} без уважительной причины',
+          onClose: () => _dismiss(context, store, semKeyStr, semLevel.index),
+        ),
+      );
     }
 
     return Smooth(
@@ -119,40 +115,48 @@ class _Banner extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 14, 6, 14),
           decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(28)),
-          child: Row(children: [
-            TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: 0.5, end: 1),
-              duration: Motion.ms(650),
-              curve: Motion.spring,
-              builder: (context, v, child) => Transform.scale(scale: v, child: child),
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
-                child: Icon(
-                  reached ? Icons.priority_high_rounded : Icons.hourglass_bottom_rounded,
-                  size: 28,
-                  color: onColorFor(accent),
+          child: Row(
+            children: [
+              TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0.5, end: 1),
+                duration: Motion.ms(650),
+                curve: Motion.spring,
+                builder: (context, v, child) => Transform.scale(scale: v, child: child),
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                  child: Icon(
+                    reached ? Icons.priority_high_rounded : Icons.hourglass_bottom_rounded,
+                    size: 28,
+                    color: onColorFor(accent),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(title, style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 2),
-                Text(text, style: context.tt.bodyMedium?.copyWith(color: fg.withValues(alpha: 0.92), height: 1.3)),
-              ]),
-            ),
-            if (onClose != null)
-              IconButton(
-                tooltip: 'Скрыть',
-                icon: Icon(Icons.close_rounded, color: fg),
-                onPressed: onClose,
-              )
-            else
-              const SizedBox(width: 10),
-          ]),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(text, style: context.tt.bodyMedium?.copyWith(color: fg.withValues(alpha: 0.92), height: 1.3)),
+                  ],
+                ),
+              ),
+              if (onClose != null)
+                IconButton(
+                  tooltip: 'Скрыть',
+                  icon: Icon(Icons.close_rounded, color: fg),
+                  onPressed: onClose,
+                )
+              else
+                const SizedBox(width: 10),
+            ],
+          ),
         ),
       ),
     );
@@ -162,7 +166,13 @@ class _Banner extends StatelessWidget {
 /// Два счётчика друг под другом, в том же стиле, что и пары в расписании:
 /// пропуски без уважительной причины за месяц и за семестр.
 class LimitCounters extends StatelessWidget {
-  const LimitCounters({super.key, required this.monthHours, required this.semesterHours, required this.semester, required this.onSemesterTap});
+  const LimitCounters({
+    super.key,
+    required this.monthHours,
+    required this.semesterHours,
+    required this.semester,
+    required this.onSemesterTap,
+  });
   final int monthHours;
   final int semesterHours;
   final Semester semester;
@@ -172,39 +182,61 @@ class LimitCounters extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final semSubtitle = semester.upcoming ? 'Каникулы · с 1 сентября' : '${semester.title} · ${semester.years}';
-    return Column(children: [
-      LimitCard(
-        index: 0,
-        count: 2,
-        icon: Icons.calendar_month_rounded,
-        title: 'За месяц',
-        subtitle: monthYear(now),
-        hours: monthHours,
-        limit: kMonthLimit,
-        warnFrom: kMonthWarnFrom,
+    final tone = Tone(context.cs.primaryContainer, context.cs.onPrimaryContainer);
+    final month = _LimitGauge(
+      title: 'За месяц',
+      subtitle: monthYear(now),
+      hours: monthHours,
+      limit: kMonthLimit,
+      warnFrom: kMonthWarnFrom,
+    );
+    final term = _LimitGauge(
+      title: 'За семестр',
+      subtitle: semSubtitle,
+      hours: semesterHours,
+      limit: kSemesterLimit,
+      warnFrom: kSemesterWarnFrom,
+      onTap: onSemesterTap,
+    );
+    return HeroCard(
+      tone: tone,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Запас часов',
+            style: context.tt.headlineSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w800),
+          ),
+          Text('Без уважительной причины', style: context.tt.bodyMedium?.copyWith(color: tone.fg)),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, box) {
+              if (box.maxWidth < MediaQuery.textScalerOf(context).scale(245)) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [month, const SizedBox(height: 4), term],
+                );
+              }
+              return IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: month),
+                    const SizedBox(width: 4),
+                    Expanded(child: term),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
-      LimitCard(
-        index: 1,
-        count: 2,
-        icon: Icons.school_rounded,
-        title: 'За семестр',
-        subtitle: semSubtitle,
-        hours: semesterHours,
-        limit: kSemesterLimit,
-        warnFrom: kSemesterWarnFrom,
-        onTap: onSemesterTap,
-      ),
-    ]);
+    );
   }
 }
 
-/// Карточка-счётчик: кольцо с числом часов, период, сколько осталось до лимита и полоса прогресса.
-class LimitCard extends StatelessWidget {
-  const LimitCard({
-    super.key,
-    required this.index,
-    required this.count,
-    required this.icon,
+class _LimitGauge extends StatelessWidget {
+  const _LimitGauge({
     required this.title,
     required this.subtitle,
     required this.hours,
@@ -212,91 +244,99 @@ class LimitCard extends StatelessWidget {
     required this.warnFrom,
     this.onTap,
   });
-  final int index;
-  final int count;
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final int hours;
-  final int limit;
-  final int warnFrom;
+  final String title, subtitle;
+  final int hours, limit, warnFrom;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
     final level = limitLevel(hours, warnFrom: warnFrom, limit: limit);
-    final Tone tone;
-    final Color accent;
-    switch (level) {
-      case LimitLevel.reached:
-        tone = absenceTone(context, excused: false);
-        accent = absenceAccent(context, excused: false);
-      case LimitLevel.near:
-        tone = warnTone(context);
-        accent = warnAccent(context);
-      case LimitLevel.ok:
-        tone = Tone(cs.surfaceContainerLow, cs.onSurface);
-        accent = cs.primary;
-    }
-    final left = limit - hours;
-    final status = level == LimitLevel.reached
-        ? (hours == limit ? 'Лимит достигнут' : 'Превышено на ${hoursText(hours - limit)}')
-        : 'Осталось ${hoursText(left)}';
-    final muted = tone.fg.withValues(alpha: 0.78);
-    return Semantics(
-      container: true,
-      label: '$title, $subtitle: $hours из $limit часов без уважительной причины. $status',
-      child: SegmentCard(
-        index: index,
-        count: count,
-        color: tone.bg,
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-          child: Row(children: [
-            SizedBox(
-              width: 62,
-              height: 62,
-              child: TweenAnimationBuilder<double>(
-                tween: Tween<double>(end: limit == 0 ? 0 : hours / limit),
-                duration: Motion.ms(800),
-                curve: Motion.standard,
-                builder: (context, v, _) => CustomPaint(
-                  painter: _RingPainter(progress: v, color: accent, track: tone.fg.withValues(alpha: 0.14), stroke: 7),
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: AnimatedNumber(
-                          value: hours.toDouble(),
-                          format: (x) => '${x.round()}',
-                          style: context.tt.titleLarge?.copyWith(color: tone.fg, fontWeight: FontWeight.w800, height: 1),
-                        ),
-                      ),
-                    ),
+    final tone = switch (level) {
+      LimitLevel.reached => absenceTone(context, excused: false),
+      LimitLevel.near => warnTone(context),
+      LimitLevel.ok => Tone(cs.surfaceContainerLow, cs.onSurface),
+    };
+    final remaining = math.max(0, limit - hours);
+    final status = hours > limit
+        ? 'Превышено на ${hoursText(hours - limit)}'
+        : hours == limit
+        ? 'Лимит достигнут'
+        : level == LimitLevel.near
+        ? 'Близко к лимиту'
+        : 'Осталось часов';
+    final body = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      child: Column(
+        children: [
+          Wrap(
+            spacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                title,
+                style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w700),
+              ),
+              if (onTap != null) Icon(Icons.expand_more_rounded, color: tone.fg, size: 18),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox.square(
+            dimension: 72,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(end: remaining / limit),
+              duration: context.motion(Motion.medium),
+              curve: Motion.standard,
+              builder: (context, progress, child) => CustomPaint(
+                painter: _RingPainter(
+                  progress: progress,
+                  color: level == LimitLevel.ok ? cs.primary : tone.fg,
+                  track: tone.fg.withValues(alpha: .15),
+                  stroke: 6,
+                ),
+                child: child,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '$remaining',
+                    style: context.tt.headlineMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Icon(icon, size: 18, color: muted),
-                  const SizedBox(width: 6),
-                  Expanded(child: Text(title, style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800))),
-                ]),
-                const SizedBox(height: 1),
-                Text(subtitle, style: context.tt.bodySmall?.copyWith(color: muted)),
-                const SizedBox(height: 6),
-                Text('$status · из $limit ч', style: context.tt.bodyMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w600)),
-              ]),
-            ),
-            if (onTap != null) Icon(Icons.chevron_right_rounded, color: muted),
-          ]),
-        ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            status,
+            textAlign: TextAlign.center,
+            style: context.tt.labelLarge?.copyWith(color: tone.fg),
+          ),
+          Text(
+            '$hours из $limit ч',
+            textAlign: TextAlign.center,
+            style: context.tt.bodySmall?.copyWith(color: tone.fg),
+          ),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: context.tt.labelSmall?.copyWith(color: tone.fg),
+          ),
+        ],
+      ),
+    );
+    return Semantics(
+      button: onTap != null,
+      label: '$title, $subtitle. Осталось ${hoursText(remaining)}, использовано $hours из $limit. $status',
+      onTap: onTap,
+      excludeSemantics: true,
+      child: Material(
+        color: tone.bg,
+        clipBehavior: Clip.antiAlias,
+        borderRadius: BorderRadius.circular(JournalLayout.panelRadius),
+        child: onTap == null ? body : InkWell(onTap: onTap, child: body),
       ),
     );
   }

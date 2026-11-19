@@ -3,6 +3,17 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/palette.dart';
 
+abstract final class JournalLayout {
+  static const double heroRadius = 32;
+  static const double cardRadius = 28;
+  static const double panelRadius = 24;
+  static const double joinedRadius = 6;
+  static const double touchTarget = 48;
+  static const double gap = 4;
+  static const double inset = 16;
+  static const rowPadding = EdgeInsets.symmetric(horizontal: inset, vertical: 12);
+}
+
 extension BuildContextX on BuildContext {
   ColorScheme get cs => Theme.of(this).colorScheme;
   TextTheme get tt => Theme.of(this).textTheme;

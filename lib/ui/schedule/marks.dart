@@ -30,6 +30,13 @@ IconData markIcon(String label) => label == kShortDayMark ? Icons.timelapse_roun
 
 Tone markTone(BuildContext context) => Tone(context.cs.tertiaryContainer, context.cs.onTertiaryContainer);
 
+class MarkPill extends StatelessWidget {
+  const MarkPill(this.mark, {super.key});
+  final DayMark mark;
+  @override
+  Widget build(BuildContext context) => Pill(mark.label, tone: markTone(context), icon: markIcon(mark.label));
+}
+
 class _MarkSheet extends StatefulWidget {
   const _MarkSheet({required this.date, this.lesson, this.edit, required this.customEntry});
   final DateTime date;
@@ -282,34 +289,9 @@ class _MarkTile extends StatelessWidget {
         showUndo(messenger, 'Пометка удалена', () => store.restoreMarks(m.date, before));
       },
       onTap: () => showMarkSheet(context, m.date, edit: m),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(46 * 0.34)),
-              child: Icon(markIcon(m.label), color: tone.fg, size: 24),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(m.label, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                  Text(
-                    m.wholeDay ? 'Весь день' : '${m.lesson} пара',
-                    style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.edit_outlined, size: 20, color: cs.onSurfaceVariant),
-          ],
-        ),
-      ),
+      child: JournalRow(leading: IconBox(icon: markIcon(m.label), tone: tone), title: m.label,
+        subtitle: m.wholeDay ? 'Весь день' : '${m.lesson} пара',
+        trailing: Icon(Icons.edit_outlined, size: 20, color: cs.onSurfaceVariant)),
     );
   }
 }

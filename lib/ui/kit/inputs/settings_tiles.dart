@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/haptics.dart';
 import '../foundation/ctx.dart';
+import '../components/widgets.dart';
 
 /// Строка настроек в стиле Material: значок слева, заголовок, пояснение и действие справа.
 class SettingsTile extends StatelessWidget {
@@ -58,32 +59,8 @@ class BadgeRow extends StatelessWidget {
   final bool showChevron;
 
   @override
-  Widget build(BuildContext context) {
-    final cs = context.cs;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
-      child: Row(children: [
-        Container(
-          width: 46,
-          height: 46,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(46 * 0.34)),
-          child: Icon(icon, size: 24, color: tone.fg),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, height: 1.2)),
-            if (subtitle != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(subtitle!, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.25)),
-              ),
-          ]),
-        ),
-        if (trailing != null) trailing!,
-        if (trailing == null && showChevron) Padding(padding: const EdgeInsets.only(left: 4), child: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant)),
-      ]),
-    );
-  }
+  Widget build(BuildContext context) => JournalRow(
+    leading: IconBox(icon: icon, tone: tone), title: title, subtitle: subtitle,
+    trailing: trailing ?? (showChevron ? Icon(Icons.chevron_right_rounded, color: context.cs.onSurfaceVariant) : null),
+  );
 }

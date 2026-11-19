@@ -96,7 +96,7 @@ class SettingsHomePage extends StatelessWidget {
                   scale: 0.99,
                   child: Material(
                     color: cs.primaryContainer,
-                    borderRadius: BorderRadius.circular(32),
+                    borderRadius: BorderRadius.circular(JournalLayout.heroRadius),
                     clipBehavior: Clip.antiAlias,
                     child: ArtCircles(
                       color: cs.primary,

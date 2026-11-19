@@ -63,7 +63,7 @@ class OptionTile extends StatelessWidget {
               onTap();
             },
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 48),
+              constraints: const BoxConstraints(minHeight: JournalLayout.touchTarget),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                 child: Row(

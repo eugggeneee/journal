@@ -93,4 +93,5 @@ gh attestation verify Journal-vX.Y.Z-android.apk --repo eugggeneee/journal
 ## Название и значки
 
 - Название приложения на устройстве: Journal (задаётся в workflow).
-- Рисунок колокольчика: `scripts/icons/bell.png`; готовые значки тем: `assets/icons/` и `assets/icon/` (генерируются `scripts/icons/make_icons.py`).
+- Исходники в `assets/icons/ios` и `assets/icons/android` собираются скриптами `scripts/icons/setup_ios.py` и `scripts/icons/setup_android.py`. Имена вариантов используются при обновлении установленного приложения.
+- При изменении платформенных ресурсов проверка Native icons устанавливает приложения на симулятор и эмулятор. Артефакт icon-composer содержит экспорт Icon Composer для README и экрана выбора значка.

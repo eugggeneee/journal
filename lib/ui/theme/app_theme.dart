@@ -68,7 +68,7 @@ class AppTheme {
       tertiary: Color.lerp(source.tertiary, source.secondary, .12),
       error: Color.lerp(source.error, source.onErrorContainer, .08),
     );
-    final shape24 = RoundedRectangleBorder(borderRadius: BorderRadius.circular(24));
+    final shape24 = RoundedRectangleBorder(borderRadius: BorderRadius.circular(JournalLayout.panelRadius));
     return ThemeData(
       colorScheme: s,
       scaffoldBackgroundColor: s.surface,
@@ -174,14 +174,14 @@ class AppTheme {
         elevation: 0,
         modalElevation: 0,
         shadowColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(JournalLayout.cardRadius))),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: s.surfaceContainerHigh,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shadowColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(JournalLayout.cardRadius)),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
