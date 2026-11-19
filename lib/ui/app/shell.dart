@@ -68,8 +68,6 @@ class _ShellState extends State<Shell> {
     if (_tab != 1) setState(() => _tab = 1);
   }
 
-  /// Расписание и оценки добавляют оценку (на расписании — на выбранную дату),
-  /// пропуски — пропуск.
   Widget _fab(BuildContext context) {
     switch (_tab) {
       case 2:
@@ -79,17 +77,6 @@ class _ShellState extends State<Shell> {
           onPressed: () {
             Haptics.selection();
             showGradeSheet(context);
-          },
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('Оценка'),
-        );
-      case 1:
-        return FloatingActionButton.extended(
-          key: const ValueKey('fab-grade-day'),
-          heroTag: null,
-          onPressed: () {
-            Haptics.selection();
-            showGradeSheet(context, date: _sched.selected);
           },
           icon: const Icon(Icons.add_rounded),
           label: const Text('Оценка'),
@@ -122,20 +109,22 @@ class _ShellState extends State<Shell> {
       },
       child: Scaffold(
         body: wide
-            ? Row(children: [
-                SafeArea(
-                  child: NavigationRail(
-                    selectedIndex: _tab,
-                    onDestinationSelected: _select,
-                    labelType: NavigationRailLabelType.all,
-                    destinations: [
-                      for (final it in _items)
-                        NavigationRailDestination(icon: Icon(it.$1), selectedIcon: Icon(it.$2), label: Text(it.$3)),
-                    ],
+            ? Row(
+                children: [
+                  SafeArea(
+                    child: NavigationRail(
+                      selectedIndex: _tab,
+                      onDestinationSelected: _select,
+                      labelType: NavigationRailLabelType.all,
+                      destinations: [
+                        for (final it in _items)
+                          NavigationRailDestination(icon: Icon(it.$1), selectedIcon: Icon(it.$2), label: Text(it.$3)),
+                      ],
+                    ),
                   ),
-                ),
-                Expanded(child: body),
-              ])
+                  Expanded(child: body),
+                ],
+              )
             : body,
         bottomNavigationBar: wide
             ? null
@@ -143,14 +132,18 @@ class _ShellState extends State<Shell> {
                 selectedIndex: _tab,
                 onDestinationSelected: _select,
                 destinations: [
-                  for (final it in _items) NavigationDestination(icon: Icon(it.$1), selectedIcon: Icon(it.$2), label: it.$3),
+                  for (final it in _items)
+                    NavigationDestination(icon: Icon(it.$1), selectedIcon: Icon(it.$2), label: it.$3),
                 ],
               ),
         floatingActionButton: AnimatedSwitcher(
           duration: context.motion(Motion.short),
           switchInCurve: Motion.spring,
           switchOutCurve: Curves.easeIn,
-          transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim.clamped, child: child)),
+          transitionBuilder: (child, anim) => ScaleTransition(
+            scale: anim,
+            child: FadeTransition(opacity: anim.clamped, child: child),
+          ),
           child: _fab(context),
         ),
       ),

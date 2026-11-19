@@ -1,226 +1,341 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
-import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
+import '../../logic/bells.dart';
 import '../../logic/schedule/schedule_service.dart';
 import '../app/scope.dart';
-import '../kit/animation/reveal.dart';
-import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
+import 'calendar_grid.dart';
 import 'lesson_card.dart';
 import 'lesson_sheet.dart';
+import 'marks.dart';
 
-/// Неделя на широком экране: шесть колонок (пн–сб), в каждой пары дня с временем, названием и аудиторией.
-/// Нажатие на заголовок дня открывает его целиком, нажатие на пару открывает подробности.
-class WeekView extends StatelessWidget {
-  const WeekView({super.key, required this.refresh, required this.selected, required this.onShift, required this.onOpenDay});
+/// Все семь дней используют общую часовую сетку, в том числе при разных звонках.
+class WeekView extends StatefulWidget {
+  const WeekView({
+    super.key,
+    required this.refresh,
+    required this.selected,
+    required this.onShift,
+    required this.onOpenDay,
+  });
   final DateTime selected;
   final int refresh;
   final ValueChanged<int> onShift;
   final ValueChanged<DateTime> onOpenDay;
-
   @override
-  Widget build(BuildContext context) {
-    final cs = context.cs;
-    final tt = context.tt;
-    final store = StoreScope.of(context);
-    final monday = addDays(selected, -(selected.weekday - 1));
-    final saturday = addDays(monday, 5);
-    return Column(children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-        child: Row(children: [
-          IconButton(tooltip: 'Предыдущая неделя', icon: const Icon(Icons.chevron_left_rounded), onPressed: () => onShift(-1)),
-          Expanded(
-            child: Center(
-              child: Text(
-                '${shortDate(monday)} – ${shortDate(saturday)}',
-                style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, color: cs.onSurface),
-              ),
-            ),
-          ),
-          IconButton(tooltip: 'Следующая неделя', icon: const Icon(Icons.chevron_right_rounded), onPressed: () => onShift(1)),
-        ]),
-      ),
-      Expanded(
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, kFabClearance),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            for (var i = 0; i < 6; i++)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: Appear(
-                    index: i,
-                    child: _WeekDay(refresh: refresh, key: ValueKey('${ymd(addDays(monday, i))}|${store.settings.group}'), date: addDays(monday, i), onOpen: onOpenDay),
-                  ),
-                ),
-              ),
-          ]),
-        ),
-      ),
-    ]);
-  }
+  State<WeekView> createState() => _WeekViewState();
 }
 
-class _WeekDay extends StatefulWidget {
-  const _WeekDay({super.key, required this.refresh, required this.date, required this.onOpen});
-  final DateTime date;
-  final ValueChanged<DateTime> onOpen;
-  final int refresh;
-  @override
-  State<_WeekDay> createState() => _WeekDayState();
-}
-
-class _WeekDayState extends State<_WeekDay> {
-  DayState? _st;
-  bool _started = false;
+class _WeekViewState extends State<WeekView> {
+  final _states = <DateTime, DayState>{};
+  (DateTime, String, int)? _request;
+  late final Timer _timer;
   int _generation = 0;
+  DateTime get monday => addDays(widget.selected, 1 - widget.selected.weekday);
 
   @override
-  void didUpdateWidget(_WeekDay oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.refresh != oldWidget.refresh) _load(force: true);
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (dayDiff(today(), monday) >= 0 && dayDiff(today(), monday) < 7) setState(() {});
+    });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_started) return;
-    _started = true;
     _load();
   }
 
-  void _load({bool force = false}) {
-    final generation = ++_generation;
+  @override
+  void didUpdateWidget(WeekView old) {
+    super.didUpdateWidget(old);
+    _load();
+  }
+
+  void _load() {
     final store = StoreScope.of(context);
-    final cached = store.cachedSchedule(store.settings.group, widget.date);
-    if (cached != null) _st = DayState(DayStatus.ok, schedule: cached, fromCache: true);
-    StoreScope.repoOf(context).load(widget.date, force: force).then((s) {
-      if (mounted && generation == _generation) setState(() => _st = s);
-    }).catchError((_) {
-      if (mounted && generation == _generation) setState(() => _st = const DayState(DayStatus.error));
-    });
+    final repo = StoreScope.repoOf(context);
+    final key = (monday, store.settings.group, widget.refresh);
+    if (_request == key) return;
+    final force = _request != null && _request!.$3 != widget.refresh;
+    final generation = ++_generation;
+    _request = key;
+    _states.clear();
+    for (var i = 0; i < 7; i++) {
+      final date = addDays(monday, i);
+      if (date.weekday == DateTime.sunday) {
+        _states[date] = const DayState(DayStatus.sunday);
+        continue;
+      }
+      final cache = store.cachedSchedule(store.settings.group, date);
+      if (cache != null) _states[date] = DayState(DayStatus.ok, schedule: cache, fromCache: true);
+      repo.load(date, force: force).catchError((_) => const DayState(DayStatus.error)).then((state) {
+        if (mounted && generation == _generation) setState(() => _states[date] = state);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.cs;
-    final tt = context.tt;
     final store = StoreScope.of(context);
-    final d = widget.date;
-    final isToday = sameDay(d, today());
-    final st = _st;
-    final slots = [...?st?.schedule?.slots]..sort((a, b) => a.number.compareTo(b.number));
-
-    Widget body;
-    if (st == null) {
-      body = const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Center(child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5))));
-    } else if (st.status != DayStatus.ok) {
-      body = Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
-        child: Text(
-          st.status == DayStatus.sunday ? 'Выходной' : (st.status == DayStatus.notPublished ? 'Ещё не опубликовано' : 'Нет данных'),
-          textAlign: TextAlign.center,
-          style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+    final cs = context.cs;
+    final now = DateTime.now();
+    final days = List.generate(7, (i) => addDays(monday, i));
+    final todayIndex = days.indexWhere((d) => sameDay(d, now));
+    final minute = now.hour * 60 + now.minute;
+    final slots = [for (final d in days) _states[d]?.schedule?.slots ?? <LessonSlot>[]];
+    final bells = [
+      for (var i = 0; i < days.length; i++)
+        for (final s in slots[i]) ?store.bellFor(days[i], s.number),
+    ];
+    final start = bells.isEmpty ? 8 * 60 : bells.map((b) => b.start).reduce(math.min) ~/ 60 * 60;
+    final end = bells.isEmpty ? 16 * 60 : ((bells.map((b) => b.end).reduce(math.max) + 59) ~/ 60) * 60;
+    final scale = 1.35 * MediaQuery.textScalerOf(context).scale(12) / 12;
+    final height = (end - start) * scale;
+    Widget dayColumn(int i) => Expanded(
+      child: SizedBox(
+        height: height,
+        child: Stack(
+          children: [
+            for (final slot in slots[i])
+              if (store.bellFor(days[i], slot.number) case final bell?)
+                Positioned(
+                  left: 3,
+                  right: 2,
+                  top: (bell.start - start) * scale,
+                  height: math.max(1, bell.minutes * scale - 2),
+                  child: _WeekEvent(
+                    date: days[i],
+                    slot: slot,
+                    store: store,
+                    live: i == todayIndex && minute >= bell.start && minute < bell.end,
+                  ),
+                ),
+          ],
         ),
-      );
-    } else if (slots.isEmpty) {
-      body = Padding(padding: const EdgeInsets.symmetric(vertical: 16), child: Text('Пар нет', textAlign: TextAlign.center, style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)));
-    } else {
-      body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        for (final s in slots) _WeekTile(date: d, slot: s, store: store),
-      ]);
-    }
-
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Semantics(
-        button: true,
-        label: longDate(d),
-        excludeSemantics: true,
+      ),
+    );
+    List<Widget> extras(int i) {
+      final date = days[i];
+      final state = _states[date];
+      final notes = store.marksOn(date).where((m) => m.wholeDay || !slots[i].any((s) => s.number == m.lesson));
+      final status = switch (state?.status) {
+        null => 'Загрузка…',
+        DayStatus.sunday => 'Выходной',
+        DayStatus.noGroup => 'Нет пар',
+        DayStatus.notPublished => 'Нет расписания',
+        DayStatus.offline => 'Нет сети',
+        DayStatus.error => 'Ошибка загрузки',
+        _ => null,
+      };
+      Widget entry(String label, VoidCallback tap, {bool marked = false}) => Padding(
+        padding: const EdgeInsets.all(2),
         child: Material(
-          color: isToday ? cs.primary : cs.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(20),
-          clipBehavior: Clip.antiAlias,
+          color: marked ? cs.tertiaryContainer : cs.surfaceContainer,
+          borderRadius: BorderRadius.circular(8),
           child: InkWell(
-            onTap: () {
-              Haptics.selection();
-              widget.onOpen(d);
-            },
+            onTap: tap,
+            borderRadius: BorderRadius.circular(8),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text(weekdayShort(d), style: tt.labelMedium?.copyWith(color: isToday ? cs.onPrimary.withValues(alpha: 0.85) : cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
-                  Text('${d.day}', style: tt.titleLarge?.copyWith(color: isToday ? cs.onPrimary : cs.onSurface, fontWeight: FontWeight.w800)),
-                ]),
+              padding: const EdgeInsets.all(5),
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: context.tt.labelSmall?.copyWith(color: marked ? cs.onTertiaryContainer : cs.onSurfaceVariant),
               ),
             ),
           ),
         ),
+      );
+      return [
+        if (status != null) entry(status, () => widget.onOpenDay(date)),
+        for (final mark in notes)
+          entry(
+            mark.wholeDay ? mark.label : '${mark.lesson} · ${mark.label}',
+            () => showMarkSheet(context, date, edit: mark),
+            marked: true,
+          ),
+        for (final s in slots[i].where((s) => store.bellFor(date, s.number) == null))
+          entry(
+            '${s.number} · ${s.subjects.map(store.subjectName).join(' / ')}',
+            () => showLessonSheet(context, date, s),
+          ),
+      ];
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              IconButton(
+                tooltip: 'Предыдущая неделя',
+                icon: const Icon(Icons.chevron_left_rounded),
+                onPressed: () => widget.onShift(-1),
+              ),
+              Expanded(
+                child: Text(
+                  '${shortDate(days.first)} – ${shortDate(days.last)}',
+                  textAlign: TextAlign.center,
+                  style: context.tt.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Следующая неделя',
+                icon: const Icon(Icons.chevron_right_rounded),
+                onPressed: () => widget.onShift(1),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 60,
+            child: Row(
+              children: [
+                const SizedBox(width: calendarGutter),
+                for (final d in days)
+                  Expanded(
+                    child: CalendarDate(
+                      date: d,
+                      selected: sameDay(d, widget.selected),
+                      onTap: () => widget.onOpenDay(d),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: cs.outlineVariant),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: calendarGutter,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text('День', style: context.tt.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
+                        ),
+                      ),
+                      for (var i = 0; i < 7; i++)
+                        Expanded(
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: extras(i)),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  CalendarBand(
+                    start: start,
+                    end: end,
+                    columns: 7,
+                    minute: minute,
+                    todayColumn: todayIndex,
+                    pixelsPerMinute: scale,
+                    child: Row(children: [for (var i = 0; i < 7; i++) dayColumn(i)]),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
-      const SizedBox(height: 8),
-      body,
-    ]);
+    );
   }
 }
 
-/// Компактная карточка пары для колонки недели: время, название целиком, аудитория и преподаватель.
-class _WeekTile extends StatelessWidget {
-  const _WeekTile({required this.date, required this.slot, required this.store});
+class _WeekEvent extends StatelessWidget {
+  const _WeekEvent({required this.date, required this.slot, required this.store, required this.live});
   final DateTime date;
   final LessonSlot slot;
   final AppStore store;
+  final bool live;
 
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
-    final tt = context.tt;
-    final key = slot.subjects.isEmpty ? '' : slot.subjects.first;
-    final accent = hueAccent(context, subjectHue(key));
+    final bell = store.bellFor(date, slot.number)!;
     final absence = store.absenceFor(date, slot.number);
-    final edge = absence != null ? absenceAccent(context, excused: absence.excused) : accent;
-    final bg = absence != null
-        ? absenceTone(context, excused: absence.excused).bg.withValues(alpha: 0.55)
-        : Color.alphaBlend(accent.withValues(alpha: 0.09), cs.surfaceContainerLow);
-    final bell = store.bellFor(date, slot.number);
-    final place = [
-      for (final e in slot.entries) [LessonCard.roomText(e.room), e.teacher].where((x) => x.isNotEmpty).join(' · '),
-    ].where((x) => x.isNotEmpty).join(' / ');
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+    final mark = store.markFor(date, slot.number);
+    final tasks = store.tasksForLesson(date, slot.number);
+    final name = slot.subjects.map(store.subjectName).join(' / ');
+    final time = shortRange(bell.start, bell.end);
+    final rooms = slot.entries.map((e) => LessonCard.roomText(e.room)).where((r) => r.isNotEmpty).toSet().join(' / ');
+    final accent = hueAccent(context, subjectHue(slot.subjects.firstOrNull ?? ''));
+    final bg = live ? cs.primaryContainer : Color.alphaBlend(accent.withValues(alpha: .16), cs.surfaceContainerLow);
+    final fg = live ? cs.onPrimaryContainer : cs.onSurface;
+    final details = [
+      time,
+      if (rooms.isNotEmpty) rooms,
+      if (mark != null) mark.label,
+      if (absence != null) absence.excused ? 'По уважительной' : 'Пропуск',
+      if (tasks.isNotEmpty) 'Заданий: ${tasks.length}',
+    ];
+    return Semantics(
+      button: true,
+      label: [longDate(date), name, ...details].join(', '),
+      excludeSemantics: true,
       child: Material(
         color: bg,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () {
-            Haptics.selection();
-            showLessonSheet(context, date, slot);
-          },
+          onTap: () => showLessonSheet(context, date, slot),
           child: DecoratedBox(
-            decoration: BoxDecoration(border: Border(left: BorderSide(color: edge, width: 4))),
+            decoration: BoxDecoration(
+              border: Border(left: BorderSide(color: live ? cs.primary : accent, width: 3)),
+            ),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(
-                  [if (bell != null) fmtMin(bell.start), '${slot.number} пара'].join(' · '),
-                  style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700, fontFeatures: const [FontFeature.tabularFigures()]),
-                ),
-                const SizedBox(height: 2),
-                Text(slot.subjects.map(store.subjectName).join(' / '), style: tt.bodySmall?.copyWith(fontWeight: FontWeight.w800, height: 1.2)),
-                if (place.isNotEmpty) Text(place, style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, height: 1.25)),
-                if (absence != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(absence.excused ? 'Уважительная' : 'Пропуск', style: tt.labelSmall?.copyWith(color: edge, fontWeight: FontWeight.w800)),
-                  ),
-              ]),
+              padding: const EdgeInsets.fromLTRB(8, 5, 4, 4),
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  final titleStyle = context.tt.bodySmall!.copyWith(
+                    color: fg,
+                    fontWeight: FontWeight.w800,
+                    height: 1.25,
+                  );
+                  final lineHeight = MediaQuery.textScalerOf(context).scale(titleStyle.fontSize!) * 1.25;
+                  final lines = (box.maxHeight / lineHeight).floor();
+                  if (lines < 1) return const SizedBox.shrink();
+                  final titleLines = lines >= 3 ? math.min(3, lines - 1) : 1;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Flexible(
+                        flex: titleLines,
+                        fit: FlexFit.loose,
+                        child: Text(name, maxLines: titleLines, overflow: TextOverflow.ellipsis, style: titleStyle),
+                      ),
+                      if (lines > titleLines)
+                        Flexible(
+                          flex: lines - titleLines,
+                          child: Text(
+                            details.join(' · '),
+                            maxLines: lines - titleLines,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.tt.labelSmall?.copyWith(color: fg, height: 1.25),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ),

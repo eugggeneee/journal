@@ -52,7 +52,9 @@ class OptionTile extends StatelessWidget {
         selected: selected,
         child: Material(
           animationDuration: context.motion(Motion.short),
-          color: selected ? cs.secondaryContainer : (card ? cs.surfaceContainerHighest.withValues(alpha: 0.6) : Colors.transparent),
+          color: selected
+              ? cs.secondaryContainer
+              : (card ? cs.surfaceContainerHighest.withValues(alpha: 0.6) : Colors.transparent),
           borderRadius: BorderRadius.circular(18),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
@@ -61,34 +63,31 @@ class OptionTile extends StatelessWidget {
               onTap();
             },
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 56),
+              constraints: const BoxConstraints(minHeight: 48),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Row(children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 22, color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant),
-                    const SizedBox(width: 14),
-                  ],
-                  Expanded(
-                    child: Text(
-                      label,
-                      style: context.tt.bodyLarge?.copyWith(fontWeight: selected ? FontWeight.w700 : FontWeight.w500, color: fg),
-                    ),
-                  ),
-                  AnimatedScale(
-                    scale: selected ? 1 : 0.6,
-                    duration: context.motion(Motion.short),
-                    curve: Motion.spring,
-                    child: AnimatedOpacity(
-                      opacity: selected ? 1 : 0,
-                      duration: context.motion(Motion.short),
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 12),
-                        child: Icon(Icons.check_rounded, size: 22, color: cs.onSecondaryContainer),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                child: Row(
+                  children: [
+                    if (icon != null) ...[
+                      Icon(icon, size: 22, color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant),
+                      const SizedBox(width: 14),
+                    ],
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: context.tt.bodyLarge?.copyWith(
+                          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                          color: fg,
+                        ),
                       ),
                     ),
-                  ),
-                ]),
+                    if (selected)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Icon(Icons.check_rounded, size: 20, color: cs.onSecondaryContainer),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -106,16 +105,19 @@ class ChoiceList<T> extends StatelessWidget {
   final ValueChanged<T> onChanged;
 
   @override
-  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        for (final o in options)
-          OptionTile(
-            label: o.label,
-            icon: o.icon,
-            card: true,
-            selected: value != null && o.value == value,
-            onTap: () => onChanged(o.value),
-          ),
-      ]);
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      for (final o in options)
+        OptionTile(
+          label: o.label,
+          icon: o.icon,
+          card: true,
+          selected: value != null && o.value == value,
+          onTap: () => onChanged(o.value),
+        ),
+    ],
+  );
 }
 
 /// Нижняя шторка выбора: нажали на поле — снизу открылся список со всеми вариантами.
@@ -128,25 +130,24 @@ Future<void> showSelectSheet<T>(
   T? value,
   String? subtitle,
   List<MenuAction> actions = const [],
-}) =>
-    showAdaptiveSheet<void>(
-      context,
-      (ctx) => _SelectSheet<T>(
-        title: title,
-        subtitle: subtitle,
-        options: options,
-        value: value,
-        actions: actions,
-        onSelected: (v) {
-          Navigator.of(ctx).pop();
-          onSelected(v);
-        },
-        onAction: (a) {
-          Navigator.of(ctx).pop();
-          a.onTap();
-        },
-      ),
-    );
+}) => showAdaptiveSheet<void>(
+  context,
+  (ctx) => _SelectSheet<T>(
+    title: title,
+    subtitle: subtitle,
+    options: options,
+    value: value,
+    actions: actions,
+    onSelected: (v) {
+      Navigator.of(ctx).pop();
+      onSelected(v);
+    },
+    onAction: (a) {
+      Navigator.of(ctx).pop();
+      a.onTap();
+    },
+  ),
+);
 
 class _SelectSheet<T> extends StatefulWidget {
   const _SelectSheet({
@@ -184,44 +185,55 @@ class _SelectSheetState<T> extends State<_SelectSheet<T>> {
   Widget build(BuildContext context) {
     final cs = context.cs;
     final searchable = widget.options.length > _searchFrom;
-    final query = _q.text.trim().toLowerCase();
-    final visible = query.isEmpty ? widget.options : widget.options.where((o) => o.label.toLowerCase().contains(query)).toList();
+    String normalized(String text) => text.trim().toLowerCase().replaceAll('ё', 'е');
+    final query = normalized(_q.text);
+    final visible = query.isEmpty
+        ? widget.options
+        : widget.options.where((o) => normalized([?o.section, o.label].join(' ')).contains(query)).toList();
 
     final children = <Widget>[];
     String? lastSection;
     for (final o in visible) {
       if (o.section != null && o.section != lastSection) {
-        children.add(Padding(
-          padding: EdgeInsets.fromLTRB(8, children.isEmpty ? 4 : 16, 8, 6),
-          child: Text(o.section!, style: context.tt.labelLarge?.copyWith(color: cs.primary, fontWeight: FontWeight.w700)),
-        ));
+        children.add(
+          Padding(
+            padding: EdgeInsets.fromLTRB(8, children.isEmpty ? 4 : 16, 8, 6),
+            child: Text(
+              o.section!,
+              style: context.tt.labelLarge?.copyWith(color: cs.primary, fontWeight: FontWeight.w700),
+            ),
+          ),
+        );
       }
       lastSection = o.section;
-      children.add(OptionTile(
-        label: o.label,
-        icon: o.icon,
-        selected: widget.value != null && o.value == widget.value,
-        onTap: () => widget.onSelected(o.value),
-      ));
+      children.add(
+        OptionTile(
+          label: o.label,
+          icon: o.icon,
+          selected: widget.value != null && o.value == widget.value,
+          onTap: () => widget.onSelected(o.value),
+        ),
+      );
     }
     if (visible.isEmpty) {
-      children.add(Padding(
-        padding: const EdgeInsets.symmetric(vertical: 28),
-        child: Center(child: Text('Ничего не найдено', style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant))),
-      ));
+      children.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 28),
+          child: Center(
+            child: Text('Ничего не найдено', style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+          ),
+        ),
+      );
     }
     if (widget.actions.isNotEmpty) {
-      children.add(Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Divider(height: 1, color: cs.outlineVariant),
-      ));
+      children.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Divider(height: 1, color: cs.outlineVariant),
+        ),
+      );
       for (final a in widget.actions) {
-        children.add(OptionTile(
-          label: a.label,
-          icon: a.icon,
-          selected: false,
-          onTap: () => widget.onAction(a),
-        ));
+        children.add(OptionTile(label: a.label, icon: a.icon, selected: false, onTap: () => widget.onAction(a)));
       }
     }
 
@@ -234,6 +246,9 @@ class _SelectSheetState<T> extends State<_SelectSheet<T>> {
               controller: _q,
               onChanged: (_) => setState(() {}),
               textInputAction: TextInputAction.search,
+              onSubmitted: (_) {
+                if (visible.length == 1) widget.onSelected(visible.single.value);
+              },
               decoration: InputDecoration(
                 hintText: 'Поиск',
                 prefixIcon: const Icon(Icons.search_rounded),

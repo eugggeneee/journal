@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
-import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../logic/schedule/schedule_service.dart';
@@ -83,41 +82,24 @@ class _DayViewState extends State<DayView> {
     final st = _st;
     final slots = st?.schedule?.slots ?? const <LessonSlot>[];
     final Widget content = st == null
-        ? const Padding(key: ValueKey('day-loading'), padding: EdgeInsets.only(top: 120), child: Center(child: CircularProgressIndicator()))
+        ? const Padding(
+            key: ValueKey('day-loading'),
+            padding: EdgeInsets.only(top: 120),
+            child: Center(child: CircularProgressIndicator()),
+          )
         : KeyedSubtree(key: ValueKey('day-${st.status.name}'), child: _content(context, store, st));
     return RefreshIndicator(
       onRefresh: () => _load(force: true),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, kFabClearance),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          if (st != null && st.status != DayStatus.ok) _chips(context),
-          MarksSection(date: widget.date, store: store, slots: slots),
+          if (st?.status != DayStatus.ok) MarksSection(date: widget.date, store: store, slots: slots),
           Smooth(child: content),
         ],
       ),
     );
   }
-
-  /// Кнопки дня без пар: пометка (ОКР, зачёт, практика, сокращённый день или своя).
-  Widget _chips(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 0, 0, 12),
-        child: Wrap(spacing: 8, runSpacing: 8, children: [
-          ActionChip(
-            avatar: const Icon(Icons.bookmark_add_outlined, size: 18),
-            label: const Text('Пометка'),
-            onPressed: () {
-              Haptics.selection();
-              showMarkSheet(context, widget.date);
-            },
-          ),
-          ActionChip(
-            avatar: const Icon(Icons.timelapse_rounded, size: 18),
-            label: const Text('Сокращённый день'),
-            onPressed: () => toggleShortDay(context, StoreScope.of(context), widget.date),
-          ),
-        ]),
-      );
 
   Widget _content(BuildContext context, AppStore store, DayState st) {
     switch (st.status) {
@@ -125,16 +107,24 @@ class _DayViewState extends State<DayView> {
         final s = st.schedule!;
         final date = widget.date;
         final status = st.note ?? (st.fromCache ? 'Сохранено на устройстве' : 'Обновлено в ${hhmm(s.fetchedAt)}');
-        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          DayToolbar(date: date, slots: s.slots, store: store),
-          DayTimeline(date: date, slots: s.slots, store: store, now: DateTime.now()),
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Center(
-              child: Text(status, textAlign: TextAlign.center, style: context.tt.bodySmall?.copyWith(color: context.cs.onSurfaceVariant)),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DayToolbar(date: date, slots: s.slots, store: store),
+            MarksSection(date: date, store: store, slots: s.slots),
+            DayTimeline(date: date, slots: s.slots, store: store, now: DateTime.now()),
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Center(
+                child: Text(
+                  status,
+                  textAlign: TextAlign.center,
+                  style: context.tt.bodySmall?.copyWith(color: context.cs.onSurfaceVariant),
+                ),
+              ),
             ),
-          ),
-        ]);
+          ],
+        );
       case DayStatus.sunday:
         return RestDay(
           date: widget.date,

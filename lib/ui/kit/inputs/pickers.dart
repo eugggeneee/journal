@@ -469,6 +469,30 @@ class GradePad extends StatelessWidget {
 
 // ───────────────────────── причина пропуска ─────────────────────────
 
+/// В обеих колонках за высоту отвечает самый длинный текст.
+class ExcuseChoices extends StatelessWidget {
+  const ExcuseChoices({super.key, required this.onChoice, this.selected, this.enabled = true});
+  final ValueChanged<bool> onChoice;
+  final bool? selected;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget tile(bool excused) =>
+        ExcuseTile(excused: excused, selected: selected == excused, enabled: enabled, onTap: () => onChoice(excused));
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: tile(false)),
+          const SizedBox(width: 10),
+          Expanded(child: tile(true)),
+        ],
+      ),
+    );
+  }
+}
+
 /// Большая плитка «без уважительной» / «по уважительной».
 /// В быстрой шторке нажатие сразу сохраняет; в форме правки плитка показывает выбранное состояние.
 class ExcuseTile extends StatelessWidget {
@@ -521,7 +545,8 @@ class ExcuseTile extends StatelessWidget {
                 ]),
                 const SizedBox(height: 12),
                 Text(title, style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 2),
+                const Spacer(),
+                const SizedBox(height: 4),
                 Text(sub, style: context.tt.bodySmall?.copyWith(color: tone.fg.withValues(alpha: 0.8))),
               ]),
             ),

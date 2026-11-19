@@ -171,15 +171,14 @@ class _QuickAbsenceState extends State<_QuickAbsence> {
     final already = slots == null ? 0 : slots.where((s) => store.absenceFor(date, s.number) != null).length;
     final totalHours = (slots?.length ?? 1) * hours;
 
+    final choices = ExcuseChoices(enabled: canSave, onChoice: (value) => _commit(value, sched));
+    final available = MediaQuery.sizeOf(context).height - MediaQuery.viewInsetsOf(context).bottom;
+    final pinChoices = available >= 540 && MediaQuery.textScalerOf(context).scale(16) < 26;
     return SheetScaffold(
       title: title,
       subtitle: subtitle,
       leading: CookieIcon(icon: Icons.event_busy_rounded, size: 52, bg: redTone.bg, fg: redTone.fg),
-      footer: Row(children: [
-        Expanded(child: ExcuseTile(excused: false, enabled: canSave, onTap: () => _commit(false, sched))),
-        const SizedBox(width: 12),
-        Expanded(child: ExcuseTile(excused: true, enabled: canSave, onTap: () => _commit(true, sched))),
-      ]),
+      footer: pinChoices ? choices : null,
       children: [
         if (!_locked) ...[
           FieldLabel('Дата', trailing: dayCaption(date), top: 8),
@@ -267,6 +266,7 @@ class _QuickAbsenceState extends State<_QuickAbsence> {
               ),
             ),
           ),
+        if (!pinChoices) choices,
       ],
     );
   }
@@ -477,11 +477,7 @@ class _AbsenceFormState extends State<_AbsenceForm> {
           ),
         ),
         const FieldLabel('Причина'),
-        Row(children: [
-          Expanded(child: ExcuseTile(excused: false, selected: !excused, onTap: () => setState(() => excused = false))),
-          const SizedBox(width: 12),
-          Expanded(child: ExcuseTile(excused: true, selected: excused, onTap: () => setState(() => excused = true))),
-        ]),
+        ExcuseChoices(selected: excused, onChoice: (value) => setState(() => excused = value)),
         const SizedBox(height: 20),
         TextField(
           controller: note,

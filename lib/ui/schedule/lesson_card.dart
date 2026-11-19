@@ -18,14 +18,12 @@ class LessonCard extends StatelessWidget {
     required this.store,
     this.minute,
     this.next = false,
-    this.minHeight = 0,
   });
   final LessonSlot slot;
   final DateTime date;
   final AppStore store;
   final int? minute;
   final bool next;
-  final double minHeight;
 
   static String roomText(String r) => r.isEmpty ? '' : (RegExp(r'^\d').hasMatch(r) ? 'ауд. $r' : r);
 
@@ -41,10 +39,12 @@ class LessonCard extends StatelessWidget {
     final absence = store.absenceFor(date, slot.number);
     final mark = store.markFor(date, slot.number);
     final tasks = store.tasksForLesson(date, slot.number);
-    final fg = live ? cs.onPrimary : cs.onSurface;
-    final muted = live ? cs.onPrimary : cs.onSurfaceVariant;
-    final chip = live ? Tone(cs.onPrimary, cs.primary) : Tone(cs.secondaryContainer, cs.onSecondaryContainer);
-    final info = ['${slot.number} пара', if (bell != null) shortRange(bell.start, bell.end)].join('  ·  ');
+    final fg = live ? cs.onPrimaryContainer : cs.onSurface;
+    final muted = live ? cs.onPrimaryContainer : cs.onSurfaceVariant;
+    final chip = live ? Tone(cs.primary, cs.onPrimary) : Tone(cs.secondaryContainer, cs.onSecondaryContainer);
+    final info = [if (bell != null) shortRange(bell.start, bell.end), '${slot.number} пара'].join(' · ');
+    final accent = hueAccent(context, subjectHue(slot.subjects.firstOrNull ?? ''));
+    final eventColor = Color.alphaBlend(accent.withValues(alpha: past ? .10 : .18), cs.surfaceContainerLow);
     final state = inner
         ? 'Сейчас ${innerBreakWord(bell)}'
         : live
@@ -57,28 +57,36 @@ class LessonCard extends StatelessWidget {
       index: 0,
       count: 1,
       appear: false,
-      borderRadius: BorderRadius.only(
-        topLeft: const Radius.circular(24),
-        topRight: const Radius.circular(24),
-        bottomRight: const Radius.circular(24),
-        bottomLeft: Radius.circular(live ? 8 : 24),
-      ),
-
-      color: live ? cs.primary : (past ? cs.surfaceContainerLow : cs.surfaceContainerHigh),
+      borderRadius: BorderRadius.circular(live ? 20 : 14),
+      color: live ? cs.primaryContainer : eventColor,
       onTap: () => showLessonSheet(context, date, slot),
       onLongPress: () => toggleLessonAbsence(context, store, date, slot),
-      child: Container(
-        constraints: BoxConstraints(minHeight: minHeight),
-        padding: const EdgeInsets.fromLTRB(16, 8, 12, 16),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 4, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    info,
-                    style: tt.labelLarge?.copyWith(color: muted, fontWeight: FontWeight.w700),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 2,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        info,
+                        style: tt.labelLarge?.copyWith(color: muted, fontWeight: FontWeight.w700),
+                      ),
+                      if (state != null)
+                        Text(
+                          state,
+                          style: tt.labelMedium?.copyWith(
+                            color: live ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 IconButton(
@@ -92,7 +100,7 @@ class LessonCard extends StatelessWidget {
             for (final subject in slot.subjects) ...[
               Text(
                 store.subjectName(subject),
-                style: tt.titleLarge?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1.12),
+                style: tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1.12),
               ),
               for (final entry in slot.entries.where((e) => e.subject == subject))
                 if (entry.room.isNotEmpty || entry.teacher.isNotEmpty)
@@ -104,14 +112,13 @@ class LessonCard extends StatelessWidget {
                     ),
                   ),
             ],
-            if (state != null || mark != null || absence != null)
+            if (mark != null || absence != null)
               Padding(
                 padding: const EdgeInsets.only(top: 10),
                 child: Wrap(
                   spacing: 4,
                   runSpacing: 4,
                   children: [
-                    if (state != null) Pill(state, tone: chip, icon: Icons.schedule_rounded),
                     if (mark != null) Pill(mark.label, tone: chip, icon: Icons.bookmark_rounded),
                     if (absence != null)
                       Pill(

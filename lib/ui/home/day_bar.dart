@@ -14,6 +14,7 @@ class DayBar extends StatelessWidget {
     required this.minute,
     required this.fg,
     required this.bg,
+    required this.onOpen,
     this.compact = false,
   });
   final List<LessonSlot> slots;
@@ -22,6 +23,7 @@ class DayBar extends StatelessWidget {
   final Color fg;
   final Color bg;
   final bool compact;
+  final ValueChanged<LessonSlot> onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -31,11 +33,11 @@ class DayBar extends StatelessWidget {
     final start = profile[numbers.first]!.start;
     final end = numbers.map((n) => profile[n]!.end).reduce(math.max);
     final active = minute >= start && minute < end;
-    final height = compact ? 8.0 : 38.0;
+    final height = compact ? 8.0 : 50.0;
     final top = !compact && active ? 28.0 : 0.0;
     return Semantics(
       label: 'Ход дня, с ${fmtMin(start)} до ${fmtMin(end)}${active ? ', сейчас ${fmtMin(minute)}' : ''}',
-      excludeSemantics: true,
+      excludeSemantics: compact,
       child: LayoutBuilder(
         builder: (context, box) {
           double x(int m) => (m - start) / (end - start) * box.maxWidth;
@@ -45,6 +47,7 @@ class DayBar extends StatelessWidget {
           for (var i = 0; i < numbers.length; i++) {
             final n = numbers[i];
             final b = profile[n]!;
+            final slot = slots.firstWhere((s) => s.number == n);
             final left = x(b.start);
             final width = math.max(1.0, x(b.end) - left - 1);
             final done = ((minute - b.start) / b.minutes).clamp(0.0, 1.0).toDouble();
@@ -55,39 +58,82 @@ class DayBar extends StatelessWidget {
                 top: top,
                 height: height,
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(compact ? 4 : 14),
+                  borderRadius: BorderRadius.horizontal(
+                    left: Radius.circular(
+                      compact
+                          ? 4
+                          : i == 0
+                          ? 16
+                          : 7,
+                    ),
+                    right: Radius.circular(
+                      compact
+                          ? 4
+                          : i == numbers.length - 1
+                          ? 16
+                          : 7,
+                    ),
+                  ),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      ColoredBox(color: fg.withValues(alpha: .16)),
-                      FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: done,
-                        child: ColoredBox(color: fg),
-                      ),
-                      if (b.hasBreak)
+                      ColoredBox(color: done >= 1 ? fg : fg.withValues(alpha: .12)),
+                      if (compact || done > 0 && done < 1)
+                        Positioned(
+                          left: 0,
+                          bottom: 0,
+                          width: width * done,
+                          height: compact ? height : 4,
+                          child: ColoredBox(color: fg),
+                        ),
+                      if (b.hasBreak && !compact && done < 1)
                         Positioned(
                           left: (b.breakStart! - b.start) / b.minutes * width,
-                          width: b.breakMinutes / b.minutes * width,
-                          top: 0,
+                          width: math.max(2.0, b.breakMinutes / b.minutes * width),
+                          height: 4,
                           bottom: 0,
-                          child: ColoredBox(color: bg.withValues(alpha: .65)),
+                          child: ColoredBox(color: done >= 1 ? bg.withValues(alpha: .7) : fg.withValues(alpha: .35)),
                         ),
-                      if (!compact && width >= 18)
+                      if (!compact && width >= 16)
                         Center(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(color: done >= .5 ? fg : bg, shape: BoxShape.circle),
-                            child: Padding(
-                              padding: const EdgeInsets.all(3),
-                              child: Text(
-                                '$n',
-                                style: TextStyle(
-                                  color: done >= .5 ? bg : fg,
-                                  fontSize: 14,
-                                  height: 1,
-                                  fontWeight: FontWeight.w800,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '$n',
+                                  style: TextStyle(
+                                    color: done >= 1 ? bg : fg,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 18,
+                                    height: 1,
+                                  ),
                                 ),
-                              ),
+                                if (width >= 32) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    fmtMin(b.start),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                      fontWeight: FontWeight.w600,
+                                      color: done >= 1 ? bg : fg,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      if (!compact)
+                        Positioned.fill(
+                          child: Semantics(
+                            button: true,
+                            label: '${slot.number} пара, ${slot.subjects.join(' / ')}, ${fmtMin(b.start)}',
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: InkWell(onTap: () => onOpen(slot)),
                             ),
                           ),
                         ),
@@ -96,23 +142,6 @@ class DayBar extends StatelessWidget {
                 ),
               ),
             );
-            if (!compact && width >= 32)
-              children.add(
-                Positioned(
-                  left: left,
-                  width: width,
-                  top: top + height + 4,
-                  height: 16,
-                  child: FittedBox(
-                    alignment: Alignment.centerLeft,
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      fmtMin(b.start),
-                      style: TextStyle(fontSize: 12, color: fg, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-              );
             if (!compact && i + 1 < numbers.length) {
               final next = profile[numbers[i + 1]]!;
               final gap = x(next.start) - x(b.end);
@@ -166,7 +195,7 @@ class DayBar extends StatelessWidget {
             );
           }
           return SizedBox(
-            height: top + height + (compact ? 0 : 20),
+            height: top + height,
             child: Stack(children: children),
           );
         },

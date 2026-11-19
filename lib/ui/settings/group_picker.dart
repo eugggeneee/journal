@@ -141,6 +141,13 @@ class _GroupSheetState extends State<GroupSheet> {
           controller: _q,
           keyboardType: TextInputType.number,
           textInputAction: TextInputAction.done,
+          onSubmitted: (_) {
+            if (manualOk || _groups.contains(query)) {
+              widget.onSelected(query);
+            } else if (query.isNotEmpty && filtered.length == 1) {
+              widget.onSelected(filtered.single);
+            }
+          },
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             hintText: 'Номер группы',

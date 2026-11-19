@@ -297,27 +297,6 @@ class ThemePreview extends StatelessWidget {
             ]),
           ),
           const SizedBox(height: 14),
-          Row(children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(color: cs.primary, borderRadius: BorderRadius.circular(100)),
-              child: Text('Добавить', style: tt.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w700)),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(color: cs.secondaryContainer, borderRadius: BorderRadius.circular(100)),
-              child: Text('Весь день', style: tt.labelLarge?.copyWith(color: cs.onSecondaryContainer, fontWeight: FontWeight.w700)),
-            ),
-            const Spacer(),
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(16)),
-              child: Icon(Icons.add_rounded, color: cs.onPrimaryContainer),
-            ),
-          ]),
-          const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(color: cs.surfaceContainer, borderRadius: BorderRadius.circular(24)),

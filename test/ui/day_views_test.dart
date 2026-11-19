@@ -1,11 +1,20 @@
+import 'dart:ui' as ui;
+
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:journal/data/models.dart';
 import 'package:journal/data/store.dart';
 import 'package:journal/logic/schedule/schedule_service.dart';
 import 'package:journal/ui/app/scope.dart';
 import 'package:journal/ui/home/day_card.dart';
+import 'package:journal/ui/home/day_bar.dart';
+import 'package:journal/ui/kit/inputs/pickers.dart';
+import 'package:journal/ui/kit/sheets/select_sheet.dart';
+import 'package:journal/ui/absences/absence_actions.dart';
+import 'package:journal/core/dates.dart';
 import 'package:journal/ui/home/home_page.dart';
 import 'package:journal/ui/schedule/day_timeline.dart';
+import 'package:journal/ui/schedule/week_view.dart';
 import 'package:journal/ui/schedule/schedule_page.dart';
 import 'package:journal/ui/tasks/tasks_page.dart';
 import 'package:journal/ui/theme/app_theme.dart';
@@ -90,10 +99,8 @@ void main() {
     slots: slots,
     profile: profile,
     store: store,
-    header: (fg) => Text('Среда, 18 ноября', style: TextStyle(color: fg)),
+    header: (fg, _) => Text('Среда, 18 ноября', style: TextStyle(color: fg)),
     onOpenDay: () {},
-    onShortDay: () {},
-    onMark: () {},
   );
 
   testWidgets('отсчёт до внутреннего перерыва, во время перерыва и после занятий', (tester) async {
@@ -108,6 +115,193 @@ void main() {
     expect(find.text('до продолжения\nв 12:55'), findsOneWidget);
     await screen(tester, hero(DateTime(2026, 11, 18, 18)), width: 900, brightness: Brightness.light);
     expect(find.text('Без времени звонков'), findsOneWidget);
+  });
+
+  testWidgets('во время пары быстрые действия сохраняют предмет, дату и номер пары', (tester) async {
+    await screen(tester, hero(now));
+    Future<void> tap(String label) async {
+      await tester.ensureVisible(find.text(label).last);
+      await tester.tap(find.text(label).last);
+      await tester.pumpAndSettle();
+    }
+
+    await tap('Оценка');
+    await tap('8');
+    await tap('Сохранить');
+    expect(store.grades.single.subject, slots.first.subject);
+    expect(sameDay(store.grades.single.date, now), isTrue);
+    await tap('Пропуск');
+    final choices = find.byType(ExcuseTile);
+    final first = tester.getRect(choices.first);
+    final second = tester.getRect(choices.last);
+    expect((first.top, first.bottom, first.width), (second.top, second.bottom, second.width));
+    await tap('Без уважительной');
+    expect(store.absenceFor(now, 2)?.excused, isFalse);
+    await tap('Пометка');
+    expect(find.text('К чему относится'), findsNothing);
+    await tester.enterText(find.byType(TextField), 'Пересдача');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(store.markFor(now, 2)?.label, 'Пересдача');
+    expect(store.markFor(now, 0), isNull);
+    await screen(tester, hero(DateTime(2026, 11, 18, 18)));
+    expect(find.text('Пометка'), findsNothing);
+    final tile = find.descendant(of: find.byType(DayBar), matching: find.byType(InkWell)).last;
+    await tester.tap(tile);
+    await tester.pumpAndSettle();
+    expect(find.text('История'), findsWidgets);
+    expect(find.text('Добавить оценку по предмету'), findsOneWidget);
+  });
+
+  testWidgets('обе причины доступны при крупном шрифте на узком телефоне', (tester) async {
+    await screen(
+      tester,
+      Builder(
+        builder: (context) => TextButton(
+          onPressed: () => toggleLessonAbsence(context, store, now, slots.last),
+          child: const Text('Пропуск'),
+        ),
+      ),
+      width: 320,
+      scale: 1.8,
+    );
+    await tester.tap(find.text('Пропуск'));
+    await tester.pumpAndSettle();
+    final tiles = find.byType(ExcuseTile);
+    await tester.ensureVisible(tiles.last);
+    final a = tester.getRect(tiles.first);
+    final b = tester.getRect(tiles.last);
+    expect((a.top, a.bottom, a.width), (b.top, b.bottom, b.width));
+    await tester.tap(tiles.last);
+    await tester.pumpAndSettle();
+    expect(store.absenceFor(now, slots.last.number)?.excused, isTrue);
+  });
+
+  testWidgets('поиск по меню находит е и ё и принимает выбор с клавиатуры', (tester) async {
+    String? result;
+    await screen(
+      tester,
+      Builder(
+        builder: (context) => TextButton(
+          onPressed: () => showSelectSheet<String>(
+            context,
+            title: 'Предмет',
+            options: [const MenuOption('test', 'Зачёт'), for (var i = 0; i < 9; i++) MenuOption('$i', 'Предмет $i')],
+            onSelected: (value) => result = value,
+          ),
+          child: const Text('Открыть'),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Открыть'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), ' зачет ');
+    await tester.pumpAndSettle();
+    expect(find.text('Зачёт'), findsOneWidget);
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    expect(result, 'test');
+  });
+
+  testWidgets('фон главной заполняет открывшуюся область во время жеста обновления', (tester) async {
+    final key = GlobalKey();
+    await screen(
+      tester,
+      RepaintBoundary(
+        key: key,
+        child: HomePage(onTab: (_) {}, onDay: (_) {}),
+      ),
+      scroll: false,
+    );
+    final gesture = await tester.startGesture(const Offset(80, 160));
+    await gesture.moveBy(const Offset(0, 32));
+    await tester.pump();
+    await gesture.moveBy(const Offset(0, 220));
+    await tester.pump();
+    final view = tester.widget<CustomScrollView>(find.byType(CustomScrollView));
+    expect(view.controller!.offset, lessThan(-30));
+    final want = Theme.of(tester.element(find.byType(HomePage))).colorScheme.primary.toARGB32();
+    final sample = await tester.runAsync(() async {
+      final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      final image = await boundary.toImage();
+      try {
+        final pixels = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
+        return pixels.getUint32((10 * image.width + 10) * 4);
+      } finally {
+        image.dispose();
+      }
+    });
+    expect(sample, ((want & 0xffffff) << 8) | 0xff);
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(repo.refreshed, isNotEmpty);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('свайп недели и смена ширины сохраняют выбранный день', (tester) async {
+    final controller = ScheduleController();
+    await screen(tester, SchedulePage(controller: controller), scroll: false);
+    final distant = DateTime(2031, 3, 5);
+    controller.jumpTo(distant);
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(PageView).first, const Offset(-320, 0));
+    await tester.pumpAndSettle();
+    expect(controller.selected, addDays(distant, 7));
+    tester.view.physicalSize = const Size(900, 812);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Показать неделю'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Следующая неделя'));
+    await tester.pumpAndSettle();
+    tester.view.physicalSize = const Size(360, 812);
+    await tester.pumpAndSettle();
+    final selected = addDays(distant, 14);
+    expect(controller.selected, selected);
+    final dateChip = find
+        .descendant(of: find.byType(PageView).first, matching: find.text('${selected.day}'))
+        .hitTestable();
+    expect(dateChip, findsOneWidget);
+    expect(find.text(longDate(selected)), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    controller.dispose();
+  });
+
+  testWidgets('в недельной сетке время общее для разных профилей звонков', (tester) async {
+    final monday = DateTime(2031, 3, 3);
+    store.setBellProfile(kBellWeek, const BellProfile(slots: {1: BellSlot(start: 480, end: 540)}));
+    store.setBellProfile(kBellSat, const BellProfile(slots: {1: BellSlot(start: 540, end: 600)}));
+    for (var i = 0; i < 6; i++) {
+      final date = addDays(monday, i);
+      store.putSchedule(
+        DaySchedule(
+          date: date,
+          fetchedAt: now,
+          group: store.settings.group,
+          slots: [
+            LessonSlot(
+              number: 1,
+              entries: [LessonEntry(subject: 'Курс $i', room: '214', teacher: '')],
+            ),
+          ],
+        ),
+      );
+    }
+    store.saveMark(DayMark(id: 'all', date: monday, lesson: 0, label: 'Практика'));
+    await screen(
+      tester,
+      WeekView(refresh: 0, selected: monday, onShift: (_) {}, onOpenDay: (_) {}),
+      width: 960,
+      scroll: false,
+    );
+    Rect event(String name) => tester.getRect(find.ancestor(of: find.text(name), matching: find.byType(InkWell)).first);
+    expect(event('Курс 0').top, event('Курс 1').top);
+    final hour = tester.getTopLeft(find.text('09:00')).dy - tester.getTopLeft(find.text('08:00')).dy;
+    expect(event('Курс 5').top - event('Курс 0').top, closeTo(hour, .01));
+    expect(find.text('Практика'), findsOneWidget);
+    await tester.tap(find.text('Курс 5'));
+    await tester.pumpAndSettle();
+    expect(find.text('Добавить оценку по предмету'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
   });
 
   testWidgets('таймлайн показывает данные подгрупп и все привязанные записи', (tester) async {
