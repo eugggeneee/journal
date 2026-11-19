@@ -250,3 +250,16 @@ class CalendarDate extends StatelessWidget {
     );
   }
 }
+
+class CalendarDateDivider extends StatelessWidget {
+  const CalendarDateDivider({super.key});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 8),
+    child: Divider(
+      height: 1,
+      color: context.cs.outlineVariant.withValues(alpha: .6),
+    ),
+  );
+}

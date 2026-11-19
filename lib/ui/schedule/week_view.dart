@@ -9,6 +9,7 @@ import '../../data/store.dart';
 import '../../logic/bells.dart';
 import '../../logic/schedule/schedule_service.dart';
 import '../app/scope.dart';
+import '../kit/components/widgets.dart' show segmentRadius;
 import '../kit/foundation/ctx.dart';
 import 'calendar_grid.dart';
 import 'lesson_card.dart';
@@ -206,7 +207,7 @@ class _WeekViewState extends State<WeekView> {
             ],
           ),
           SizedBox(
-            height: 60,
+            height: 64,
             child: Row(
               children: [
                 const SizedBox(width: calendarGutter),
@@ -221,7 +222,7 @@ class _WeekViewState extends State<WeekView> {
               ],
             ),
           ),
-          Divider(height: 1, color: cs.outlineVariant),
+          const CalendarDateDivider(),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
@@ -288,6 +289,7 @@ class _WeekEvent extends StatelessWidget {
     final rooms = slot.entries.map((e) => LessonCard.roomText(e.room)).where((r) => r.isNotEmpty).toSet().join(' / ');
     final bg = lessonSurface(context, darker);
     final fg = context.cs.onSurface;
+    final radius = segmentRadius(0, 1, outer: 20);
     final details = [
       time,
       if (rooms.isNotEmpty) rooms,
@@ -301,14 +303,14 @@ class _WeekEvent extends StatelessWidget {
       excludeSemantics: true,
       child: Material(
         color: bg,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: radius,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => showLessonSheet(context, date, slot),
           child: DecoratedBox(
-            decoration: BoxDecoration(border: live ? Border.all(color: context.cs.outline, width: 2) : null),
+            decoration: BoxDecoration(borderRadius: radius, border: live ? Border.all(color: context.cs.outline, width: 2) : null),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 5, 4, 4),
+              padding: const EdgeInsets.fromLTRB(10, 7, 6, 6),
               child: LayoutBuilder(
                 builder: (context, box) {
                   final titleStyle = context.tt.bodySmall!.copyWith(

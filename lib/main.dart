@@ -8,12 +8,13 @@ import 'logic/schedule/schedule_service.dart';
 import 'ui/app/scope.dart';
 import 'ui/app/shell.dart';
 import 'ui/kit/animation/motion.dart';
+import 'ui/kit/foundation/ctx.dart';
 import 'ui/onboarding/onboarding.dart';
 import 'ui/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   final store = await AppStore.load();
   runApp(JournalApp(store: store, repo: ScheduleRepo(store)));
 }
@@ -25,8 +26,10 @@ class JournalApp extends StatelessWidget {
 
   static const _modes = [ThemeMode.system, ThemeMode.light, ThemeMode.dark];
 
-  Widget _scope(BuildContext context, Widget? child) =>
-      StoreScope(store: store, repo: repo, child: child ?? const SizedBox.shrink());
+  Widget _scope(BuildContext context, Widget? child) => AnnotatedRegion<SystemUiOverlayStyle>(
+    value: overlayForSurface(context.cs.surface),
+    child: StoreScope(store: store, repo: repo, child: child ?? const SizedBox.shrink()),
+  );
 
   /// Приветствие, пока оно не пройдено или не выбрана группа; затем — оболочка с вкладками.
   Widget _home() => ListenableBuilder(

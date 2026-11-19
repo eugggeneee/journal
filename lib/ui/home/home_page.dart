@@ -47,6 +47,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   DayState? _st;
   String? _loadedGroup;
   int _gen = 0;
+  final _scroll = ScrollController();
   Timer? _tick;
   late DateTime _day = today();
 
@@ -72,6 +73,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void dispose() {
     _tick?.cancel();
+    _scroll.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -115,9 +117,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         Expanded(
           child: Semantics(
             header: true,
-            child: Text(
-              longDate(now),
-              style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w700),
+            child: LayoutBuilder(
+              builder: (context, box) {
+                final date = longDate(now);
+                return FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    box.maxWidth < MediaQuery.textScalerOf(context).scale(140) ? date.replaceFirst(', ', ',\n') : date,
+                    style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w700),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -154,8 +165,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       for (final b in store.settings.homeOrder)
         if (!store.settings.homeHidden.contains(b)) b,
     ];
-    final heroMetrics = _st?.status == DayStatus.ok && shown.firstOrNull == kBlockMetrics;
-    if (heroMetrics) shown.removeAt(0);
     Widget block(String id) => switch (id) {
       kBlockMetrics => _Metrics(store: store, onTab: widget.onTab),
       kBlockTasks => _TasksBlock(store: store),
@@ -179,7 +188,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       MarksSection(date: day, store: store, slots: slots),
       _LimitNote(store: store, onTab: widget.onTab),
       for (var i = 0; i < shown.length; i++) ...[if (i > 0) const _Hairline(), block(shown[i])],
-      if (shown.isEmpty && !heroMetrics)
+      if (shown.isEmpty)
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 24),
           child: Text(
@@ -192,62 +201,52 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     final heroColor = _st?.status == DayStatus.ok ? context.cs.primary : context.cs.primaryContainer;
     final bodyColor = context.cs.surface;
-    final overlay = ThemeData.estimateBrightnessForColor(heroColor) == Brightness.dark
-        ? SystemUiOverlayStyle.light
-        : SystemUiOverlayStyle.dark;
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: overlay.copyWith(statusBarColor: Colors.transparent),
-      child: Column(
-        children: [
-          // Системные часы остаются над цветной полосой при любом смещении списка.
-          SizedBox(
-            width: double.infinity,
-            height: MediaQuery.paddingOf(context).top,
-            child: ColoredBox(color: heroColor),
-          ),
-          Expanded(
-            child: ContentFrame(
-              child: ColoredBox(
-                color: heroColor,
-                child: RefreshIndicator(
-                  onRefresh: () => _load(force: true),
-                  child: ScrollConfiguration(
-                    behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
-                    child: CustomScrollView(
-                      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                      slivers: [
-                        SliverToBoxAdapter(
-                          child: ColoredBox(color: bodyColor, child: _hero(context, store, day, now, heroMetrics)),
-                        ),
-                        DecoratedSliver(
-                          decoration: BoxDecoration(color: bodyColor),
-                          sliver: SliverPadding(
-                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                            sliver: SliverList(
-                              delegate: SliverChildListDelegate([
-                                for (var i = 0; i < sections.length; i++) Appear(index: i + 1, child: sections[i]),
-                              ]),
-                            ),
-                          ),
-                        ),
-                        SliverFillRemaining(
-                          hasScrollBody: false,
-                          fillOverscroll: true,
-                          child: ColoredBox(color: bodyColor),
-                        ),
-                      ],
+    return ContentFrame(
+      child: LayoutBuilder(
+        builder: (context, viewport) => AnimatedBuilder(
+          animation: _scroll,
+          builder: (context, child) {
+            final pulling = _scroll.hasClients && _scroll.offset < 0;
+            final background = pulling ? heroColor : bodyColor;
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: overlayForSurface(background),
+              child: ColoredBox(color: background, child: child),
+            );
+          },
+          child: RefreshIndicator(
+            edgeOffset: MediaQuery.paddingOf(context).top,
+            onRefresh: () => _load(force: true),
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
+              child: CustomScrollView(
+                controller: _scroll,
+                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: ColoredBox(color: bodyColor, child: _hero(context, store, day, now, viewport.maxHeight)),
+                  ),
+                  DecoratedSliver(
+                    decoration: BoxDecoration(color: bodyColor),
+                    sliver: SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          for (var i = 0; i < sections.length; i++) Appear(index: i + 1, child: sections[i]),
+                        ]),
+                      ),
                     ),
                   ),
-                ),
+                  SliverFillRemaining(hasScrollBody: false, fillOverscroll: true, child: ColoredBox(color: bodyColor)),
+                ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _hero(BuildContext context, AppStore store, DateTime day, DateTime now, bool heroMetrics) {
+  Widget _hero(BuildContext context, AppStore store, DateTime day, DateTime now, double viewportHeight) {
     final cs = context.cs;
     final tt = context.tt;
     Widget hdr(Color fg) => _header(context, fg, now);
@@ -265,9 +264,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
     if (st.status == DayStatus.ok) {
       return DayCard(
+        viewportHeight: viewportHeight,
         now: now,
         onOpenDay: () => widget.onDay(day),
-        metrics: heroMetrics ? _Metrics(store: store, onTab: widget.onTab) : null,
         slots: st.schedule!.slots,
         profile: store.bellProfileFor(day),
         store: store,
@@ -301,34 +300,40 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         true,
       ),
     };
-    return HeroSurface(
-      tone: calm,
-      header: hdr,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CookieIcon(icon: icon, size: 56, bg: cs.primary, fg: cs.onPrimary),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        HeroSurface(
+          tone: calm,
+          header: hdr,
+          child: Row(
+            children: [
+              CookieIcon(icon: icon, size: 48, bg: cs.primary, fg: cs.onPrimary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
                   title,
                   style: tt.titleLarge?.copyWith(color: calm.fg, fontWeight: FontWeight.w800),
                 ),
-                const SizedBox(height: 4),
-                Text(message, style: tt.bodyMedium?.copyWith(color: calm.fg.withValues(alpha: 0.85), height: 1.3)),
-                if (retry)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: FilledButton.tonal(onPressed: () => _load(force: true), child: const Text('Повторить')),
-                  ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(message, style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+              if (retry)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: FilledButton.tonal(onPressed: () => _load(force: true), child: const Text('Повторить')),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -425,15 +430,15 @@ class _Metrics extends StatelessWidget {
     return IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       for (var i = 0; i < items.length; i++) ...[
         if (i > 0) const SizedBox(width: 4),
-        Expanded(child: Material(color: cs.onPrimary, clipBehavior: Clip.antiAlias,
+        Expanded(child: Material(color: cs.surfaceContainerHigh, clipBehavior: Clip.antiAlias,
           borderRadius: BorderRadius.horizontal(left: Radius.circular(i == 0 ? 24 : 8), right: Radius.circular(i == 2 ? 24 : 8)),
           child: InkWell(onTap: items[i].$4, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(items[i].$1, style: context.tt.labelMedium?.copyWith(color: cs.primary)),
+              Text(items[i].$1, style: context.tt.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
               const Spacer(),
               Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: FittedBox(fit: BoxFit.scaleDown,
-                child: Text(items[i].$2, style: context.tt.headlineMedium?.copyWith(color: cs.primary, height: 1, fontWeight: FontWeight.w800)))),
-              Text(items[i].$3, style: context.tt.labelSmall?.copyWith(color: cs.primary)),
+                child: Text(items[i].$2, style: context.tt.headlineMedium?.copyWith(color: cs.onSurface, height: 1, fontWeight: FontWeight.w800)))),
+              Text(items[i].$3, style: context.tt.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
             ]))))),
       ],
     ]));

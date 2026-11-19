@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/palette.dart';
+import '../kit/foundation/ctx.dart';
 import 'page_transitions.dart';
 
 /// Тема Material 3 (официальный пакет material_ui).
@@ -81,6 +82,7 @@ class AppTheme {
         TargetPlatform.fuchsia: SlidePageTransitionsBuilder(),
       }),
       appBarTheme: AppBarTheme(
+        systemOverlayStyle: overlayForSurface(s.surface),
         backgroundColor: s.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
