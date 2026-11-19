@@ -31,9 +31,13 @@ jobs:
             name=$(basename "$icon" .icon)
             id=${name#Icon_}
             if [[ $name == AppIcon ]]; then id=default; fi
-            "$ictool" "$icon" --export-image --output-file "build/icon-review/preview/$id.png" --platform iOS --rendition Default --width 128 --height 128 --scale 1
+            "$ictool" "$icon" --export-preview iOS Light 128 128 1 "build/icon-review/preview/$id.png"
           done
-          "$ictool" assets/icons/ios/AppIcon.icon --export-image --output-file build/icon-review/logo.png --platform iOS --rendition Default --width 1024 --height 1024 --scale 1
+          "$ictool" assets/icons/ios/AppIcon.icon --export-preview iOS Light 1024 1024 1 build/icon-review/logo.png
+      - uses: actions/upload-artifact@v5
+        with:
+          name: icon-composer
+          path: build/icon-review/
       - name: Собрать и установить на iPhone
         run: |
           set -euo pipefail
@@ -73,7 +77,7 @@ jobs:
         if: always()
         with:
           name: iphone-icons
-          path: build/icon-review/
+          path: build/icon-review/iphone-*.png
   android:
     runs-on: ubuntu-latest
     timeout-minutes: 35

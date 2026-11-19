@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:journal/core/app_icons.dart';
 import 'package:journal/main.dart' as journal;
