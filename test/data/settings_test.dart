@@ -60,8 +60,21 @@ void main() {
     final ids = (jsonDecode(File('assets/icons/icons.json').readAsStringSync()) as List).cast<String>();
     expect(AppPalette.choices.map((c) => c.id).toList(), ids);
     for (final id in ids) {
-      for (final f in ['ios', 'ios_dark', 'ios_tinted', 'fg', 'bg', 'legacy']) {
-        expect(File('assets/icons/$id/$f.png').existsSync(), isTrue, reason: '$id/$f.png');
+      final name = id == 'default' ? 'AppIcon' : 'Icon_$id';
+      final base = 'assets/icons/ios/$name.icon';
+      final spec = jsonDecode(File('$base/icon.json').readAsStringSync());
+      for (final group in spec['groups']) {
+        for (final layer in group['layers']) {
+          expect(File('$base/Assets/${layer['image-name']}').existsSync(), isTrue);
+        }
+      }
+      final key = id.replaceAllMapped(RegExp('[A-Z]'), (m) => '_${m[0]!.toLowerCase()}');
+      final launcher = id == 'default' ? 'ic_launcher' : 'ic_launcher_$key';
+      for (final suffix in ['', '_round']) {
+        expect(File('assets/icons/android/mipmap-anydpi-v26/$launcher$suffix.xml').existsSync(), isTrue);
+        for (final density in ['mdpi','hdpi','xhdpi','xxhdpi','xxxhdpi']) {
+          expect(File('assets/icons/android/mipmap-$density/$launcher$suffix.png').existsSync(), isTrue);
+        }
       }
       expect(File('assets/icons/preview/$id.png').existsSync(), isTrue, reason: 'preview/$id.png');
     }

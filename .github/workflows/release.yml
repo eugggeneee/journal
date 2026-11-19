@@ -172,7 +172,7 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Journal" "$P" || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Journal" "$P"
           /usr/libexec/PlistBuddy -c "Set :CFBundleName Journal" "$P" || /usr/libexec/PlistBuddy -c "Add :CFBundleName string Journal" "$P"
 
-      - run: xcodebuild -version
+      - run: bash scripts/icons/select_xcode.sh
       - run: flutter pub get
 
       - name: Значки под каждую тему (смена значка)

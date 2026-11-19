@@ -21,6 +21,19 @@ jobs:
         with:
           channel: stable
           cache: true
+      - name: Экспортировать иконки для README и настроек
+        run: |
+          set -euo pipefail
+          mkdir -p build/icon-review/preview
+          bash scripts/icons/select_xcode.sh
+          ictool="$(xcode-select -p)/../Applications/Icon Composer.app/Contents/Executables/ictool"
+          for icon in assets/icons/ios/*.icon; do
+            name=$(basename "$icon" .icon)
+            id=${name#Icon_}
+            if [[ $name == AppIcon ]]; then id=default; fi
+            "$ictool" "$icon" --export-image --output-file "build/icon-review/preview/$id.png" --platform iOS --rendition Default --width 128 --height 128 --scale 1
+          done
+          "$ictool" assets/icons/ios/AppIcon.icon --export-image --output-file build/icon-review/logo.png --platform iOS --rendition Default --width 1024 --height 1024 --scale 1
       - name: Собрать и установить на iPhone
         run: |
           set -euo pipefail
@@ -28,7 +41,7 @@ jobs:
           python3 scripts/icons/setup_ios.py
           device=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; ds=json.load(sys.stdin)["devices"]; print(next(d["udid"] for runtime in reversed(list(ds)) for d in ds[runtime] if "iPhone" in d["name"]))')
           xcrun simctl boot "$device"
-          flutter build ios --simulator --debug
+          flutter build ios --simulator --debug --target scripts/icons/launcher_probe.dart
           app=build/ios/iphonesimulator/Runner.app
           python3 - "$app" <<'PY'
           import json, pathlib, plistlib, sys
@@ -41,23 +54,23 @@ jobs:
           PY
           xcrun simctl bootstatus "$device" -b
           xcrun simctl install "$device" "$app"
-          xcrun simctl launch "$device" eugggeneee.journal
-          xcrun simctl terminate "$device" eugggeneee.journal
           mkdir -p build/icon-review/preview
+          xcrun simctl io "$device" screenshot build/icon-review/iphone-default.png
+          xcrun simctl launch --console "$device" eugggeneee.journal > "$RUNNER_TEMP/launcher.log" 2>&1 &
+          for attempt in {1..60}; do
+            if grep -qF JOURNAL_LAUNCHER_VERIFIED "$RUNNER_TEMP/launcher.log"; then break; fi
+            sleep 2
+          done
+          cat "$RUNNER_TEMP/launcher.log"
+          grep -F JOURNAL_LAUNCHER_VERIFIED "$RUNNER_TEMP/launcher.log"
+          xcrun simctl terminate "$device" eugggeneee.journal
           for appearance in light dark; do
             xcrun simctl ui "$device" appearance "$appearance"
             sleep 2
             xcrun simctl io "$device" screenshot "build/icon-review/iphone-$appearance.png"
           done
-          ictool="$(xcode-select -p)/../Applications/Icon Composer.app/Contents/Executables/ictool"
-          for icon in assets/icons/ios/*.icon; do
-            name=$(basename "$icon" .icon)
-            id=${name#Icon_}
-            if [[ $name == AppIcon ]]; then id=default; fi
-            "$ictool" "$icon" --export-image --output-file "build/icon-review/preview/$id.png" --platform iOS --rendition Default --width 128 --height 128 --scale 1
-          done
-          "$ictool" assets/icons/ios/AppIcon.icon --export-image --output-file build/icon-review/logo.png --platform iOS --rendition Default --width 1024 --height 1024 --scale 1
       - uses: actions/upload-artifact@v5
+        if: always()
         with:
           name: iphone-icons
           path: build/icon-review/
@@ -78,7 +91,7 @@ jobs:
         run: |
           flutter create --platforms=android --org eugggeneee --project-name journal .
           python3 scripts/icons/setup_android.py
-          flutter build apk --debug
+          flutter build apk --debug --target scripts/icons/launcher_probe.dart
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
@@ -90,6 +103,7 @@ jobs:
           disable-animations: true
           script: bash scripts/icons/check_launcher.sh
       - uses: actions/upload-artifact@v5
+        if: always()
         with:
           name: android-icons
           path: build/icon-review/
