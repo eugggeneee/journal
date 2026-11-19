@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
+
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
@@ -46,7 +48,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   String? _loadedGroup;
   int _gen = 0;
   Timer? _tick;
-  final _scroll = ScrollController();
   late DateTime _day = today();
 
   @override
@@ -70,7 +71,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    _scroll.dispose();
     _tick?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -190,30 +190,59 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         ),
     ];
 
-    return ContentFrame(
-      child: CustomPaint(
-        painter: _PullFill(_scroll, _st?.status == DayStatus.ok ? context.cs.primary : context.cs.primaryContainer),
-        child: RefreshIndicator(
-          onRefresh: () => _load(force: true),
-          child: ScrollConfiguration(
-            behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
-            child: CustomScrollView(
-              controller: _scroll,
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              slivers: [
-                SliverToBoxAdapter(child: _hero(context, store, day, now, heroMetrics)),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, kFabClearance),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      for (var i = 0; i < sections.length; i++) Appear(index: i + 1, child: sections[i]),
-                    ]),
+    final heroColor = _st?.status == DayStatus.ok ? context.cs.primary : context.cs.primaryContainer;
+    final bodyColor = context.cs.surface;
+    final overlay = ThemeData.estimateBrightnessForColor(heroColor) == Brightness.dark
+        ? SystemUiOverlayStyle.light
+        : SystemUiOverlayStyle.dark;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: overlay.copyWith(statusBarColor: Colors.transparent),
+      child: Column(
+        children: [
+          // Системные часы остаются над цветной полосой при любом смещении списка.
+          SizedBox(
+            width: double.infinity,
+            height: MediaQuery.paddingOf(context).top,
+            child: ColoredBox(color: heroColor),
+          ),
+          Expanded(
+            child: ContentFrame(
+              child: ColoredBox(
+                color: heroColor,
+                child: RefreshIndicator(
+                  onRefresh: () => _load(force: true),
+                  child: ScrollConfiguration(
+                    behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
+                    child: CustomScrollView(
+                      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: ColoredBox(color: bodyColor, child: _hero(context, store, day, now, heroMetrics)),
+                        ),
+                        DecoratedSliver(
+                          decoration: BoxDecoration(color: bodyColor),
+                          sliver: SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                            sliver: SliverList(
+                              delegate: SliverChildListDelegate([
+                                for (var i = 0; i < sections.length; i++) Appear(index: i + 1, child: sections[i]),
+                              ]),
+                            ),
+                          ),
+                        ),
+                        SliverFillRemaining(
+                          hasScrollBody: false,
+                          fillOverscroll: true,
+                          child: ColoredBox(color: bodyColor),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -302,23 +331,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       ),
     );
   }
-}
-
-/// Открытый над шапкой участок красится в том же кадре, в котором движется viewport.
-class _PullFill extends CustomPainter {
-  _PullFill(this.scroll, this.color) : super(repaint: scroll);
-  final ScrollController scroll;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (!scroll.hasClients || scroll.offset >= 0) return;
-    final depth = (-scroll.offset + 1).clamp(0.0, size.height);
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, depth), Paint()..color = color);
-  }
-
-  @override
-  bool shouldRepaint(_PullFill old) => old.scroll != scroll || old.color != color;
 }
 
 /// Тонкая разделительная линия между блоками главной.

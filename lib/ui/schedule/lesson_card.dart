@@ -7,7 +7,7 @@ import '../../logic/bells.dart';
 import '../absences/absence_actions.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
-import '../kit/foundation/lesson_colors.dart';
+import 'calendar_grid.dart';
 import 'lesson_sheet.dart';
 
 /// Содержимое растёт вместе с подгруппами, пометками и системным шрифтом.
@@ -19,12 +19,14 @@ class LessonCard extends StatelessWidget {
     required this.store,
     this.minute,
     this.next = false,
+    this.darker = false,
   });
   final LessonSlot slot;
   final DateTime date;
   final AppStore store;
   final int? minute;
   final bool next;
+  final bool darker;
 
   static String roomText(String r) => r.isEmpty ? '' : (RegExp(r'^\d').hasMatch(r) ? 'ауд. $r' : r);
 
@@ -35,13 +37,13 @@ class LessonCard extends StatelessWidget {
     final m = minute;
     final live = m != null && bell != null && m >= bell.start && m < bell.end;
     final inner = live && bell.hasBreak && m >= bell.breakStart! && m < bell.breakEnd!;
-    final colors = LessonColors.of(context, store, slot);
+    final cs = context.cs;
     final absence = store.absenceFor(date, slot.number);
     final mark = store.markFor(date, slot.number);
     final tasks = store.tasksForLesson(date, slot.number);
-    final fg = colors.ink;
-    final muted = colors.ink;
-    final chip = Tone(Color.alphaBlend(colors.edge.withValues(alpha: .13), colors.fill), colors.ink);
+    final fg = cs.onSurface;
+    final muted = cs.onSurfaceVariant;
+    final chip = Tone(cs.secondaryContainer, cs.onSecondaryContainer);
     final info = [if (bell != null) shortRange(bell.start, bell.end), '${slot.number} пара'].join(' · ');
     final state = inner
         ? 'Сейчас ${innerBreakWord(bell)}'
@@ -56,14 +58,14 @@ class LessonCard extends StatelessWidget {
       count: 1,
       appear: false,
       borderRadius: BorderRadius.circular(live ? 20 : 14),
-      color: colors.fill,
+      color: lessonSurface(context, darker),
       onTap: () => showLessonSheet(context, date, slot),
       onLongPress: () => toggleLessonAbsence(context, store, date, slot),
       child: Container(
         foregroundDecoration: live
             ? BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: colors.edge, width: 2),
+                border: Border.all(color: cs.outline, width: 2),
               )
             : null,
         padding: const EdgeInsets.fromLTRB(12, 0, 4, 12),
@@ -85,7 +87,7 @@ class LessonCard extends StatelessWidget {
                       if (state != null)
                         Text(
                           state,
-                          style: tt.labelMedium?.copyWith(color: colors.ink, fontWeight: FontWeight.w600),
+                          style: tt.labelMedium?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w600),
                         ),
                     ],
                   ),

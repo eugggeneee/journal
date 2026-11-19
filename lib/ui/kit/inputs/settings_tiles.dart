@@ -17,7 +17,7 @@ class SettingsTile extends StatelessWidget {
     // Устроена так же, как строки расписания и оценок: значок в цветном квадрате, у каждой настройки свой оттенок.
     final row = BadgeRow(
       icon: icon,
-      tone: hueTone(context, subjectHue(title)),
+      tone: hueTone(context, settingHue(title)),
       title: title,
       subtitle: subtitle,
       trailing: trailing,

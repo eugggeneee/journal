@@ -18,40 +18,6 @@ void main() {
   Absence abs(int lesson, {int hours = 2}) =>
       Absence(id: newId(), date: day, lesson: lesson, subject: 'S$lesson', hours: hours);
 
-  test('цвет пары сохраняется при перестановке подгрупп, смене дня, перезапуске и восстановлении', () async {
-    LessonSlot pair(List<String> names, int n) => LessonSlot(number: n,
-      entries: [for (final name in names) LessonEntry(subject: name, room: '$n', teacher: 'Преподаватель $n')]);
-    final first = pair(['АнглЯз', 'Физика'], 1);
-    final same = pair(['физика', 'Английский   язык'], 4);
-    final others = List.generate(40, (i) => pair(['Дисциплина $i'], 3));
-    void cache(DateTime date, List<LessonSlot> slots) => store.putSchedule(
-      DaySchedule(date: date, group: '6312', slots: slots, fetchedAt: day));
-    cache(day, [first]);
-    final initial = store.lessonColorId(first);
-    cache(day.add(const Duration(days: 7)), [same, ...others]);
-    expect(store.lessonColorId(same), initial);
-    final ids = others.map(store.lessonColorId).toSet();
-    expect(ids, hasLength(40));
-    expect(ids, isNot(contains(initial)));
-    final backup = store.exportJson();
-    store = await AppStore.load();
-    expect(store.lessonColorId(same), initial);
-    SharedPreferences.setMockInitialValues({});
-    store = await AppStore.load();
-    expect(store.importJson(backup), isNull);
-    expect(store.lessonColorId(same), initial);
-    expect(others.map(store.lessonColorId).toSet(), ids);
-  });
-
-  test('цвета назначаются расписаниям, сохранённым предыдущей версией', () async {
-    final slot = LessonSlot(number: 1, entries: [LessonEntry(subject: 'Математика', room: '', teacher: '')]);
-    final legacy = DaySchedule(date: day, group: '6312', slots: [slot], fetchedAt: day);
-    SharedPreferences.setMockInitialValues({'sched_v1': jsonEncode([legacy.toJson()])});
-    store = await AppStore.load();
-    expect(store.lessonColorId(slot), 0);
-    expect((store.exportMap()['lessonColors'] as Map).length, 1);
-  });
-
   test('повторный пропуск той же пары заменяет прежний', () {
     store.saveAbsence(abs(1));
     store.saveAbsence(abs(1, hours: 1));
@@ -98,6 +64,14 @@ void main() {
     expect(st.bySubjectCount['P'], 1);
     expect(st.lastBySubject['M'], DateTime(2026, 10, 30));
     expect(st.lastBySubject['P'], DateTime(2026, 10, 29));
+  });
+
+  test('копия beta.12 с назначенными цветами сохраняет записи при восстановлении', () {
+    store.saveGrade(Grade(id: 'grade', date: day, subject: 'Физика', value: 9));
+    final copy = store.exportMap()..['lessonColors'] = {'["физика"]': 4};
+    store.deleteGrade('grade');
+    expect(store.importJson(jsonEncode(copy)), isNull);
+    expect(store.grades.single.value, 9);
   });
 
   test('неполная или неподдерживаемая копия сохраняет прежние данные', () {
