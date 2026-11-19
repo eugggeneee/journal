@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:journal/data/models.dart';
 import 'package:journal/data/store.dart';
@@ -13,6 +14,7 @@ import 'package:journal/ui/kit/sheets/select_sheet.dart';
 import 'package:journal/ui/absences/absence_actions.dart';
 import 'package:journal/core/dates.dart';
 import 'package:journal/ui/home/home_page.dart';
+import 'package:journal/ui/home/hero_surface.dart';
 import 'package:journal/ui/schedule/day_timeline.dart';
 import 'package:journal/ui/schedule/week_view.dart';
 import 'package:journal/ui/schedule/calendar_grid.dart';
@@ -77,12 +79,13 @@ void main() {
     WidgetTester tester,
     Widget child, {
     double width = 360,
+    double height = 812,
     double scale = 1,
     Brightness brightness = Brightness.dark,
     bool scroll = true,
   }) async {
     tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = Size(width, 812);
+    tester.view.physicalSize = Size(width, height);
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
@@ -97,7 +100,8 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Widget hero(DateTime time) => DayCard(
+  Widget hero(DateTime time, {double viewportHeight = 812}) => DayCard(
+    viewportHeight: viewportHeight,
     now: time,
     slots: slots,
     profile: profile,
@@ -115,9 +119,34 @@ void main() {
     expect(store.settings.dayCardFolded, isTrue);
     store.setDayCardFolded(false);
     await screen(tester, hero(DateTime(2026, 11, 18, 12, 52)), scale: 1.8);
-    expect(find.text('до продолжения\nв 12:55'), findsOneWidget);
+    expect(find.textContaining(RegExp(r'до продолжения\s+в 12:55')), findsOneWidget);
     await screen(tester, hero(DateTime(2026, 11, 18, 18)), width: 900, brightness: Brightness.light);
     expect(find.text('Без времени звонков'), findsOneWidget);
+  });
+
+  testWidgets('вся карточка с крупным отсчётом помещается над навигацией', (tester) async {
+    for (final (width, height, top, bottom, scale) in [
+      (320.0, 568.0, 20.0, 80.0, 1.0),
+      (320.0, 568.0, 20.0, 80.0, 2.0),
+      (375.0, 667.0, 20.0, 80.0, 2.0),
+      (390.0, 844.0, 59.0, 114.0, 1.0),
+      (812.0, 375.0, 0.0, 21.0, 1.5),
+    ]) {
+      tester.view.padding = FakeViewPadding(top: top);
+      await screen(
+        tester,
+        hero(now, viewportHeight: height - bottom),
+        width: width,
+        height: height,
+        scale: scale,
+      );
+      expect(
+        tester.getBottomLeft(find.byType(HeroSurface)).dy,
+        lessThanOrEqualTo(height - bottom),
+        reason: '${width}×$height, масштаб $scale',
+      );
+      expect(tester.widget<Text>(find.text('34')).style!.fontSize, 148);
+    }
   });
 
   testWidgets('во время пары быстрые действия сохраняют предмет, дату и номер пары', (tester) async {
@@ -206,7 +235,7 @@ void main() {
     expect(result, 'test');
   });
 
-  testWidgets('цвет шапки доходит до верхнего края iPhone при прокрутке в обе стороны', (tester) async {
+  testWidgets('под часами видна карточка при обновлении и поверхность списка после прокрутки', (tester) async {
     const inset = 59.0;
     tester.view.padding = const FakeViewPadding(top: inset);
     tester.view.viewPadding = const FakeViewPadding(top: inset);
@@ -220,9 +249,17 @@ void main() {
       scroll: false,
     );
     final context = tester.element(find.byType(HomePage));
-    final hero = Theme.of(context).colorScheme.primary.toARGB32();
-    final rgba = ((hero & 0xffffff) << 8) | 0xff;
-    Future<void> check(List<int> ys) async {
+    final scheme = Theme.of(context).colorScheme;
+    expect(tester.getTopLeft(find.byType(CustomScrollView)).dy, 0);
+    void checkClock(Color surface) {
+      final layer = tester.binding.renderViews.first.debugLayer!;
+      final style = layer.find<SystemUiOverlayStyle>(const Offset(180, inset / 2));
+      expect(style?.statusBarColor, Colors.transparent);
+      expect(style?.statusBarBrightness, ThemeData.estimateBrightnessForColor(surface));
+    }
+
+    Future<void> check(Color color, List<int> ys) async {
+      final rgba = ((color.toARGB32() & 0xffffff) << 8) | 0xff;
       final samples = await tester.runAsync(() async {
         final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
         final image = await boundary.toImage();
@@ -236,7 +273,9 @@ void main() {
       expect(samples, everyElement(rgba));
     }
 
-    await check([0, 32, 58, 60]);
+    final heroHeight = tester.getSize(find.byType(HeroSurface)).height;
+    checkClock(scheme.primary);
+    await check(scheme.primary, [0, 32, 58, 60]);
     final gesture = await tester.startGesture(const Offset(80, 160));
     await gesture.moveBy(const Offset(0, 32));
     await tester.pump();
@@ -244,14 +283,28 @@ void main() {
     await tester.pump();
     final position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
     expect(position.pixels, lessThan(-30));
-    await check([0, 32, 58, 60, 80]);
+    checkClock(scheme.primary);
+    await check(scheme.primary, [0, 32, 58, 60, 80]);
     await gesture.up();
     await tester.pumpAndSettle();
     expect(repo.refreshed, isNotEmpty);
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -680));
     await tester.pumpAndSettle();
     expect(position.pixels, greaterThan(0));
-    await check([0, 32, 58]);
+    expect(position.pixels, greaterThan(heroHeight));
+    checkClock(scheme.surface);
+    await check(scheme.surface, [0, 32, 58]);
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pumpAndSettle();
+    final bottomPull = await tester.startGesture(const Offset(100, 715));
+    await bottomPull.moveBy(const Offset(0, -32));
+    await tester.pump();
+    await bottomPull.moveBy(const Offset(0, -180));
+    await tester.pump();
+    expect(position.pixels, greaterThan(position.maxScrollExtent));
+    await check(scheme.surface, [795, 810]);
+    await bottomPull.up();
+    await tester.pumpAndSettle();
     await tester.pumpWidget(const SizedBox());
   });
 

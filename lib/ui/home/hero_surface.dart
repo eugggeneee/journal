@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:material_ui/material_ui.dart';
 
 import '../kit/foundation/ctx.dart';
@@ -14,20 +15,23 @@ class HeroSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-      decoration: BoxDecoration(
-        color: tone.bg,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (header != null) ...[header!(tone.fg), const SizedBox(height: 16)],
-          child,
-        ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: overlayForSurface(tone.bg),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 4, 20, 16),
+        decoration: BoxDecoration(
+          color: tone.bg,
+          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (header != null) ...[header!(tone.fg), const SizedBox(height: 8)],
+            child,
+          ],
+        ),
       ),
     );
   }

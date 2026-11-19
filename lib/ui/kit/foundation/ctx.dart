@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/palette.dart';
@@ -7,6 +8,20 @@ extension BuildContextX on BuildContext {
   TextTheme get tt => Theme.of(this).textTheme;
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
   Size get screen => MediaQuery.sizeOf(this);
+}
+
+SystemUiOverlayStyle overlayForSurface(Color surface) {
+  final icons = ThemeData.estimateBrightnessForColor(surface) == Brightness.dark
+      ? SystemUiOverlayStyle.light
+      : SystemUiOverlayStyle.dark;
+  return icons.copyWith(
+    statusBarColor: Colors.transparent,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarIconBrightness: icons.statusBarIconBrightness,
+    systemNavigationBarDividerColor: Colors.transparent,
+    systemStatusBarContrastEnforced: false,
+    systemNavigationBarContrastEnforced: false,
+  );
 }
 
 /// Пара цветов «фон — текст» для оценок и статусов.

@@ -57,18 +57,17 @@ class LessonCard extends StatelessWidget {
       index: 0,
       count: 1,
       appear: false,
-      borderRadius: BorderRadius.circular(live ? 20 : 14),
       color: lessonSurface(context, darker),
       onTap: () => showLessonSheet(context, date, slot),
       onLongPress: () => toggleLessonAbsence(context, store, date, slot),
       child: Container(
         foregroundDecoration: live
             ? BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: segmentRadius(0, 1),
                 border: Border.all(color: cs.outline, width: 2),
               )
             : null,
-        padding: const EdgeInsets.fromLTRB(12, 0, 4, 12),
+        padding: const EdgeInsets.fromLTRB(16, 2, 8, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

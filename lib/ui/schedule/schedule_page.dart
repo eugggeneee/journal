@@ -349,7 +349,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
           else ...[
             // Лента дат всегда на виду: прокрутка дня её не трогает.
             strip,
-            Divider(height: 1, color: cs.outlineVariant.withValues(alpha: .6)),
+            const CalendarDateDivider(),
             Expanded(child: pages),
           ],
         ],
