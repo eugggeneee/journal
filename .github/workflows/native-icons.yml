@@ -8,6 +8,10 @@ on:
       - '.github/workflows/native-icons.yml'
   workflow_dispatch:
 
+concurrency:
+  group: native-icons-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -26,19 +30,13 @@ jobs:
           set -euo pipefail
           mkdir -p build/icon-review/preview
           bash scripts/icons/select_xcode.sh
-          ictool="$(xcode-select -p)/../Applications/Icon Composer.app/Contents/Executables/ictool"
-          for icon in assets/icons/ios/*.icon; do
-            name=$(basename "$icon" .icon)
-            id=${name#Icon_}
-            if [[ $name == AppIcon ]]; then id=default; fi
-            "$ictool" "$icon" --export-preview iOS Light 128 128 1 "build/icon-review/preview/$id.png"
-          done
-          "$ictool" assets/icons/ios/AppIcon.icon --export-preview iOS Light 1024 1024 1 build/icon-review/logo.png
+          bash scripts/icons/export_ios.sh
       - uses: actions/upload-artifact@v5
         with:
           name: icon-composer
           path: build/icon-review/
       - name: Собрать и установить на iPhone
+        if: ${{ !cancelled() }}
         run: |
           set -euo pipefail
           flutter create --platforms=ios --org eugggeneee --project-name journal .
