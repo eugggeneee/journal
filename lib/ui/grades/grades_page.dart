@@ -182,7 +182,8 @@ class GradesHero extends StatelessWidget {
                 for (var i = 0; i < 10; i++)
                   Expanded(
                     child: Semantics(
-                      label: '${i + 1} баллов, ${gradesText(stats.distribution[i])}',
+                      container: true,
+                      label: 'Оценка ${i + 1}, ${gradesText(stats.distribution[i])}',
                       excludeSemantics: true,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 2),

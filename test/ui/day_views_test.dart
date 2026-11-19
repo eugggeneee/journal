@@ -13,7 +13,6 @@ import 'package:journal/ui/absences/absence_limit.dart';
 import 'package:journal/ui/grades/grades_page.dart';
 import 'package:journal/ui/settings/home_layout_page.dart';
 import 'package:journal/ui/kit/inputs/settings_tiles.dart';
-import 'package:journal/logic/stats.dart';
 import 'package:journal/ui/home/day_bar.dart';
 import 'package:journal/ui/kit/inputs/pickers.dart';
 import 'package:journal/ui/kit/sheets/select_sheet.dart';
@@ -368,8 +367,24 @@ void main() {
       expect(find.text('57'), findsOneWidget);
       expect(find.text('${(10 - hours).clamp(0, 10)}'), findsOneWidget);
     }
-    await screen(tester, GradesHero(stats: GradeStats.of([])), width: 320, scale: 2);
-    expect(find.text('Добавить оценку'), findsOneWidget);
+  });
+
+  testWidgets('первая оценка сразу обновляет сводку и доступное описание графика', (tester) async {
+    store.putSchedule(DaySchedule(date: today(), group: store.settings.group, slots: slots, fetchedAt: now));
+    const early = BellProfile(slots: {2: BellSlot(start: 0, end: 60)});
+    store.setBellProfile(store.bellKeyOn(today()), early);
+    await screen(tester, const GradesPage(), width: 320, scale: 2, scroll: false);
+    await tester.tap(find.text('Добавить оценку'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('9').last);
+    await tester.tap(find.text('9').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Сохранить'));
+    await tester.tap(find.text('Сохранить'));
+    await tester.pumpAndSettle();
+    expect(store.grades.single.value, 9);
+    expect(find.text('Распределение оценок'), findsOneWidget);
+    expect(find.bySemanticsLabel('Оценка 9, 1 оценка'), findsOneWidget);
   });
 
   testWidgets('в календаре тон меняется только при смене предмета', (tester) async {

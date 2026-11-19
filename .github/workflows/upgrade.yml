@@ -1,0 +1,42 @@
+name: Проверка обновления Android
+on:
+  workflow_dispatch:
+    inputs:
+      previous:
+        description: Тег установленной версии
+        required: true
+      target:
+        description: Тег обновления
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PREVIOUS: ${{ inputs.previous }}
+      TARGET: ${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Скачать опубликованные APK и проверить суммы
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for tag in "$PREVIOUS" "$TARGET"; do
+            [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-(beta|rc)\.[0-9]+)?$ ]] || exit 1
+            gh release download "$tag" --pattern '*-android.apk' --pattern SHA256SUMS.txt --dir "$RUNNER_TEMP/$tag"
+            (cd "$RUNNER_TEMP/$tag" && sha256sum --check --ignore-missing SHA256SUMS.txt)
+          done
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: bash scripts/project/check_upgrade.sh
