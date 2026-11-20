@@ -47,7 +47,7 @@ Future<void> main() async {
       record('Requested teal: $changed');
       for (var i = 0; i < 6; i++) {
         if (await AppIcons.current() == 'teal') {
-          record('JOURNAL_LAUNCHER_VERIFIED');
+          record(changed ? 'JOURNAL_LAUNCHER_VERIFIED' : 'JOURNAL_LAUNCHER_FAILED applied without confirmation');
           return;
         }
         await Future<void>.delayed(const Duration(seconds: 1));
