@@ -7,7 +7,8 @@ import 'package:journal/main.dart' as journal;
 void record(String message) {
   debugPrint(message);
   if (Platform.isIOS) {
-    File('${Directory.systemTemp.path}/journal-launcher-probe.txt').writeAsStringSync('$message\n', mode: FileMode.append);
+    File('${Directory.systemTemp.path}/journal-launcher-probe.txt')
+        .writeAsStringSync('$message\n', mode: FileMode.append);
   }
 }
 
@@ -16,11 +17,25 @@ Future<void> main() async {
   record('Starting Journal');
   await journal.main();
   await WidgetsBinding.instance.endOfFrame;
-  final previous = await AppIcons.current();
-  record('Current icon: $previous');
-  if (previous == 'default' && await AppIcons.set('teal') && await AppIcons.current() == 'teal') {
-    record('JOURNAL_LAUNCHER_VERIFIED');
-  } else {
-    record('JOURNAL_LAUNCHER_FAILED ($previous)');
+  for (var i = 0; i < 90 && WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed; i++) {
+    await Future<void>.delayed(const Duration(seconds: 1));
   }
+  record('Lifecycle: ${WidgetsBinding.instance.lifecycleState}');
+  final previous = await AppIcons.current();
+  record('Initial icon: $previous');
+  if (previous == 'default') {
+    for (var attempt = 0; attempt < 3; attempt++) {
+      await Future<void>.delayed(const Duration(seconds: 3));
+      final changed = await AppIcons.set('teal');
+      record('Requested teal: $changed');
+      for (var i = 0; i < 6; i++) {
+        if (await AppIcons.current() == 'teal') {
+          record('JOURNAL_LAUNCHER_VERIFIED');
+          return;
+        }
+        await Future<void>.delayed(const Duration(seconds: 1));
+      }
+    }
+  }
+  record('JOURNAL_LAUNCHER_FAILED');
 }

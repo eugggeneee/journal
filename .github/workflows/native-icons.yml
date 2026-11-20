@@ -46,7 +46,6 @@ jobs:
           flutter create --platforms=ios --org eugggeneee --project-name journal .
           python3 scripts/icons/setup_ios.py
           device=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; ds=json.load(sys.stdin)["devices"]; print(next(d["udid"] for runtime in reversed(list(ds)) for d in ds[runtime] if "iPhone" in d["name"]))')
-          xcrun simctl boot "$device"
           flutter build ios --simulator --debug --target scripts/icons/launcher_probe.dart
           app=build/ios/iphonesimulator/Runner.app
           python3 - "$app" <<'PY'
@@ -70,6 +69,7 @@ jobs:
             sleep 2
           done
           cat "$RUNNER_TEMP/launcher.log"
+          xcrun simctl spawn "$device" log show --last 3m --style compact --predicate 'eventMessage CONTAINS[c] "alternate icon"' | tail -60
           xcrun simctl io "$device" screenshot build/icon-review/iphone-app.png
           [[ -n "$marker" ]] && cat "$marker"
           grep -F JOURNAL_LAUNCHER_VERIFIED "$marker"

@@ -31,9 +31,22 @@ final class AppIconChannel {
         let args = call.arguments as? [String: Any]
         guard let id = args?["id"] as? String else { result(false); return }
         DispatchQueue.main.async {
-          guard UIApplication.shared.supportsAlternateIcons else { result(false); return }
+          guard UIApplication.shared.supportsAlternateIcons else {
+            NSLog("Journal alternate icon unavailable, application state %ld", UIApplication.shared.applicationState.rawValue)
+            result(FlutterError(code: "unsupported", message: "Alternate icons unavailable", details: nil))
+            return
+          }
           let name: String? = (id == "default") ? nil : "Icon_" + id
-          UIApplication.shared.setAlternateIconName(name) { error in result(error == nil) }
+          UIApplication.shared.setAlternateIconName(name) { error in
+            DispatchQueue.main.async {
+              if let error = error as NSError? {
+                NSLog("Journal alternate icon: %@", error.description)
+                result(FlutterError(code: error.domain, message: error.localizedDescription, details: error.code))
+              } else {
+                result(true)
+              }
+            }
+          }
         }
       default:
         result(FlutterMethodNotImplemented)

@@ -34,6 +34,9 @@ class AppIcons {
     if (!platformOk || !ids.contains(id)) return false;
     try {
       return (await _channel.invokeMethod<bool>('set', {'id': id})) ?? false;
+    } on PlatformException catch (e) {
+      if (kDebugMode) debugPrint('App icon: ${e.code} ${e.message} (${e.details})');
+      return false;
     } catch (_) {
       return false;
     }
