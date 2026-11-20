@@ -7,7 +7,7 @@
 | Платформа | Файл | Установка |
 |---|---|---|
 | Android | `Journal-{{TAG}}-android.apk` | Открыть файл и разрешить установку из этого источника |
-| iPhone, iPad | `Journal-{{TAG}}-ios.ipa` | Установить через [AltStore](https://altstore.io) или [Sideloadly](https://sideloadly.io) |
+| iPhone, iPad | [Скачать IPA](https://github.com/{{REPO}}/releases/download/{{TAG}}/Journal-{{TAG}}-ios.ipa) | В AltStore Classic или SideStore открыть **My Apps → +** и выбрать файл. На компьютере можно использовать [Sideloadly](https://sideloadly.io) |
 
 Для установки стабильной версии и дальнейших обновлений [добавьте источник Journal в AltStore Classic или SideStore](https://eugggeneee.github.io/journal/ios/).
 

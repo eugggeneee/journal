@@ -34,8 +34,9 @@ Android и iOS. Без рекламы и аккаунтов, работает о
 |---|---|---|
 | Android | `Journal-vX.Y.Z-android.apk` | Открыть файл, разрешить установку из этого источника |
 | iPhone, iPad | Источник Journal | [Добавить в AltStore Classic или SideStore](https://eugggeneee.github.io/journal/ios/), затем установить Journal из каталога |
+| iPhone, iPad | Файл IPA | [Скачать IPA](https://eugggeneee.github.io/journal/ios/#ipa) и выбрать файл в **My Apps → +** в AltStore Classic или SideStore. На компьютере можно использовать [Sideloadly](https://sideloadly.io) |
 
-Источник добавляется один раз. Когда выйдет следующая стабильная версия, откройте **My Apps** в магазине и нажмите **Update** у Journal. Для ручного добавления вставьте в **Sources → +** адрес `https://eugggeneee.github.io/journal/ios/source.json`. IPA также можно установить через [Sideloadly](https://sideloadly.io).
+Источник добавляется один раз. Когда выйдет следующая стабильная версия, откройте **My Apps** в магазине и нажмите **Update** у Journal. Для ручного добавления вставьте в **Sources → +** адрес `https://eugggeneee.github.io/journal/ios/source.json`.
 
 <details>
 <summary>Проверка файла</summary>
