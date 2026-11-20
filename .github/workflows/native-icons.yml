@@ -39,7 +39,7 @@ jobs:
         with:
           name: icon-composer
           path: build/icon-review/
-      - name: Собрать и установить на iPhone
+      - name: Собрать iOS и проверить все варианты значка
         if: ${{ !cancelled() }}
         run: |
           set -euo pipefail
@@ -56,9 +56,10 @@ jobs:
           assert icons['CFBundlePrimaryIcon']['CFBundleIconName'] == 'AppIcon'
           assert set(icons['CFBundleAlternateIcons']) == expected
           PY
-          for runtime in 26-0 26-2; do
-            bash scripts/icons/check_iphone.sh "$runtime" "$app"
-          done
+      - name: Проверить установку и значок на iOS 26.0
+        run: bash scripts/icons/check_iphone.sh 26-0 build/ios/iphonesimulator/Runner.app
+      - name: Проверить установку и значок на iOS 26.2
+        run: bash scripts/icons/check_iphone.sh 26-2 build/ios/iphonesimulator/Runner.app
       - uses: actions/upload-artifact@v5
         if: always()
         with:

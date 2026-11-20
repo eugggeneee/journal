@@ -33,7 +33,7 @@ if ! wait_for_result; then
   # UIKit может ждать закрытия своего окна, когда SpringBoard уже применил значок.
   xcrun simctl io "$device" screenshot "$out-confirmation.png"
   xcrun simctl terminate "$device" eugggeneee.journal
-  SIMCTL_CHILD_JOURNAL_READ_ICON=1 xcrun simctl launch "$device" eugggeneee.journal
+  xcrun simctl launch "$device" eugggeneee.journal
   wait_for_result
 fi
 cat "$marker"

@@ -18,11 +18,15 @@ Future<void> main() async {
     final console = debugPrint;
     debugPrint = (message, {wrapWidth}) {
       if (message != null && message.startsWith('App icon:')) {
-        File('${Directory.systemTemp.path}/journal-launcher-probe.txt').writeAsStringSync('$message\n', mode: FileMode.append);
+        File('${Directory.systemTemp.path}/journal-launcher-probe.txt')
+            .writeAsStringSync('$message\n', mode: FileMode.append);
       }
       console(message, wrapWidth: wrapWidth);
     };
   }
+  final log = File('${Directory.systemTemp.path}/journal-launcher-probe.txt');
+  final previouslyRequested =
+      Platform.isIOS && log.existsSync() && log.readAsStringSync().contains('Initial icon: default');
   record('Starting Journal');
   await journal.main();
   await WidgetsBinding.instance.endOfFrame;
@@ -32,7 +36,7 @@ Future<void> main() async {
   record('Lifecycle: ${WidgetsBinding.instance.lifecycleState}');
   final previous = await AppIcons.current();
   record('Initial icon: $previous');
-  if (Platform.environment['JOURNAL_READ_ICON'] == '1') {
+  if (previouslyRequested) {
     record(previous == 'teal' ? 'JOURNAL_LAUNCHER_VERIFIED' : 'JOURNAL_LAUNCHER_FAILED current=$previous');
     return;
   }
