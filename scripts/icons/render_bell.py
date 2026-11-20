@@ -29,6 +29,10 @@ def blend(a, b, fraction):
     return tuple(round(x + (y - x) * fraction) for x, y in zip(a, b))
 
 
+def solid(rgb):
+    return {'solid': 'srgb:' + ','.join(f'{c/255:.5f}' for c in rgb) + ',1.00000'}
+
+
 layer(624, 624, 'white').save(root / 'bell.png')
 drawable = root / 'android/drawable-nodpi'
 layer(432, 176, 'white').save(drawable / 'ic_mono_shared.png')
@@ -42,10 +46,15 @@ for key in json.loads((root / 'icons.json').read_text()):
     ios = root / 'ios' / ('AppIcon.icon' if key == 'default' else f'Icon_{key}.icon')
     layer(1024, 624, fg).save(ios / 'Assets/bell.png')
     doc = json.loads((ios / 'icon.json').read_text())
-    doc['fill'] = {'solid': 'srgb:' + ','.join(f'{c/255:.5f}' for c in bg) + ',1.00000'}
-    doc['groups'] = [{'layers': [{'image-name': 'bell.png', 'name': 'bell', 'glass': False}],
+    doc['fill'] = solid(bg)
+    ink_modes = [
+        {'appearance': 'dark', 'value': solid(blend(seed, (255, 255, 255), .77))},
+        {'appearance': 'tinted', 'value': {'solid': 'extended-gray:1.00000,1.00000'}},
+    ]
+    doc['groups'] = [{'layers': [{'image-name': 'bell.png', 'name': 'bell', 'glass': False,
+                                  'fill-specializations': ink_modes}],
                       'shadow': {'kind': 'none', 'opacity': 0}, 'translucency': {'enabled': False, 'value': 0}}]
-    (ios / 'icon.json').write_text(json.dumps(doc, indent=2) + '\n', encoding='utf-8')
+    (ios / 'icon.json').write_text(json.dumps(doc, indent=2) + '\n', encoding='utf-8', newline='\n')
     suffix = re.sub(r'[A-Z]', lambda m: '_' + m[0].lower(), key)
     Image.new('RGB', (432, 432), bg).save(drawable / f'ic_bg_{suffix}.png')
     layer(432, 176, fg).save(drawable / f'ic_fg_{suffix}.png')

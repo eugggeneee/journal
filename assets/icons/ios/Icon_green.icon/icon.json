@@ -8,7 +8,21 @@
         {
           "image-name": "bell.png",
           "name": "bell",
-          "glass": false
+          "glass": false,
+          "fill-specializations": [
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:0.83922,0.92941,0.84314,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:1.00000,1.00000"
+              }
+            }
+          ]
         }
       ],
       "shadow": {

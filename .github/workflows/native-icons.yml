@@ -28,14 +28,12 @@ jobs:
       - name: Выбрать Xcode для сборки значков
         run: bash scripts/icons/select_xcode.sh
       - name: Экспортировать иконки для README и настроек
-        if: github.event_name == 'workflow_dispatch'
         timeout-minutes: 6
         run: |
           set -euo pipefail
           mkdir -p build/icon-review/preview
           bash scripts/icons/export_ios.sh
       - uses: actions/upload-artifact@v5
-        if: github.event_name == 'workflow_dispatch' && success()
         with:
           name: icon-composer
           path: build/icon-review/
