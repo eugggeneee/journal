@@ -65,8 +65,9 @@ void main() {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     try {
       var attempts = 0;
+      final requested = <String>[];
       messenger.setMockMethodCallHandler(channel, (call) async {
-        expect(call.arguments['id'], 'teal');
+        requested.add(call.arguments['id'] as String);
         if (++attempts == 1) throw PlatformException(code: 'NSPOSIXErrorDomain', details: 35);
         return true;
       });
@@ -75,6 +76,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       expect(await change, isTrue);
       expect(attempts, 2);
+      expect(requested, ['teal', 'teal']);
 
       attempts = 0;
       messenger.setMockMethodCallHandler(channel, (_) async {
