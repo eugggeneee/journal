@@ -21,7 +21,7 @@
 ## Порядок выпуска
 
 1. Выставить версию в `pubspec.yaml` вручную: `version: 1.1.0-beta.1+1`.
-2. Выполнить проверки: `python3 scripts/project/check.py`, `flutter analyze`, `flutter test`.
+2. Сверить версию в настройках с тегом, включая суффикс беты или RC. Выполнить проверки: `python3 scripts/project/check.py`, `flutter analyze`, `flutter test`.
 3. Закоммитить: `chore(release): 1.1.0-beta.1`.
 4. Поставить тег и отправить:
    ```bash

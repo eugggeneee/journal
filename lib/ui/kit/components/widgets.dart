@@ -52,7 +52,7 @@ class PageTitle extends StatelessWidget {
     // Длинное название (например, предмета) занимает до двух строк и берёт шрифт помельче, поэтому читается целиком.
     final long = maxLines > 1 && title.length > 26;
     final style = (long ? tt.headlineSmall : tt.headlineMedium)?.copyWith(
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w600,
       height: maxLines > 1 ? 1.1 : null,
     );
     return Semantics(
@@ -166,7 +166,7 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = Text(
       text,
-      style: context.tt.titleSmall?.copyWith(color: context.cs.primary, fontWeight: FontWeight.w700),
+      style: context.tt.titleSmall?.copyWith(color: context.cs.primary, fontWeight: FontWeight.w500),
     );
     final row = Semantics(
       header: true,
@@ -257,7 +257,7 @@ class EmptyState extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: context.tt.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+              style: context.tt.headlineSmall?.copyWith(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Text(
@@ -292,7 +292,7 @@ class NumberBadge extends StatelessWidget {
     child: AnimatedDefaultTextStyle(
       duration: Motion.short,
       curve: Motion.standard,
-      style: TextStyle(fontSize: size * 0.4, fontWeight: FontWeight.w800, color: tone.fg, height: 1),
+      style: TextStyle(fontSize: size * 0.4, fontWeight: FontWeight.w600, color: tone.fg, height: 1),
       child: Text(text),
     ),
   );
@@ -325,7 +325,7 @@ class AbsenceBadge extends StatelessWidget {
         ),
         child: Text(
           '$hours',
-          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: onColorFor(accent), height: 1),
+          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: onColorFor(accent), height: 1),
         ),
       ),
     );
@@ -350,7 +350,7 @@ class Pill extends StatelessWidget {
         Flexible(
           child: Text(
             text,
-            style: context.tt.labelMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w700),
+            style: context.tt.labelMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w500),
           ),
         ),
       ],
@@ -670,7 +670,7 @@ class JournalRow extends StatelessWidget {
                 Text(
                   title,
                   style: (compact ? context.tt.titleSmall : context.tt.titleMedium)?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w500,
                     height: 1.2,
                   ),
                 ),

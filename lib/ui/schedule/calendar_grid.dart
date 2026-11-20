@@ -144,7 +144,7 @@ class CalendarBand extends StatelessWidget {
                               child: Text(
                                 fmtMin(live),
                                 semanticsLabel: 'Сейчас ${fmtMin(live)}',
-                                style: text?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w800),
+                                style: text?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w600),
                               ),
                             ),
                           ),
@@ -227,7 +227,7 @@ class CalendarDate extends StatelessWidget {
                       child: Text(
                         '${date.day}',
                         style: context.tt.titleMedium?.copyWith(
-                          fontWeight: isToday || selected ? FontWeight.w800 : FontWeight.w600,
+                          fontWeight: isToday || selected ? FontWeight.w600 : FontWeight.w600,
                           color: selected ? cs.onPrimary : fg,
                         ),
                       ),

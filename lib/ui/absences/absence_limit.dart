@@ -140,7 +140,7 @@ class _Banner extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w800),
+                      style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 2),
                     Text(text, style: context.tt.bodyMedium?.copyWith(color: fg.withValues(alpha: 0.92), height: 1.3)),
@@ -205,7 +205,7 @@ class LimitCounters extends StatelessWidget {
         children: [
           Text(
             'Запас часов',
-            style: context.tt.headlineSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w800),
+            style: context.tt.headlineSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w600),
           ),
           Text('Без уважительной причины', style: context.tt.bodyMedium?.copyWith(color: tone.fg)),
           const SizedBox(height: 16),
@@ -275,7 +275,7 @@ class _LimitGauge extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w700),
+                style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w500),
               ),
               if (onTap != null) Icon(Icons.expand_more_rounded, color: tone.fg, size: 18),
             ],
@@ -302,7 +302,7 @@ class _LimitGauge extends StatelessWidget {
                   fit: BoxFit.scaleDown,
                   child: Text(
                     '$remaining',
-                    style: context.tt.headlineMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800),
+                    style: context.tt.headlineMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

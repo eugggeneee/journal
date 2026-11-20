@@ -64,8 +64,8 @@ class AppTheme {
   static ThemeData build(ColorScheme source) {
     final dark = source.brightness == Brightness.dark;
     final s = source.copyWith(
-      primaryContainer: dark ? source.primaryFixedDim : source.primaryFixed,
-      onPrimaryContainer: source.onPrimaryFixed,
+      primaryContainer: dark ? source.primaryFixedDim : source.primaryContainer,
+      onPrimaryContainer: dark ? source.onPrimaryFixed : source.onPrimaryContainer,
       secondaryContainer: dark ? source.secondaryFixedDim : source.secondaryFixed,
       onSecondaryContainer: source.onSecondaryFixed,
       tertiaryContainer: dark ? source.tertiaryFixedDim : source.tertiaryFixed,
@@ -73,8 +73,18 @@ class AppTheme {
     );
     final shape24 = RoundedRectangleBorder(borderRadius: BorderRadius.circular(JournalLayout.panelRadius));
     final base = ThemeData(colorScheme: s);
-    final actionLabel = base.textTheme.labelLarge!;
+    final type = base.textTheme;
+    final actionLabel = type.labelLarge!;
     return base.copyWith(
+      textTheme: type.copyWith(
+        displayMedium: type.displayMedium?.copyWith(fontSize: 40),
+        displaySmall: type.displaySmall?.copyWith(fontSize: 32),
+        headlineLarge: type.headlineLarge?.copyWith(fontSize: 28),
+        headlineMedium: type.headlineMedium?.copyWith(fontSize: 25),
+        headlineSmall: type.headlineSmall?.copyWith(fontSize: 22),
+        titleLarge: type.titleLarge?.copyWith(fontSize: 20),
+        titleMedium: type.titleMedium?.copyWith(fontSize: 15),
+      ),
       scaffoldBackgroundColor: s.surface,
       // Экраны скользят по горизонтали: вперёд справа налево, назад обратно.
       pageTransitionsTheme: const PageTransitionsTheme(builders: {
@@ -106,15 +116,19 @@ class AppTheme {
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         backgroundColor: s.surfaceContainer,
-        indicatorColor: s.secondaryContainer,
+        indicatorColor: s.primaryContainer,
+        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
+              color: states.contains(WidgetState.selected) ? s.onPrimaryContainer : s.onSurfaceVariant,
+            )),
         labelTextStyle: WidgetStateProperty.resolveWith((states) => base.textTheme.labelMedium!.copyWith(
-              fontWeight: states.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w500,
+              fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
               color: states.contains(WidgetState.selected) ? s.onSurface : s.onSurfaceVariant,
             )),
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: s.surfaceContainer,
-        indicatorColor: s.secondaryContainer,
+        indicatorColor: s.primaryContainer,
+        selectedIconTheme: IconThemeData(color: s.onPrimaryContainer),
         useIndicator: true,
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -146,7 +160,7 @@ class AppTheme {
         hoverElevation: 0,
         highlightElevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        extendedTextStyle: actionLabel.copyWith(fontSize: 15, fontWeight: FontWeight.w700),
+        extendedTextStyle: actionLabel.copyWith(fontSize: 15, fontWeight: FontWeight.w500),
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

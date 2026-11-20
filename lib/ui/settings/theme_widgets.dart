@@ -14,7 +14,7 @@ import '../kit/inputs/pickers.dart';
 import '../kit/sheets/sheet.dart';
 import '../theme/app_theme.dart';
 
-/// Круглый «образец» темы: три основных цвета схемы, как в выборе цветов Android.
+/// Образец темы. В светлом режиме показывает заливку карточки и два близких тона.
 class _SchemePainter extends CustomPainter {
   _SchemePainter(this.scheme);
   final ColorScheme scheme;
@@ -23,11 +23,13 @@ class _SchemePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
     final paint = Paint()..isAntiAlias = true;
-    paint.color = scheme.primary;
+    final light = scheme.brightness == Brightness.light;
+    final fill = scheme.primaryContainer;
+    paint.color = light ? fill : scheme.primary;
     canvas.drawArc(rect, math.pi, math.pi, true, paint); // верхняя половина
-    paint.color = scheme.tertiary;
+    paint.color = light ? Color.lerp(fill, scheme.primary, .28)! : scheme.tertiary;
     canvas.drawArc(rect, math.pi / 2, math.pi / 2, true, paint); // нижняя левая четверть
-    paint.color = scheme.secondary;
+    paint.color = light ? Color.lerp(fill, scheme.surface, .5)! : scheme.secondary;
     canvas.drawArc(rect, 0, math.pi / 2, true, paint); // нижняя правая четверть
   }
 
@@ -149,7 +151,7 @@ class _ChoiceTile extends StatelessWidget {
                 item.label,
                 textAlign: TextAlign.center,
                 style: context.tt.labelSmall?.copyWith(
-                  fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight: sel ? FontWeight.w600 : FontWeight.w500,
                   color: sel ? cs.onSurface : cs.onSurfaceVariant,
                 ),
               ),
@@ -255,10 +257,10 @@ class ThemePreview extends StatelessWidget {
           width: 44,
           height: 28,
           decoration: BoxDecoration(
-            color: selected ? cs.secondaryContainer : Colors.transparent,
+            color: selected ? cs.primaryContainer : Colors.transparent,
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Icon(icon, size: 18, color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant),
+          child: Icon(icon, size: 18, color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant),
         );
 
     return ExcludeSemantics(
@@ -267,7 +269,7 @@ class ThemePreview extends StatelessWidget {
         decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(JournalLayout.heroRadius)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
-            Expanded(child: Text('Расписание', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800))),
+            Expanded(child: Text('Расписание', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w600))),
             Pill('Группа 6312', tone: Tone(cs.secondaryContainer, cs.onSecondaryContainer), icon: Icons.groups_rounded),
           ]),
           const SizedBox(height: 14),

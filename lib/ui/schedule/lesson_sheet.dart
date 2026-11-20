@@ -97,7 +97,7 @@ class _LessonSheetState extends State<_LessonSheet> {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(slotRange(bell), style: context.tt.bodyLarge?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w700)),
+                Text(slotRange(bell), style: context.tt.bodyLarge?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w500)),
                 if (bell.hasBreak)
                   Text(
                     'Две половины ${halvesText(bell)}: ${fmtMin(bell.start)}–${fmtMin(bell.breakStart!)} и ${fmtMin(bell.breakEnd!)}–${fmtMin(bell.end)}, между ними ${innerBreakWord(bell)} ${minText(bell.breakMinutes)}',

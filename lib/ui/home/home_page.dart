@@ -125,7 +125,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     box.maxWidth < MediaQuery.textScalerOf(context).scale(140) ? date.replaceFirst(', ', ',\n') : date,
-                    style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w700),
+                    style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w500),
                   ),
                 );
               },
@@ -317,7 +317,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               Expanded(
                 child: Text(
                   title,
-                  style: tt.titleLarge?.copyWith(color: calm.fg, fontWeight: FontWeight.w800),
+                  style: tt.titleLarge?.copyWith(color: calm.fg, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -433,9 +433,9 @@ class _Week extends StatelessWidget {
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
                         Text(weekdayShort(d), style: tt.labelMedium?.copyWith(color: muted, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 2),
-                        Text('${d.day}', style: tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w800)),
+                        Text('${d.day}', style: tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 4),
-                        Text(n == null ? '–' : '$n', style: tt.labelLarge?.copyWith(color: sel ? cs.onPrimary : cs.primary, fontWeight: FontWeight.w800)),
+                        Text(n == null ? '–' : '$n', style: tt.labelLarge?.copyWith(color: sel ? cs.onPrimary : cs.primary, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 4),
                         Container(
                           width: 6,
@@ -546,7 +546,7 @@ class _LimitNote extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          for (final l in lines) Text(l, style: tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w700, height: 1.3)),
+                          for (final l in lines) Text(l, style: tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w500, height: 1.3)),
                           Text('Нажмите, чтобы открыть пропуски', style: tt.bodySmall?.copyWith(color: tone.fg.withValues(alpha: 0.85))),
                         ]),
                       ),
@@ -647,7 +647,7 @@ class _GestureTip extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Подсказка', style: tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w800)),
+                Text('Подсказка', style: tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text(
                   'Коротко удержите пару в расписании, чтобы отметить пропуск, а смахните запись влево, чтобы удалить её.',
@@ -674,7 +674,7 @@ class _GestureTip extends StatelessWidget {
                 Haptics.selection();
                 store.setTipGestures(true);
               },
-              child: const Text('Понятно', style: TextStyle(fontWeight: FontWeight.w800)),
+              child: const Text('Понятно', style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ]),
         ]),

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/dates.dart';
 import '../logic/bells.dart';
 import '../logic/limits.dart';
+import '../logic/release_updates.dart';
 import '../logic/subject_names.dart';
 import 'models.dart';
 
@@ -13,6 +14,7 @@ import 'models.dart';
 class AppStore extends ChangeNotifier {
   AppStore._(this._prefs);
   final SharedPreferences _prefs;
+  late final releases = ReleaseUpdates(_prefs);
 
   static const _kData = 'data_v1';
   static const _kSched = 'sched_v1';

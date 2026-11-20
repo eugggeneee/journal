@@ -10,6 +10,7 @@ import '../kit/animation/tab_switcher.dart';
 import '../home/home_page.dart';
 import '../schedule/schedule_page.dart';
 import 'scope.dart';
+import 'release_link.dart';
 
 /// Оболочка: нижняя панель навигации на телефоне, боковая NavigationRail на планшете и ПК.
 /// На вкладках с данными справа внизу одна кнопка добавления: любое действие занимает не больше трёх шагов.
@@ -31,6 +32,29 @@ class _ShellState extends State<Shell> {
 
   int _tab = 0;
   bool _prefetched = false;
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(onResume: _checkRelease);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkRelease());
+  }
+
+  Future<void> _checkRelease() async {
+    if (!mounted) return;
+    final releases = StoreScope.of(context).releases;
+    await releases.check();
+    if (!mounted || WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed || !releases.shouldNotify) return;
+    final version = releases.available!;
+    final page = releases.page(version);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('Доступен Journal $version'),
+      persist: false,
+      action: SnackBarAction(label: 'Открыть', onPressed: () => openRelease(context, page)),
+    ));
+    await releases.markShown(version);
+  }
 
   final ScheduleController _sched = ScheduleController();
   late final List<Widget> _pages = [
@@ -51,6 +75,7 @@ class _ShellState extends State<Shell> {
 
   @override
   void dispose() {
+    _lifecycle.dispose();
     _sched.dispose();
     super.dispose();
   }

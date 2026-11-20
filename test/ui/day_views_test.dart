@@ -12,6 +12,8 @@ import 'package:journal/ui/home/day_metrics.dart';
 import 'package:journal/ui/absences/absence_limit.dart';
 import 'package:journal/ui/grades/grades_page.dart';
 import 'package:journal/ui/settings/home_layout_page.dart';
+import 'package:journal/ui/settings/settings_home.dart';
+import 'package:journal/logic/release_updates.dart';
 import 'package:journal/ui/kit/inputs/settings_tiles.dart';
 import 'package:journal/ui/home/day_bar.dart';
 import 'package:journal/ui/kit/inputs/pickers.dart';
@@ -117,6 +119,15 @@ void main() {
     header: (fg, _) => Text('Среда, 18 ноября', style: TextStyle(color: fg)),
     onOpenDay: () {},
   );
+
+  testWidgets('настройки показывают установленную версию и доступное обновление', (tester) async {
+    SharedPreferences.setMockInitialValues({'release.latest': '99.0.0'});
+    store = await AppStore.load();
+    repo = _FixtureRepo(store);
+    await screen(tester, const SettingsHomePage(), scroll: false);
+    await tester.scrollUntilVisible(find.text('Версия ${ReleaseUpdates.buildVersion}'), 400);
+    expect(find.text('Доступно обновление до 99.0.0'), findsOneWidget);
+  });
 
   testWidgets('отсчёт до внутреннего перерыва, во время перерыва и после занятий', (tester) async {
     await screen(tester, hero(now));

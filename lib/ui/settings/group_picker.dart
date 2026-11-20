@@ -125,7 +125,7 @@ class _GroupSheetState extends State<GroupSheet> {
           padding: const EdgeInsets.fromLTRB(8, 4, 8, 10),
           child: Text(
             query.isEmpty ? 'Группы на сайте · ${_groups.length}' : 'Найдено: ${filtered.length}',
-            style: context.tt.labelLarge?.copyWith(color: cs.primary, fontWeight: FontWeight.w700),
+            style: context.tt.labelLarge?.copyWith(color: cs.primary, fontWeight: FontWeight.w500),
           ),
         ),
         _GroupGrid(groups: filtered, selected: widget.selected, onTap: widget.onSelected),
@@ -233,7 +233,7 @@ class _GroupTile extends StatelessWidget {
                 curve: Motion.standard,
                 maxLines: 1,
                 style: (context.tt.titleMedium ?? const TextStyle()).copyWith(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   color: selected ? cs.onPrimary : cs.onSurface,
                 ),
                 child: Text(label),

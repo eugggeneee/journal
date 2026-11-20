@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/haptics.dart';
 import '../../logic/limits.dart';
 import '../app/scope.dart';
+import '../app/release_link.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
@@ -113,7 +114,7 @@ class SettingsHomePage extends StatelessWidget {
                             const SizedBox(width: 18),
                             Expanded(
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text('Группа ${s.group}', style: context.tt.headlineSmall?.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w800)),
+                                Text('Группа ${s.group}', style: context.tt.headlineSmall?.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w600)),
                                 const SizedBox(height: 2),
                                 Text('МГТЭК · нажмите, чтобы сменить', style: context.tt.bodyMedium?.copyWith(color: cs.onPrimaryContainer.withValues(alpha: 0.85))),
                               ]),
@@ -134,6 +135,26 @@ class SettingsHomePage extends StatelessWidget {
                   onTap: () => _open(context, rows[i].page),
                   child: BadgeRow(icon: rows[i].icon, tone: rows[i].tone, title: rows[i].title, subtitle: rows[i].subtitle),
                 ),
+              const SizedBox(height: 16),
+              ListenableBuilder(
+                listenable: store.releases,
+                builder: (context, _) {
+                  final releases = store.releases;
+                  final next = releases.available;
+                  return SegmentCard(
+                    index: 0,
+                    count: 1,
+                    onTap: next == null ? null : () => openRelease(context, releases.page(next)),
+                    child: BadgeRow(
+                      icon: Icons.info_outline_rounded,
+                      tone: neutralTone(context),
+                      title: 'Версия ${releases.installed}',
+                      subtitle: next == null ? null : 'Доступно обновление до $next',
+                      showChevron: next != null,
+                    ),
+                  );
+                },
+              ),
             ]),
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
           ],
