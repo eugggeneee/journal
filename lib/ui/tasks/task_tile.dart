@@ -139,7 +139,7 @@ class TaskSummary extends StatelessWidget {
                   Text(
                     task.text,
                     style: context.tt.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w500,
                       height: 1.25,
                       color: task.done ? cs.onSurfaceVariant : cs.onSurface,
                       decoration: task.done ? TextDecoration.lineThrough : null,

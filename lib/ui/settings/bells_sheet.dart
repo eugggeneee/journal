@@ -73,7 +73,7 @@ class BellTimeline extends StatelessWidget {
         const SizedBox(width: 14),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(slotRange(slot), style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+            Text(slotRange(slot), style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
             if (slot.hasBreak)
               Row(children: [
                 Icon(slot.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded, size: 14, color: cs.tertiary),

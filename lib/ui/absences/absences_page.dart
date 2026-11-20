@@ -249,7 +249,7 @@ class AbsencesHero extends StatelessWidget {
     return HeroCard(
       tone: tone,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('По причинам', style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w700)),
+        Text('По причинам', style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w500)),
         Text('${hoursText(stats.totalHours)} за всё время · $pairs', style: context.tt.bodyMedium?.copyWith(color: fg)),
         const SizedBox(height: 12),
         _SplitBar(unexcused: unex, excused: ex, unexColor: unexColor, exColor: exColor, gapColor: tone.bg, emptyColor: fg.withValues(alpha: 0.2)),
@@ -347,7 +347,7 @@ class _Legend extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('$hours ч', style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w800)),
+            Text('$hours ч', style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w600)),
             Text(label, style: context.tt.bodySmall?.copyWith(color: fg.withValues(alpha: 0.85))),
           ]),
         ),
@@ -464,7 +464,7 @@ class _SemesterSheet extends StatelessWidget {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(title, style: context.tt.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
-            Text(value, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Text(value, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
           ]),
         ),
       ]),

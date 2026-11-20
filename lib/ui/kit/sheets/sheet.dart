@@ -88,7 +88,7 @@ class SheetScaffold extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: context.tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                      Text(title, style: context.tt.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
                       if (subtitle != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 2),

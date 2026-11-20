@@ -154,7 +154,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       );
 
   Widget _title(BuildContext context, String title, String subtitle) => Column(children: [
-        Text(title, textAlign: TextAlign.center, style: context.tt.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
+        Text(title, textAlign: TextAlign.center, style: context.tt.headlineMedium?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 10),
         Text(subtitle, textAlign: TextAlign.center, style: context.tt.bodyLarge?.copyWith(height: 1.4, color: context.cs.onSurfaceVariant)),
       ]);
@@ -170,7 +170,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             child: CookieIcon(size: 144, bg: cs.primary, glyph: _BellSwing(size: 78, color: cs.onPrimary)),
           ),
           const SizedBox(height: 32),
-          Text('Journal', textAlign: TextAlign.center, style: context.tt.displaySmall?.copyWith(fontWeight: FontWeight.w800)),
+          Text('Journal', textAlign: TextAlign.center, style: context.tt.displaySmall?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 4),
           Text('МГТЭК · Дневник', textAlign: TextAlign.center, style: context.tt.titleMedium?.copyWith(color: cs.primary, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
@@ -272,7 +272,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                           has ? 'Группа $group' : 'Выбрать группу',
                           style: context.tt.headlineSmall?.copyWith(
                             color: has ? cs.onPrimaryContainer : cs.onSurface,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 2),

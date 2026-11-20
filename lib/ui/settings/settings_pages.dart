@@ -209,11 +209,11 @@ class AbsenceSettingsPage extends StatelessWidget {
             Row(children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(sem.title, style: context.tt.titleLarge?.copyWith(color: tone.fg, fontWeight: FontWeight.w800)),
+                  Text(sem.title, style: context.tt.titleLarge?.copyWith(color: tone.fg, fontWeight: FontWeight.w600)),
                   Text('Учебный год ${sem.years}', style: context.tt.bodyMedium?.copyWith(color: tone.fg.withValues(alpha: 0.85))),
                 ]),
               ),
-              Text('$hours / $kSemesterLimit ч', style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800)),
+              Text('$hours / $kSemesterLimit ч', style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w600)),
             ]),
             const SizedBox(height: 14),
             TweenAnimationBuilder<double>(

@@ -56,7 +56,7 @@ class GoalCard extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Цель по предмету', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, height: 1.2)),
+                Text('Цель по предмету', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w500, height: 1.2)),
                 Text(
                   goal == null ? 'Не задана: нажмите, чтобы выбрать' : 'Средний балл $goal',
                   style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
@@ -68,7 +68,7 @@ class GoalCard extends StatelessWidget {
           if (goal != null && avg != null) ...[
             const SizedBox(height: 14),
             Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-              Text(fmtAvg(avg), style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+              Text(fmtAvg(avg), style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w600)),
               Text(' из $goal', style: tt.titleMedium?.copyWith(color: cs.onSurfaceVariant)),
             ]),
             const SizedBox(height: 8),

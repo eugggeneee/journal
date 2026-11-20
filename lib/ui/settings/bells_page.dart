@@ -292,7 +292,7 @@ class _PairRow extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(slotRange(slot), style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, fontFeatures: const [FontFeature.tabularFigures()])),
+                Text(slotRange(slot), style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontFeatures: const [FontFeature.tabularFigures()])),
                 Text(detail, style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
               ]),
             ),
@@ -425,7 +425,7 @@ class _PairSheet extends StatelessWidget {
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Перерыв внутри пары', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                    Text('Перерыв внутри пары', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w500)),
                     Text(
                       s.hasBreak ? (s.lunchInside ? 'Обед внутри пары: ${halvesText(s)}' : 'Две половины: ${halvesText(s)}') : 'Например, две половины по 45 минут',
                       style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
@@ -490,7 +490,7 @@ class _HalvesBar extends StatelessWidget {
     Widget half(double w, int minutes) => block(
           w,
           cs.primaryContainer,
-          Text('$minutes', maxLines: 1, overflow: TextOverflow.clip, style: context.tt.labelLarge?.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w800)),
+          Text('$minutes', maxLines: 1, overflow: TextOverflow.clip, style: context.tt.labelLarge?.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w600)),
         );
 
     return Padding(
@@ -666,7 +666,7 @@ class _Stepper extends StatelessWidget {
               child: Text(
                 value == 0 && zeroLabel != null ? zeroLabel! : '$value$suffix',
                 textAlign: TextAlign.center,
-                style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, fontFeatures: const [FontFeature.tabularFigures()]),
+                style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontFeatures: const [FontFeature.tabularFigures()]),
               ),
             ),
             IconButton(

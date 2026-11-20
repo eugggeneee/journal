@@ -144,7 +144,7 @@ class _GradeFormState extends State<_GradeForm> {
             child: Text(
               v == null ? '–' : '$v',
               key: ValueKey(v),
-              style: TextStyle(fontSize: v == 10 ? 26 : 30, fontWeight: FontWeight.w800, color: onAccent, height: 1),
+              style: TextStyle(fontSize: v == 10 ? 26 : 30, fontWeight: FontWeight.w600, color: onAccent, height: 1),
             ),
           ),
         ),
@@ -153,7 +153,7 @@ class _GradeFormState extends State<_GradeForm> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
             Text(
               subject.isEmpty ? 'Предмет не выбран' : store.subjectName(subject),
-              style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w800),
+              style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 2),
             Text(

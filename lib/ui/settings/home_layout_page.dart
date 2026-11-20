@@ -81,7 +81,7 @@ class HomeLayoutPage extends StatelessWidget {
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(info.$2, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, height: 1.2)),
+                            Text(info.$2, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w500, height: 1.2)),
                             Text(info.$3, style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
                           ]),
                         ),

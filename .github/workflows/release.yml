@@ -181,6 +181,7 @@ jobs:
       - name: Сборка (без подписи)
         run: |
           flutter build ios --release --no-codesign --config-only \
+            --dart-define=JOURNAL_VERSION="${{ needs.meta.outputs.version }}" \
             --build-name "${{ needs.meta.outputs.ios_version }}" \
             --build-number "${{ github.run_number }}"
           xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \

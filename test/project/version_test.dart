@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:journal/logic/release_updates.dart';
 
 /// Схема версий из docs/VERSIONING.md: MAJOR.MINOR.PATCH, PATCH от 0 до 20,
 /// пред-релизы -beta.N и -rc.N, номер сборки после «+».
@@ -11,6 +12,10 @@ void main() {
 
   test('версия в pubspec.yaml соответствует схеме', () {
     expect(match, isNotNull, reason: raw);
+  });
+
+  test('в настройках показан полный номер версии из pubspec.yaml', () {
+    expect(ReleaseUpdates.buildVersion, raw.split('+').first);
   });
 
   test('первая цифра не меньше 1, последняя не больше 20', () {

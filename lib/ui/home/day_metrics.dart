@@ -73,7 +73,7 @@ class DayMetrics extends StatelessWidget {
                             style: (compact ? context.tt.titleLarge : context.tt.headlineSmall)?.copyWith(
                               color: tone.fg,
                               height: 1.1,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),

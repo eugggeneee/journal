@@ -1,4 +1,8 @@
+import 'dart:ui' as ui;
+
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:journal/ui/settings/theme_widgets.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:journal/core/palette.dart';
 import 'package:journal/ui/kit/foundation/ctx.dart';
@@ -16,6 +20,51 @@ void main() {
   test('оттенки набора различаются', () {
     expect(kSettingHues.toSet().length, kSettingHues.length);
   });
+  testWidgets('все светлые образцы показывают пастельные заливки карточек', (tester) async {
+    final key = GlobalKey();
+    await tester.pumpWidget(RepaintBoundary(
+      key: key,
+      child: Row(textDirection: TextDirection.ltr, children: [
+        for (final theme in AppPalette.choices)
+          SchemeDot(scheme: AppPalette.scheme(theme, Brightness.light), size: 32),
+      ]),
+    ));
+    await tester.runAsync(() async {
+      final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      final image = await boundary.toImage();
+      try {
+        final data = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
+        for (final (i, theme) in AppPalette.choices.indexed) {
+          final row = image.height ~/ 2;
+          Color pixel(int x, int y) {
+            final offset = 4 * (image.width * y + 32 * i + x);
+            return Color.fromARGB(255, data.getUint8(offset), data.getUint8(offset + 1), data.getUint8(offset + 2));
+          }
+          final expected = AppTheme.themeFor(theme.id, Brightness.light).colorScheme.primaryContainer;
+          final actual = pixel(16, row - 8);
+          for (final (a, b) in [(actual.r, expected.r), (actual.g, expected.g), (actual.b, expected.b)]) {
+            expect(a, closeTo(b, 1 / 255), reason: theme.id);
+          }
+          for (final color in [pixel(16, row - 8), pixel(8, row + 5), pixel(24, row + 5)]) {
+            expect(color.computeLuminance(), greaterThan(.3), reason: theme.id);
+          }
+        }
+      } finally {
+        image.dispose();
+      }
+    });
+  });
+
+  test('индикатор и значок выбранной вкладки используют основной акцент', () {
+    for (final theme in AppPalette.choices) {
+      final data = AppTheme.themeFor(theme.id, Brightness.dark);
+      final bar = data.navigationBarTheme;
+      expect(bar.indicatorColor, data.colorScheme.primaryContainer);
+      expect(bar.iconTheme?.resolve({WidgetState.selected})?.color, data.colorScheme.onPrimaryContainer);
+      expect(data.navigationRailTheme.indicatorColor, bar.indicatorColor);
+    }
+  });
+
   test('текст читается на карточках всех 20 тем при обеих яркостях', () {
     for (final theme in AppPalette.choices) {
       for (final brightness in Brightness.values) {

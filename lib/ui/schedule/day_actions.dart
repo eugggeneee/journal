@@ -66,7 +66,7 @@ class DayToolbar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(longDate(date), style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+          Text(longDate(date), style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 4),
           Text(details.join(' · '), style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
         ],
