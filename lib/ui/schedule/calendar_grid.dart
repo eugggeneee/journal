@@ -36,8 +36,9 @@ Set<int> darkerLessons(Iterable<LessonSlot> slots, AppStore store) {
 }
 
 Color lessonSurface(BuildContext context, bool darker) {
-  final base = context.cs.surfaceContainerHigh;
-  return darker ? Color.lerp(base, Colors.black, context.isDark ? .16 : .035)! : base;
+  final cs = context.cs;
+  if (!darker) return cs.surfaceContainerHigh;
+  return context.isDark ? cs.surfaceContainer : cs.surfaceContainerHighest;
 }
 
 /// Часы, события и текущее время привязаны к одним координатам. В режиме дня

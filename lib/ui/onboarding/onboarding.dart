@@ -376,9 +376,9 @@ class _Backdrop extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.cs;
     return Stack(children: [
-      Positioned(top: -140, left: -100, child: _Orb(320, cs.primaryContainer.withValues(alpha: 0.9))),
-      Positioned(top: 220, right: -160, child: _Orb(340, cs.tertiaryContainer.withValues(alpha: 0.8))),
-      Positioned(bottom: -140, left: -80, child: _Orb(320, cs.secondaryContainer.withValues(alpha: 0.9))),
+      Positioned(top: -140, left: -100, child: _Orb(320, cs.primaryContainer.withValues(alpha: context.isDark ? .14 : .9))),
+      Positioned(top: 220, right: -160, child: _Orb(340, cs.tertiaryContainer.withValues(alpha: context.isDark ? .12 : .8))),
+      Positioned(bottom: -140, left: -80, child: _Orb(320, cs.secondaryContainer.withValues(alpha: context.isDark ? .14 : .9))),
     ]);
   }
 }

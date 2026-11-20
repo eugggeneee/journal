@@ -198,7 +198,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         ),
     ];
 
-    final heroColor = _st?.status == DayStatus.ok ? context.cs.primary : context.cs.primaryContainer;
+    final heroColor = context.cs.primaryContainer;
     final bodyColor = context.cs.surface;
     return ContentFrame(
       child: LayoutBuilder(

@@ -250,6 +250,9 @@ void main() {
     const inset = 59.0;
     tester.view.padding = const FakeViewPadding(top: inset);
     tester.view.viewPadding = const FakeViewPadding(top: inset);
+    for (var i = 0; i < 3; i++) {
+      store.saveTask(Task(id: 't$i', date: today(), lesson: 1, due: today(), text: 'Задание $i', subject: 'Физика'));
+    }
     final key = GlobalKey();
     await screen(
       tester,
@@ -285,8 +288,8 @@ void main() {
     }
 
     final heroHeight = tester.getSize(find.byType(HeroSurface)).height;
-    checkClock(scheme.primary);
-    await check(scheme.primary, [0, 32, 58, 60]);
+    checkClock(scheme.primaryContainer);
+    await check(scheme.primaryContainer, [0, 32, 58, 60]);
     final gesture = await tester.startGesture(const Offset(80, 160));
     await gesture.moveBy(const Offset(0, 32));
     await tester.pump();
@@ -294,12 +297,12 @@ void main() {
     await tester.pump();
     final position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
     expect(position.pixels, lessThan(-30));
-    checkClock(scheme.primary);
-    await check(scheme.primary, [0, 32, 58, 60, 80]);
+    checkClock(scheme.primaryContainer);
+    await check(scheme.primaryContainer, [0, 32, 58, 60, 80]);
     await gesture.up();
     await tester.pumpAndSettle();
     expect(repo.refreshed, isNotEmpty);
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -680));
+    await tester.drag(find.byType(CustomScrollView), Offset(0, -heroHeight - 200));
     await tester.pumpAndSettle();
     expect(position.pixels, greaterThan(0));
     expect(position.pixels, greaterThan(heroHeight));

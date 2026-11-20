@@ -69,7 +69,6 @@ class _AbsenceHeatmapState extends State<AbsenceHeatmap> {
     final cs = context.cs;
     final tt = context.tt;
     final data = MonthAbsences.of(widget.store.absences, _month.year, _month.month);
-    final accent = absenceAccent(context, excused: false);
     final leading = DateTime(_month.year, _month.month, 1).weekday - 1;
     final days = data.daysInMonth;
     final rowCount = ((leading + days) / 7).ceil();
@@ -80,8 +79,8 @@ class _AbsenceHeatmapState extends State<AbsenceHeatmap> {
       if (day < 1 || day > days) return const AspectRatio(aspectRatio: 1, child: SizedBox.shrink());
       final k = data.intensity(day);
       final isToday = _isCurrent && day == now.day;
-      final bg = k > 0 ? Color.alphaBlend(accent.withValues(alpha: 0.2 + 0.7 * k), cs.surfaceContainerHigh) : cs.surfaceContainerHigh.withValues(alpha: 0.6);
-      final fg = k > 0.65 ? cs.onPrimary : cs.onSurface;
+      final bg = absenceDayFill(context, k);
+      final fg = k > 0 ? onColorFor(bg) : cs.onSurface;
       return AspectRatio(
         aspectRatio: 1,
         child: Semantics(
@@ -173,7 +172,7 @@ class _AbsenceHeatmapState extends State<AbsenceHeatmap> {
                 height: 16,
                 margin: const EdgeInsets.only(right: 4),
                 decoration: BoxDecoration(
-                  color: k == 0 ? cs.surfaceContainerHigh : Color.alphaBlend(accent.withValues(alpha: 0.2 + 0.7 * k), cs.surfaceContainerHigh),
+                  color: absenceDayFill(context, k),
                   borderRadius: BorderRadius.circular(5),
                 ),
               ),

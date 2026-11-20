@@ -59,7 +59,7 @@ class DayCard extends StatelessWidget {
   Widget _day(BuildContext context, double width) {
     final cs = context.cs;
     final tt = context.tt;
-    final tone = Tone(cs.primary, cs.onPrimary);
+    final tone = Tone(cs.primaryContainer, cs.onPrimaryContainer);
     final fg = tone.fg;
     final minute = now.hour * 60 + now.minute;
     final numbers = slots.map((s) => s.number).toList();

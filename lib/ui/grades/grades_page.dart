@@ -199,7 +199,10 @@ class GradesHero extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: stats.distribution[i] == 0
                                     ? tone.fg.withValues(alpha: 0.2)
-                                    : Color.lerp(gradeAccent(context, i + 1), gradeTone(context, i + 1).bg, .24),
+                                    : gradeChartFill(i + 1),
+                                border: stats.distribution[i] == 0
+                                    ? null
+                                    : Border.all(color: tone.fg.withValues(alpha: .55)),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                             ),
@@ -287,7 +290,11 @@ class Spark extends StatelessWidget {
             width: barWidth,
             height: 4 + (height - 4) * g.value / 10,
             margin: const EdgeInsets.only(right: 3),
-            decoration: BoxDecoration(color: gradeAccent(context, g.value), borderRadius: BorderRadius.circular(3)),
+            decoration: BoxDecoration(
+              color: gradeChartFill(g.value),
+              borderRadius: BorderRadius.circular(3),
+              border: Border.all(color: context.cs.onSurface.withValues(alpha: .45)),
+            ),
           ),
       ],
     ),

@@ -62,11 +62,14 @@ class AppTheme {
   }
 
   static ThemeData build(ColorScheme source) {
-    // Сохраняем цвет выбранной темы и тон соответствующих on-ролей.
+    final dark = source.brightness == Brightness.dark;
     final s = source.copyWith(
-      primary: Color.lerp(source.primary, source.secondary, .16),
-      tertiary: Color.lerp(source.tertiary, source.secondary, .12),
-      error: Color.lerp(source.error, source.onErrorContainer, .08),
+      primaryContainer: dark ? source.primaryFixedDim : source.primaryFixed,
+      onPrimaryContainer: source.onPrimaryFixed,
+      secondaryContainer: dark ? source.secondaryFixedDim : source.secondaryFixed,
+      onSecondaryContainer: source.onSecondaryFixed,
+      tertiaryContainer: dark ? source.tertiaryFixedDim : source.tertiaryFixed,
+      onTertiaryContainer: source.onTertiaryFixed,
     );
     final shape24 = RoundedRectangleBorder(borderRadius: BorderRadius.circular(JournalLayout.panelRadius));
     final base = ThemeData(colorScheme: s);
@@ -151,7 +154,9 @@ class AppTheme {
         side: WidgetStateBorderSide.resolveWith(
           (states) => BorderSide(color: states.contains(WidgetState.selected) ? Colors.transparent : s.outlineVariant),
         ),
-        labelStyle: actionLabel.copyWith(color: s.onSurface),
+        labelStyle: WidgetStateTextStyle.resolveWith((states) => actionLabel.copyWith(
+              color: states.contains(WidgetState.selected) ? s.onSecondaryContainer : s.onSurface,
+            )),
         showCheckmark: false,
       ),
       inputDecorationTheme: InputDecorationTheme(

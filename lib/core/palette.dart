@@ -12,7 +12,7 @@ class ThemeChoice {
 }
 
 /// Палитра тем: стандартная, чёрно-белая и основные цвета Material Design.
-/// Порядок и id совпадают со значками в assets/icons (см. scripts/icons/make_icons.py).
+/// Порядок и id совпадают со значками в assets/icons (см. assets/icons/icons.json).
 class AppPalette {
   AppPalette._();
 
