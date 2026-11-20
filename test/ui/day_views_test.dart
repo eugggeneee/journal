@@ -163,6 +163,16 @@ void main() {
     expect(find.text('Без времени звонков'), findsOneWidget);
   });
 
+  testWidgets('отсчёт при переходах 100 → 99 и 10 → 9 читается на узком экране', (tester) async {
+    for (final left in [100, 99, 10, 9]) {
+      final time = DateTime(2026, 11, 18, 11, 20).subtract(Duration(minutes: left));
+      await screen(tester, hero(time), width: 320, scale: 2);
+      expect(find.text('$left'), findsOneWidget);
+      expect(find.textContaining(RegExp(r'до начала\s+в 11:20')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
   testWidgets('вся карточка с крупным отсчётом помещается над навигацией', (tester) async {
     for (final (width, height, top, bottom, scale) in [
       (320.0, 568.0, 20.0, 80.0, 1.0),
