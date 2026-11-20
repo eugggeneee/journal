@@ -67,6 +67,7 @@ void main() {
       var attempts = 0;
       final requested = <String>[];
       messenger.setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'get') return 'default';
         requested.add(call.arguments['id'] as String);
         if (++attempts == 1) throw PlatformException(code: 'NSPOSIXErrorDomain', details: 35);
         return true;
@@ -85,6 +86,25 @@ void main() {
       });
       expect(await AppIcons.set('teal'), isFalse);
       expect(attempts, 1);
+    } finally {
+      messenger.setMockMethodCallHandler(channel, null);
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
+  testWidgets('применённый iOS значок остаётся выбранным при ошибке подтверждения', (tester) async {
+    const channel = MethodChannel('eugggeneee.journal/app_icon');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final calls = <String>[];
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call.method);
+        if (call.method == 'get') return 'teal';
+        throw PlatformException(code: 'NSPOSIXErrorDomain', details: 5);
+      });
+      expect(await AppIcons.set('teal'), isTrue);
+      expect(calls, ['set', 'get']);
     } finally {
       messenger.setMockMethodCallHandler(channel, null);
       debugDefaultTargetPlatformOverride = null;

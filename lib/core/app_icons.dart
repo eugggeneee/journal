@@ -37,6 +37,8 @@ class AppIcons {
         return (await _channel.invokeMethod<bool>('set', {'id': id})) ?? false;
       } on PlatformException catch (e) {
         if (kDebugMode) debugPrint('App icon: ${e.code} ${e.message} (${e.details})');
+        // SpringBoard может применить значок до того, как UIKit вернёт ошибку.
+        if (e.code == 'NSPOSIXErrorDomain' && await current() == id) return true;
         if (attempt != 0 || e.code != 'NSPOSIXErrorDomain' || e.details != 35) return false;
         await Future<void>.delayed(const Duration(seconds: 1));
       } catch (_) {
