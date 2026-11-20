@@ -5,15 +5,25 @@ out="$PWD/build/icon-review"
 mkdir -p "$out/preview"
 src="$PWD/assets/icons/ios"
 ictool="$(xcode-select -p)/../Applications/Icon Composer.app/Contents/Executables/ictool"
-if "$ictool" "$src/AppIcon.icon" --export-preview iOS Light 1024 1024 1 "$out/logo.png"; then
+render() {
+  for attempt in 1 2 3; do
+    if "$ictool" "$@" && [[ -s "${!#}" ]]; then return 0; fi
+    sleep 1
+  done
+  return 1
+}
+render_all() {
+  render "$src/AppIcon.icon" --export-preview iOS Light 1024 1024 1 "$out/logo.png" || return 1
   for icon in "$src"/*.icon; do
     id=$(basename "$icon" .icon); id=${id#Icon_}
     if [[ $id == AppIcon ]]; then id=default; fi
-    "$ictool" "$icon" --export-preview iOS Light 128 128 1 "$out/preview/$id.png"
+    render "$icon" --export-preview iOS Light 128 128 1 "$out/preview/$id.png" || return 1
   done
-  "$ictool" "$src/AppIcon.icon" --export-preview iOS Dark 128 128 1 "$out/dark.png"
-  "$ictool" "$src/AppIcon.icon" --export-preview iOS Tinted 128 128 1 "$out/tinted.png" ||
-    "$ictool" "$src/AppIcon.icon" --export-preview iOS TintedLight 128 128 1 "$out/tinted.png"
+}
+if render_all; then
+  render "$src/AppIcon.icon" --export-preview iOS Dark 128 128 1 "$out/dark.png"
+  render "$src/AppIcon.icon" --export-preview iOS TintedLight 128 128 1 "$out/tinted.png" ||
+    render "$src/AppIcon.icon" --export-preview iOS Tinted 128 128 1 "$out/tinted.png"
 else
   # На виртуальных Mac без подходящего Metal-драйвера используем растры iPhone из actool.
   compiled=$(mktemp -d)

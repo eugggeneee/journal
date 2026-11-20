@@ -58,13 +58,17 @@ jobs:
           xcrun simctl install "$device" "$app"
           mkdir -p build/icon-review/preview
           xcrun simctl io "$device" screenshot build/icon-review/iphone-default.png
-          xcrun simctl launch --console "$device" eugggeneee.journal > "$RUNNER_TEMP/launcher.log" 2>&1 &
-          for attempt in {1..60}; do
-            if grep -qF JOURNAL_LAUNCHER_VERIFIED "$RUNNER_TEMP/launcher.log"; then break; fi
+          flutter run -d "$device" --use-application-binary="$app" --target scripts/icons/launcher_probe.dart --no-resident > "$RUNNER_TEMP/launcher.log" 2>&1
+          data=$(xcrun simctl get_app_container "$device" eugggeneee.journal data)
+          for attempt in {1..75}; do
+            marker=$(find "$data" -name journal-launcher-probe.txt -print -quit)
+            if [[ -n "$marker" ]] && grep -q 'JOURNAL_LAUNCHER_' "$marker"; then break; fi
             sleep 2
           done
           cat "$RUNNER_TEMP/launcher.log"
-          grep -F JOURNAL_LAUNCHER_VERIFIED "$RUNNER_TEMP/launcher.log"
+          xcrun simctl io "$device" screenshot build/icon-review/iphone-app.png
+          [[ -n "$marker" ]] && cat "$marker"
+          grep -F JOURNAL_LAUNCHER_VERIFIED "$marker"
           xcrun simctl terminate "$device" eugggeneee.journal
           for appearance in light dark; do
             xcrun simctl ui "$device" appearance "$appearance"
