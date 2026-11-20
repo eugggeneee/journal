@@ -36,7 +36,8 @@ journal/
   scripts/
     icons/              генерация и подключение значков тем; bell.png: маска колокольчика
     project/            check.py, layers.py, version.py
-    release/            make-keystore.sh
+    release/            ключ подписи Android и генератор каталога AltStore из опубликованного IPA
+  site/ios/             страница добавления источника в AltStore Classic и SideStore
   test/
     data/ logic/ project/ fixtures/
   CHANGELOG.md, CONTRIBUTING.md, SECURITY.md, README.md, LICENSE

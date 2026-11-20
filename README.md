@@ -33,10 +33,9 @@ Android и iOS. Без рекламы и аккаунтов, работает о
 | Платформа | Файл | Как установить |
 |---|---|---|
 | Android | `Journal-vX.Y.Z-android.apk` | Открыть файл, разрешить установку из этого источника |
-| iPhone, iPad | `Journal-vX.Y.Z-ios.ipa` | Установить через [AltStore](https://altstore.io) или [Sideloadly](https://sideloadly.io) |
+| iPhone, iPad | Источник Journal | [Добавить в AltStore Classic или SideStore](https://eugggeneee.github.io/journal/ios/), затем установить Journal из каталога |
 
-> [!IMPORTANT]
-> Сборка для iOS не подписана Apple. С бесплатным Apple ID её нужно переподписывать раз в 7 дней; AltStore делает это автоматически.
+Источник добавляется один раз. Когда выйдет следующая стабильная версия, откройте **My Apps** в магазине и нажмите **Update** у Journal. Для ручного добавления вставьте в **Sources → +** адрес `https://eugggeneee.github.io/journal/ios/source.json`. IPA также можно установить через [Sideloadly](https://sideloadly.io).
 
 <details>
 <summary>Проверка файла</summary>
@@ -73,7 +72,7 @@ gh attestation verify Journal-vX.Y.Z-android.apk --repo eugggeneee/journal
 <details>
 <summary>Почему на iPhone приложение нужно переподписывать?</summary>
 
-Бесплатный Apple ID даёт подпись на 7 дней. AltStore продлевает её автоматически.
+С бесплатным Apple ID подпись действует 7 дней. Магазин может продлевать её в фоне. Если фоновое продление пропущено, нажмите **Refresh** в **My Apps** до истечения подписи. AltStore Classic для этого нужен доступ к AltServer.
 
 </details>
 

@@ -1,0 +1,53 @@
+name: Каталог Journal для iOS
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'docs/logo.png'
+      - 'scripts/release/altstore_source.py'
+      - '.github/workflows/site.yml'
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && !contains(github.event.workflow_run.head_branch, '-'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Собрать источник из опубликованного IPA
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases/latest" > "$RUNNER_TEMP/release.json"
+          tag=$(jq -er '.tag_name' "$RUNNER_TEMP/release.json")
+          ipa="Journal-$tag-ios.ipa"
+          gh release download "$tag" --pattern "$ipa" --dir "$RUNNER_TEMP"
+          cp docs/logo.png site/ios/icon.png
+          python3 scripts/release/altstore_source.py "$RUNNER_TEMP/release.json" "$RUNNER_TEMP/$ipa" site/ios/source.json
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.publish.outputs.page_url }}ios/
+    steps:
+      - id: publish
+        uses: actions/deploy-pages@v4
