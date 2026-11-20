@@ -38,49 +38,49 @@ class SettingsHomePage extends StatelessWidget {
         icon: Icons.palette_rounded,
         title: 'Оформление',
         subtitle: '${AppTheme.nameOf(s.themeColor, hasDynamic: AppTheme.dynamicAvailable.value)} · ${modeNames[s.themeMode]}',
-        tone: hueTone(context, kHueViolet),
+
         page: const ThemePage(),
       ),
       _Section(
         icon: Icons.dashboard_customize_rounded,
         title: 'Главная',
         subtitle: s.homeHidden.isEmpty ? 'Все блоки показаны' : 'Скрыто блоков: ${s.homeHidden.length}',
-        tone: hueTone(context, 300),
+
         page: const HomeLayoutPage(),
       ),
       _Section(
         icon: Icons.calendar_month_rounded,
         title: 'Расписание',
         subtitle: s.autoRefresh ? 'Группа и автообновление' : 'Автообновление выключено',
-        tone: hueTone(context, kHueBlue),
+
         page: const ScheduleSettingsPage(),
       ),
       _Section(
         icon: Icons.notifications_active_rounded,
         title: 'Звонки',
         subtitle: bellsSummary(s),
-        tone: hueTone(context, kHueAmber),
+
         page: const BellsPage(),
       ),
       _Section(
         icon: Icons.event_busy_rounded,
         title: 'Пропуски',
         subtitle: sem.upcoming ? 'Каникулы · лимит $kMonthLimit ч в месяц' : '${sem.title} · лимиты $kMonthLimit ч и $kSemesterLimit ч',
-        tone: hueTone(context, kHueRose),
+
         page: const AbsenceSettingsPage(),
       ),
       _Section(
         icon: Icons.tune_rounded,
         title: 'Поведение',
         subtitle: '${s.haptics ? 'Вибро включено' : 'Вибро выключено'} · ${const ['анимации полные', 'анимации спокойные', 'без анимаций'][s.motion]}',
-        tone: hueTone(context, kHueTeal),
+
         page: const BehaviorSettingsPage(),
       ),
       _Section(
         icon: Icons.cloud_sync_rounded,
         title: 'Данные',
         subtitle: 'Копия и восстановление',
-        tone: hueTone(context, kHueGreen),
+
         page: const DataSettingsPage(),
       ),
     ];
@@ -110,11 +110,11 @@ class SettingsHomePage extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(24, 22, 20, 22),
                           child: Row(children: [
-                            CookieIcon(icon: Icons.school_rounded, size: 64, bg: cs.primary, fg: cs.onPrimary),
+                            const IconBox(icon: Icons.school_outlined, size: 64, glyphSize: 38),
                             const SizedBox(width: 18),
                             Expanded(
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text('Группа ${s.group}', style: context.tt.headlineSmall?.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w600)),
+                                Text('Группа ${s.group}', style: context.tt.headlineSmall?.copyWith(color: cs.onPrimaryContainer, fontWeight: JournalType.heading)),
                                 const SizedBox(height: 2),
                                 Text('МГТЭК · нажмите, чтобы сменить', style: context.tt.bodyMedium?.copyWith(color: cs.onPrimaryContainer.withValues(alpha: 0.85))),
                               ]),
@@ -133,7 +133,7 @@ class SettingsHomePage extends StatelessWidget {
                   index: i,
                   count: rows.length,
                   onTap: () => _open(context, rows[i].page),
-                  child: BadgeRow(icon: rows[i].icon, tone: rows[i].tone, title: rows[i].title, subtitle: rows[i].subtitle),
+                  child: BadgeRow(icon: rows[i].icon, title: rows[i].title, subtitle: rows[i].subtitle),
                 ),
               const SizedBox(height: 16),
               ListenableBuilder(
@@ -147,7 +147,6 @@ class SettingsHomePage extends StatelessWidget {
                     onTap: next == null ? null : () => openRelease(context, releases.page(next)),
                     child: BadgeRow(
                       icon: Icons.info_outline_rounded,
-                      tone: neutralTone(context),
                       title: 'Версия ${releases.installed}',
                       subtitle: next == null ? null : 'Доступно обновление до $next',
                       showChevron: next != null,
@@ -165,10 +164,9 @@ class SettingsHomePage extends StatelessWidget {
 }
 
 class _Section {
-  const _Section({required this.icon, required this.title, required this.subtitle, required this.tone, required this.page});
+  const _Section({required this.icon, required this.title, required this.subtitle, required this.page});
   final IconData icon;
   final String title;
   final String subtitle;
-  final Tone tone;
   final Widget page;
 }

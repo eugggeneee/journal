@@ -103,7 +103,7 @@ class DayBar extends StatelessWidget {
                               children: [
                                 Text(
                                   '$n',
-                                  style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 18, height: 1),
+                                  style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 18, height: 1),
                                 ),
                                 if (!compact && width >= 32) ...[
                                   const SizedBox(height: 4),
@@ -180,7 +180,7 @@ class DayBar extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       child: Text(
                         fmtMin(minute),
-                        style: TextStyle(color: bg, fontSize: 13, fontWeight: FontWeight.w600),
+                        style: TextStyle(color: bg, fontSize: 13, fontWeight: FontWeight.w800),
                       ),
                     ),
                   ),

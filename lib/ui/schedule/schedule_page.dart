@@ -257,7 +257,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
                                 child: Text(
                                   monthYear(_selected),
                                   style: context.tt.headlineMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: JournalType.heading,
                                     letterSpacing: -1,
                                   ),
                                 ),

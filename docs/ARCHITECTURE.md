@@ -34,7 +34,7 @@ journal/
         sheets/         нижние шторки и диалоги
       home/ schedule/ grades/ absences/ tasks/ settings/ onboarding/   экраны
   scripts/
-    icons/              генерация и подключение значков тем; bell.png: маска колокольчика
+    icons/              генерация и подключение значков тем; мастер bell.svg, подготовка растров и экспорт нативных превью
     project/            check.py, layers.py, version.py
     release/            ключ подписи Android и генератор каталога AltStore из опубликованного IPA
   site/ios/             страница добавления источника в AltStore Classic и SideStore

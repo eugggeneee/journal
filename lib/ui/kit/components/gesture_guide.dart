@@ -1,14 +1,10 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../foundation/ctx.dart';
 import 'widgets.dart';
 
 /// Руководство по жестам: шесть коротких карточек. Используется на стартовых экранах и в «Поведении».
 class GestureGuide extends StatelessWidget {
-  const GestureGuide({super.key, this.compact = false});
-
-  /// Плотный вид для стартовых экранов: всё помещается на экран без прокрутки.
-  final bool compact;
+  const GestureGuide({super.key});
 
   static const _items = [
     (Icons.touch_app_rounded, 'Нажмите на пару', 'Откроются подробности: пропуск, оценка и пометка.'),
@@ -28,26 +24,21 @@ class GestureGuide extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    final tones = [
-      for (final h in const [kHueBlue, kHueViolet, kHueRose, kHueAmber, kHueGreen, kHueTeal]) hueTone(context, h),
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var i = 0; i < _items.length; i++)
-          SegmentCard(
-            index: i,
-            count: _items.length,
-            child: JournalRow(
-              leading: IconBox(icon: _items[i].$1, tone: tones[i], size: compact ? 40 : 46),
-              compact: compact,
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: compact ? 8 : 12),
-              title: _items[i].$2,
-              subtitle: _items[i].$3,
-            ),
-          ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => GuideRows(_items);
+}
+
+class GuideRows extends StatelessWidget {
+  const GuideRows(this.items, {super.key});
+  final List<(IconData, String, String)> items;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      for (var i = 0; i < items.length; i++)
+        SegmentCard(index: i, count: items.length,
+          child: JournalRow(leading: IconBox(icon: items[i].$1),
+            title: items[i].$2, subtitle: items[i].$3)),
+    ],
+  );
 }

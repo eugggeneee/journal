@@ -83,7 +83,7 @@ class _SubjectPageState extends State<SubjectPage> {
                       value: AnimatedNumber(
                         value: avg!,
                         format: fmtAvg,
-                        style: context.tt.displayMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w600, height: 1.05),
+                        style: context.tt.displayMedium?.copyWith(color: tone.fg, fontWeight: JournalType.heading, height: 1.05),
                       ),
                       aside: [gradesText(grades.length), 'от $minValue до $maxValue'],
                     ),

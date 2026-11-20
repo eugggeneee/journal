@@ -46,7 +46,6 @@ for key in json.loads((root / 'icons.json').read_text()):
     doc['groups'] = [{'layers': [{'image-name': 'bell.png', 'name': 'bell', 'glass': False}],
                       'shadow': {'kind': 'none', 'opacity': 0}, 'translucency': {'enabled': False, 'value': 0}}]
     (ios / 'icon.json').write_text(json.dumps(doc, indent=2) + '\n', encoding='utf-8')
-    (ios / 'Assets/plates.png').unlink(missing_ok=True)
     suffix = re.sub(r'[A-Z]', lambda m: '_' + m[0].lower(), key)
     Image.new('RGB', (432, 432), bg).save(drawable / f'ic_bg_{suffix}.png')
     layer(432, 176, fg).save(drawable / f'ic_fg_{suffix}.png')

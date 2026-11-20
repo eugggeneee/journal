@@ -6,6 +6,7 @@ import '../../app/scope.dart';
 import '../animation/motion.dart';
 import '../animation/reveal.dart';
 import '../foundation/ctx.dart';
+import '../components/widgets.dart';
 import '../sheets/select_sheet.dart';
 import '../sheets/sheet.dart';
 
@@ -130,7 +131,7 @@ class FieldTile extends StatelessWidget {
                     Text(
                       has ? valueLabel! : placeholder,
                       style: context.tt.titleMedium?.copyWith(
-                        fontWeight: has ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight: has ? JournalType.emphasis : FontWeight.w500,
                         color: has ? cs.onSurface : cs.onSurfaceVariant,
                       ),
                     ),
@@ -408,7 +409,7 @@ class ChoiceSquare extends StatelessWidget {
               child: AnimatedDefaultTextStyle(
                 duration: context.motion(Motion.short),
                 curve: Motion.standard,
-                style: TextStyle(fontSize: size * 0.42, fontWeight: FontWeight.w600, color: selected ? onAccent : tone.fg),
+                style: TextStyle(fontSize: size * 0.42, fontWeight: JournalType.heading, color: selected ? onAccent : tone.fg),
                 child: Text(label),
               ),
             ),
@@ -533,18 +534,12 @@ class ExcuseTile extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                 Row(children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(color: tone.fg.withValues(alpha: 0.14), shape: BoxShape.circle),
-                    child: Icon(excused ? Icons.verified_rounded : Icons.event_busy_rounded, size: 22, color: tone.fg),
-                  ),
+                  IconBox(icon: excused ? Icons.verified_rounded : Icons.event_busy_rounded, size: 40, glyphSize: 22),
                   const Spacer(),
-                  PopIn(child: selected ? Icon(Icons.check_circle_rounded, color: tone.fg) : null),
+                  PopIn(child: selected ? const IconBox(icon: Icons.check_rounded, size: 24, glyphSize: 16) : null),
                 ]),
                 const SizedBox(height: 12),
-                Text(title, style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w600)),
+                Text(title, style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: JournalType.heading)),
                 const Spacer(),
                 const SizedBox(height: 4),
                 Text(sub, style: context.tt.bodySmall?.copyWith(color: tone.fg.withValues(alpha: 0.8))),

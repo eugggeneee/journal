@@ -13,6 +13,8 @@ import 'package:journal/ui/absences/absence_limit.dart';
 import 'package:journal/ui/grades/grades_page.dart';
 import 'package:journal/ui/settings/home_layout_page.dart';
 import 'package:journal/ui/settings/settings_home.dart';
+import 'package:journal/ui/settings/bells_page.dart';
+import 'package:journal/ui/onboarding/onboarding.dart';
 import 'package:journal/logic/release_updates.dart';
 import 'package:journal/ui/kit/inputs/settings_tiles.dart';
 import 'package:journal/ui/home/day_bar.dart';
@@ -119,6 +121,24 @@ void main() {
     header: (fg, _) => Text('Среда, 18 ноября', style: TextStyle(color: fg)),
     onOpenDay: () {},
   );
+
+  testWidgets('выбор звонков доступен на узком экране и завершает обязательную настройку', (tester) async {
+    await screen(tester, const OnboardingFlow(), width: 320, height: 640, scale: 2, scroll: false);
+    FilledButton next() => tester.widget(find.widgetWithText(FilledButton, 'Продолжить'));
+    expect(next().onPressed, isNull);
+    await tester.ensureVisible(find.text('Время пар'));
+    await tester.tap(find.text('Время пар'));
+    await tester.pumpAndSettle();
+    expect(find.byType(BellsPage), findsOneWidget);
+    expect(tester.widget<SegmentedButton<String>>(find.byType(SegmentedButton<String>)).direction, Axis.vertical);
+    for (final label in ['Будни', 'Суббота', 'Сокращённый день']) {
+      await tester.tap(find.text('Подтвердить · $label'));
+      await tester.pumpAndSettle();
+    }
+    expect(find.byType(BellsPage), findsNothing);
+    expect(next().onPressed, isNotNull);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('настройки показывают установленную версию и доступное обновление', (tester) async {
     SharedPreferences.setMockInitialValues({'release.latest': '99.0.0'});

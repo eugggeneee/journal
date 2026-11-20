@@ -101,7 +101,6 @@ class RestDay extends StatelessWidget {
                   onTap: rows[i].onTap,
                   child: BadgeRow(
                     icon: rows[i].icon,
-                    tone: rows[i].tone,
                     title: rows[i].title,
                     subtitle: rows[i].subtitle,
                     showChevron: rows[i].onTap != null,

@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/haptics.dart';
 import '../../data/store.dart';
+import '../../data/models.dart';
 import '../app/scope.dart';
 import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
@@ -15,7 +16,6 @@ import '../kit/inputs/selectors.dart';
 import '../kit/inputs/settings_tiles.dart';
 import '../settings/bells_page.dart';
 import '../settings/group_picker.dart';
-import '../settings/settings_pages.dart';
 import '../settings/theme_widgets.dart';
 
 /// Приветствие при первом запуске: знакомство → возможности → жесты → группа → стартовые настройки.
@@ -39,7 +39,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     if (_inited) return;
     _inited = true;
     // приветствие уже проходили, но группы нет (например, после восстановления копии) — сразу к выбору группы
-    if (StoreScope.of(context).onboarded) {
+    if (StoreScope.of(context).onboarded || StoreScope.of(context).hasGroup) {
       _page = _groupPage;
       _pc.dispose();
       _pc = PageController(initialPage: _groupPage);
@@ -78,7 +78,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
-    final canNext = _page != _groupPage || store.hasGroup;
+    final canNext = _page < _groupPage || (store.hasGroup && (store.onboarded || store.bellsReady));
 
     return PopScope(
       canPop: _page == 0,
@@ -136,25 +136,15 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   // ───────────── страницы ─────────────
 
-  /// Страница без прокрутки: всё содержимое видно сразу. Если на очень маленьком экране или при крупном шрифте оно не
-  /// помещается, страница целиком чуть уменьшается, а не прокручивается.
-  Widget _fit(List<Widget> children) => LayoutBuilder(
-        builder: (context, box) => Center(
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: SizedBox(
-              width: box.maxWidth,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                child: Column(mainAxisSize: MainAxisSize.min, children: children),
-              ),
-            ),
-          ),
-        ),
-      );
+  Widget _fit(List<Widget> children) => Center(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Column(mainAxisSize: MainAxisSize.min, children: children),
+    ),
+  );
 
   Widget _title(BuildContext context, String title, String subtitle) => Column(children: [
-        Text(title, textAlign: TextAlign.center, style: context.tt.headlineMedium?.copyWith(fontWeight: FontWeight.w600)),
+        Text(title, textAlign: TextAlign.center, style: context.tt.headlineMedium?.copyWith(fontWeight: JournalType.heading)),
         const SizedBox(height: 10),
         Text(subtitle, textAlign: TextAlign.center, style: context.tt.bodyLarge?.copyWith(height: 1.4, color: context.cs.onSurfaceVariant)),
       ]);
@@ -162,71 +152,54 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   Widget _welcome(BuildContext context) {
     final cs = context.cs;
     return _fit([
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0.55, end: 1),
-            duration: Motion.ms(900),
-            curve: Motion.spring,
-            builder: (context, v, child) => Opacity(opacity: v.clamp(0.0, 1.0).toDouble(), child: Transform.scale(scale: v, child: child)),
-            child: CookieIcon(size: 144, bg: cs.primary, glyph: _BellSwing(size: 78, color: cs.onPrimary)),
-          ),
-          const SizedBox(height: 32),
-          Text('Journal', textAlign: TextAlign.center, style: context.tt.displaySmall?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text('МГТЭК · Дневник', textAlign: TextAlign.center, style: context.tt.titleMedium?.copyWith(color: cs.primary, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          Text(
-            'Расписание, оценки и пропуски — всё в одном месте.',
-            textAlign: TextAlign.center,
-            style: context.tt.titleMedium?.copyWith(height: 1.4, color: cs.onSurfaceVariant, fontWeight: FontWeight.w400),
-          ),
-          const SizedBox(height: 28),
-          Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.lock_outline_rounded, size: 16, color: cs.onSurfaceVariant),
-            const SizedBox(width: 6),
-            Flexible(child: Text('Данные хранятся только на вашем устройстве', style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant))),
-          ]),
+      TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0.55, end: 1),
+        duration: Motion.ms(900),
+        curve: Motion.spring,
+        builder: (context, v, child) => Opacity(opacity: v.clamp(0.0, 1.0).toDouble(), child: Transform.scale(scale: v, child: child)),
+        child: Container(
+          width: 112, height: 112, alignment: Alignment.center,
+          decoration: BoxDecoration(color: iconTone(cs).bg, borderRadius: BorderRadius.circular(32)),
+          child: _BellSwing(size: 68, color: iconTone(cs).fg),
+        ),
+      ),
+      const SizedBox(height: 32),
+      Text('Journal', textAlign: TextAlign.center, style: context.tt.displaySmall?.copyWith(fontWeight: JournalType.heading)),
+      const SizedBox(height: 4),
+      Text('МГТЭК · Дневник', textAlign: TextAlign.center, style: context.tt.titleMedium?.copyWith(color: cs.primary, fontWeight: FontWeight.w600)),
+      const SizedBox(height: 12),
+      Text(
+        'Расписание, оценки и пропуски — всё в одном месте.',
+        textAlign: TextAlign.center,
+        style: context.tt.titleMedium?.copyWith(height: 1.4, color: cs.onSurfaceVariant, fontWeight: FontWeight.w400),
+      ),
+      const SizedBox(height: 28),
+      Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.lock_outline_rounded, size: 16, color: cs.onSurfaceVariant),
+        const SizedBox(width: 6),
+        Flexible(child: Text('Данные хранятся только на вашем устройстве', style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant))),
+      ]),
     ]);
   }
 
-  Widget _features(BuildContext context) {
-    final cs = context.cs;
-    return _fit([
-      _title(context, 'Всё под рукой', 'Три вещи, ради которых вы открываете дневник.'),
+  Widget _info(BuildContext context, String title, String subtitle, Widget rows) => ListView(
+    padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+    children: [
+      _title(context, title, subtitle),
       const SizedBox(height: 24),
-      _FeatureCard(
-        index: 0,
-        icon: Icons.calendar_month_rounded,
-        bg: cs.primaryContainer,
-        fg: cs.onPrimaryContainer,
-        title: 'Расписание',
-        text: 'Расписание группы на любую дату. Загруженные дни доступны без интернета.',
-      ),
-      const SizedBox(height: 12),
-      _FeatureCard(
-        index: 1,
-        icon: Icons.star_rounded,
-        bg: cs.tertiaryContainer,
-        fg: cs.onTertiaryContainer,
-        title: 'Оценки',
-        text: 'Оценки по 10-балльной шкале и средний балл по каждому предмету.',
-      ),
-      const SizedBox(height: 12),
-      _FeatureCard(
-        index: 2,
-        icon: Icons.event_busy_rounded,
-        bg: cs.errorContainer,
-        fg: cs.onErrorContainer,
-        title: 'Пропуски',
-        text: 'Пропуск одним нажатием на пару или сразу на весь день.',
-      ),
-    ]);
-  }
+      rows,
+    ],
+  );
 
-  Widget _gestures(BuildContext context) => _fit([
-        _title(context, 'Жесты', 'Несколько движений, которые экономят время.'),
-        const SizedBox(height: 20),
-        const GestureGuide(compact: true),
-      ]);
+  Widget _features(BuildContext context) => _info(context, 'Всё под рукой',
+    'Три вещи, ради которых вы открываете дневник.', const GuideRows([
+      (Icons.calendar_month_rounded, 'Расписание', 'Расписание группы на любую дату. Загруженные дни доступны без интернета.'),
+      (Icons.star_rounded, 'Оценки', 'Оценки по 10-балльной шкале и средний балл по каждому предмету.'),
+      (Icons.event_busy_rounded, 'Пропуски', 'Пропуск одним нажатием на пару или сразу на весь день.'),
+    ]));
+
+  Widget _gestures(BuildContext context) => _info(context, 'Жесты',
+    'Несколько движений, которые экономят время.', const GestureGuide());
 
   Widget _group(BuildContext context, AppStore store) {
     final cs = context.cs;
@@ -259,12 +232,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Row(children: [
-                    CookieIcon(
-                      icon: Icons.groups_rounded,
-                      size: 64,
-                      bg: has ? cs.primary : cs.secondaryContainer,
-                      fg: has ? cs.onPrimary : cs.onSecondaryContainer,
-                    ),
+                    const IconBox(icon: Icons.groups_rounded, size: 64, glyphSize: 38),
                     const SizedBox(width: 18),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -272,7 +240,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                           has ? 'Группа $group' : 'Выбрать группу',
                           style: context.tt.headlineSmall?.copyWith(
                             color: has ? cs.onPrimaryContainer : cs.onSurface,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: JournalType.heading,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -302,14 +270,19 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             child: InkWell(
               onTap: () {
                 Haptics.selection();
-                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const BellsPage()));
+                final next = kBellKeys.firstWhere(
+                  (key) => !store.settings.confirmedBells.contains(key),
+                  orElse: () => kBellWeek,
+                );
+                Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => BellsPage(setup: !store.onboarded, initialKey: next),
+                ));
               },
               child: BadgeRow(
                 icon: Icons.notifications_active_rounded,
-                tone: Tone(cs.tertiaryContainer, cs.onTertiaryContainer),
                 title: 'Время пар',
-                subtitle: store.settings.bells.values.any((p) => !p.isEmpty) ? bellsSummary(store.settings) : 'По желанию: введите звонки своей группы',
-                trailing: store.settings.bells.values.any((p) => !p.isEmpty)
+                subtitle: 'Подтверждено ${store.settings.confirmedBells.length} из 3',
+                trailing: store.bellsReady
                     ? Icon(Icons.check_circle_rounded, color: cs.primary)
                     : Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
               ),
@@ -320,7 +293,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       Padding(
         padding: const EdgeInsets.fromLTRB(12, 14, 12, 0),
         child: Text(
-          'Это необязательно: время пар можно ввести позже в настройках.',
+          'Выберите время для будней, субботы и сокращённого дня. Расписания можно изменить позже.',
           textAlign: TextAlign.center,
           style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
         ),
@@ -395,26 +368,6 @@ class _Orb extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
-        ),
-      );
-}
-
-class _FeatureCard extends StatelessWidget {
-  const _FeatureCard({required this.index, required this.icon, required this.bg, required this.fg, required this.title, required this.text});
-  final int index;
-  final IconData icon;
-  final Color bg;
-  final Color fg;
-  final String title;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Appear(
-        index: index + 1,
-        child: Card(
-          color: context.cs.surfaceContainerLow,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(JournalLayout.cardRadius)),
-          child: JournalRow(leading: IconBox(icon: icon, tone: Tone(bg, fg)), title: title, subtitle: text),
         ),
       );
 }

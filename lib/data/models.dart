@@ -514,6 +514,8 @@ class Settings {
     this.group = '',
     List<String>? extraSubjects,
     this.onboarded = false,
+    this.followThemeIcon = true,
+    Iterable<String> confirmedBells = const [],
     this.themeMode = 0,
     this.themeColor = 'auto',
     this.absenceHours = 2,
@@ -529,18 +531,23 @@ class Settings {
     Map<String, BellProfile>? bells,
     Map<String, String>? semesterSplits,
     Map<String, int>? dismissed,
-  })  : extraSubjects = extraSubjects ?? [],
+  })  : confirmedBells = confirmedBells.where(kBellKeys.contains).toSet(),
+        extraSubjects = extraSubjects ?? [],
         goals = goals ?? {},
         homeOrder = normalizeHomeOrder(homeOrder ?? const []),
         homeHidden = (homeHidden ?? <String>[]).where(kHomeBlocks.contains).toSet().toList(),
         bells = bells ?? {},
         semesterSplits = semesterSplits ?? {},
-        dismissed = dismissed ?? {};
+        dismissed = dismissed ?? {} {
+    this.confirmedBells.removeWhere((key) => bell(key).isEmpty || bell(key).problem != null);
+  }
 
   String group; // пусто — группа ещё не выбрана
   final List<String> extraSubjects; // предметы, добавленные вручную
 
   bool onboarded; // приветственные экраны уже пройдены
+  final Set<String> confirmedBells;
+  bool followThemeIcon;
   int themeMode; // 0 — как в системе, 1 — светлая, 2 — тёмная
   String themeColor; // цветовая тема: 'auto' — подстраивается под систему (Material You), либо id из палитры
   int absenceHours; // сколько часов отмечать при быстром нажатии: 1 или 2
@@ -574,6 +581,8 @@ class Settings {
         'group': group,
         'extra': extraSubjects,
         'onb': onboarded,
+        'confirmedBells': confirmedBells.toList(),
+        'followThemeIcon': followThemeIcon,
         'theme': themeMode,
         'tc': themeColor,
         'ah': absenceHours,
@@ -604,6 +613,8 @@ class Settings {
         extraSubjects: ((j['extra'] as List?) ?? const []).map(_str).toList(),
         // если группа уже выбрана — приветствие не показываем
         onboarded: j['onb'] is bool ? j['onb'] as bool : group.isNotEmpty,
+        confirmedBells: (j['confirmedBells'] as List? ?? []).whereType<String>(),
+        followThemeIcon: j['followThemeIcon'] == true,
         themeMode: theme >= 0 && theme <= 2 ? theme : 0,
         themeColor: color.isEmpty ? 'auto' : color,
         absenceHours: hours == 1 ? 1 : 2,

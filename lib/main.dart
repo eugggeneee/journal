@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'core/haptics.dart';
+import 'core/palette.dart';
+import 'ui/app/icon_sync.dart';
 import 'data/store.dart';
 import 'logic/schedule/schedule_service.dart';
 import 'ui/app/scope.dart';
@@ -28,7 +30,12 @@ class JournalApp extends StatelessWidget {
 
   Widget _scope(BuildContext context, Widget? child) => AnnotatedRegion<SystemUiOverlayStyle>(
     value: overlayForSurface(context.cs.surface),
-    child: StoreScope(store: store, repo: repo, child: child ?? const SizedBox.shrink()),
+    child: IconSync(
+      desired: store.settings.followThemeIcon
+          ? AppPalette.launcherFor(store.settings.themeColor, AppTheme.dynamicFor(Brightness.light)?.primary)
+          : null,
+      child: StoreScope(store: store, repo: repo, child: child ?? const SizedBox.shrink()),
+    ),
   );
 
   /// Приветствие, пока оно не пройдено или не выбрана группа; затем — оболочка с вкладками.

@@ -111,9 +111,9 @@ class _TaskFormState extends State<_TaskForm> {
     return SheetScaffold(
       title: editing ? 'Изменить задание' : 'Новое задание',
       subtitle: lesson > 0 && lessonDate != null ? '$lesson пара · ${shortDate(lessonDate)}' : 'Со сроком и напоминанием на главной',
-      leading: IconBox(icon: homework ? Icons.menu_book_rounded : Icons.sticky_note_2_rounded, tone: Tone(cs.primaryContainer, cs.onPrimaryContainer), size: 52),
+      leading: IconBox(icon: homework ? Icons.menu_book_rounded : Icons.sticky_note_2_rounded, size: 52),
       trailing: editing
-          ? IconButton(tooltip: 'Удалить задание', icon: Icon(Icons.delete_outline_rounded, color: cs.error), onPressed: _delete)
+          ? IconButton(tooltip: 'Удалить задание', icon: Icon(Icons.delete_outline_rounded, color: iconTone(cs).fg), onPressed: _delete)
           : null,
       footer: SizedBox(
         width: double.infinity,

@@ -82,7 +82,7 @@ class LessonCard extends StatelessWidget {
                     children: [
                       Text(
                         info,
-                        style: tt.labelLarge?.copyWith(color: muted, fontWeight: FontWeight.w500),
+                        style: tt.labelLarge?.copyWith(color: muted, fontWeight: JournalType.emphasis),
                       ),
                       if (state != null)
                         Text(
@@ -103,7 +103,7 @@ class LessonCard extends StatelessWidget {
             for (final subject in slot.subjects) ...[
               Text(
                 store.subjectName(subject),
-                style: tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w600, height: 1.12),
+                style: tt.titleMedium?.copyWith(color: fg, fontWeight: JournalType.heading, height: 1.12),
               ),
               for (final entry in slot.entries.where((e) => e.subject == subject))
                 if (entry.room.isNotEmpty || entry.teacher.isNotEmpty)

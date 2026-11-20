@@ -52,7 +52,7 @@ class PageTitle extends StatelessWidget {
     // Длинное название (например, предмета) занимает до двух строк и берёт шрифт помельче, поэтому читается целиком.
     final long = maxLines > 1 && title.length > 26;
     final style = (long ? tt.headlineSmall : tt.headlineMedium)?.copyWith(
-      fontWeight: FontWeight.w600,
+      fontWeight: JournalType.heading,
       height: maxLines > 1 ? 1.1 : null,
     );
     return Semantics(
@@ -166,7 +166,7 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = Text(
       text,
-      style: context.tt.titleSmall?.copyWith(color: context.cs.primary, fontWeight: FontWeight.w500),
+      style: context.tt.titleSmall?.copyWith(color: context.cs.primary, fontWeight: JournalType.emphasis),
     );
     final row = Semantics(
       header: true,
@@ -207,7 +207,8 @@ class CookieIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = fg ?? context.cs.onPrimaryContainer;
+    final tone = iconTone(context.cs);
+    final iconColor = fg ?? tone.fg;
     return AnimatedContainer(
       duration: Motion.short,
       curve: Motion.standard,
@@ -215,7 +216,7 @@ class CookieIcon extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: ShapeDecoration(
-        color: bg ?? context.cs.primaryContainer,
+        color: bg ?? tone.bg,
         shape: const StarBorder(points: 10, innerRadiusRatio: 0.86, pointRounding: 0.55, valleyRounding: 0.4),
       ),
       child:
@@ -257,7 +258,7 @@ class EmptyState extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: context.tt.headlineSmall?.copyWith(fontWeight: FontWeight.w500),
+              style: context.tt.headlineSmall?.copyWith(fontWeight: JournalType.emphasis),
             ),
             const SizedBox(height: 8),
             Text(
@@ -292,7 +293,7 @@ class NumberBadge extends StatelessWidget {
     child: AnimatedDefaultTextStyle(
       duration: Motion.short,
       curve: Motion.standard,
-      style: TextStyle(fontSize: size * 0.4, fontWeight: FontWeight.w600, color: tone.fg, height: 1),
+      style: TextStyle(fontSize: size * 0.4, fontWeight: JournalType.heading, color: tone.fg, height: 1),
       child: Text(text),
     ),
   );
@@ -325,7 +326,7 @@ class AbsenceBadge extends StatelessWidget {
         ),
         child: Text(
           '$hours',
-          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: onColorFor(accent), height: 1),
+          style: TextStyle(fontSize: 11.5, fontWeight: JournalType.heading, color: onColorFor(accent), height: 1),
         ),
       ),
     );
@@ -346,11 +347,11 @@ class Pill extends StatelessWidget {
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (icon != null) ...[Icon(icon, size: 14, color: tone.fg), const SizedBox(width: 4)],
+        if (icon != null) ...[IconBox(icon: icon!, size: 20, glyphSize: 14), const SizedBox(width: 4)],
         Flexible(
           child: Text(
             text,
-            style: context.tt.labelMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w500),
+            style: context.tt.labelMedium?.copyWith(color: tone.fg, fontWeight: JournalType.emphasis),
           ),
         ),
       ],
@@ -588,19 +589,22 @@ class _Disc extends StatelessWidget {
 
 /// Значок в цветном квадрате: тот же размер и скругление, что у номеров пар и оценок. Основа строк списков.
 class IconBox extends StatelessWidget {
-  const IconBox({super.key, required this.icon, required this.tone, this.size = 46});
+  const IconBox({super.key, required this.icon, this.size = 44, this.glyphSize = 24});
   final IconData icon;
-  final Tone tone;
+  final double glyphSize;
   final double size;
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    alignment: Alignment.center,
-    decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(size * 0.34)),
-    child: Icon(icon, size: size * 0.52, color: tone.fg),
-  );
+  Widget build(BuildContext context) {
+    final tone = iconTone(context.cs);
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: tone.bg, borderRadius: BorderRadius.circular(size * 14 / 44)),
+      child: Icon(icon, size: glyphSize, color: tone.fg),
+    );
+  }
 }
 
 /// Одна геометрия для равноправных действий и показателей внутри группы.
@@ -670,7 +674,7 @@ class JournalRow extends StatelessWidget {
                 Text(
                   title,
                   style: (compact ? context.tt.titleSmall : context.tt.titleMedium)?.copyWith(
-                    fontWeight: FontWeight.w500,
+                    fontWeight: JournalType.emphasis,
                     height: 1.2,
                   ),
                 ),

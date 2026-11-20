@@ -125,7 +125,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     box.maxWidth < MediaQuery.textScalerOf(context).scale(140) ? date.replaceFirst(', ', ',\n') : date,
-                    style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w500),
+                    style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: JournalType.emphasis),
                   ),
                 );
               },
@@ -312,12 +312,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           footer: showMetrics ? metrics(calm, true) : null,
           child: Row(
             children: [
-              CookieIcon(icon: icon, size: 48, bg: cs.primary, fg: cs.onPrimary),
+              IconBox(icon: icon, size: 48),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
-                  style: tt.titleLarge?.copyWith(color: calm.fg, fontWeight: FontWeight.w600),
+                  style: tt.titleLarge?.copyWith(color: calm.fg, fontWeight: JournalType.heading),
                 ),
               ),
             ],
@@ -360,7 +360,6 @@ class _Tomorrow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tone = hueTone(context, kHueViolet);
     final sched = store.cachedSchedule(store.settings.group, date);
     String title;
     String sub;
@@ -380,7 +379,7 @@ class _Tomorrow extends StatelessWidget {
     }
     return JournalRow(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      leading: IconBox(icon: Icons.event_rounded, tone: tone),
+      leading: IconBox(icon: Icons.event_rounded),
       title: title,
       subtitle: sub,
       onTap: () => onDay(date),
@@ -433,9 +432,9 @@ class _Week extends StatelessWidget {
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
                         Text(weekdayShort(d), style: tt.labelMedium?.copyWith(color: muted, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 2),
-                        Text('${d.day}', style: tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w600)),
+                        Text('${d.day}', style: tt.titleMedium?.copyWith(color: fg, fontWeight: JournalType.heading)),
                         const SizedBox(height: 4),
-                        Text(n == null ? '–' : '$n', style: tt.labelLarge?.copyWith(color: sel ? cs.onPrimary : cs.primary, fontWeight: FontWeight.w600)),
+                        Text(n == null ? '–' : '$n', style: tt.labelLarge?.copyWith(color: sel ? cs.onPrimary : cs.primary, fontWeight: JournalType.heading)),
                         const SizedBox(height: 4),
                         Container(
                           width: 6,
@@ -467,12 +466,11 @@ class _Recent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (store.grades.isEmpty) {
-      final tone = hueTone(context, kHueAmber);
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const SectionHeader('Оценки'),
         JournalRow(
       padding: const EdgeInsets.symmetric(vertical: 10),
-          leading: IconBox(icon: Icons.add_rounded, tone: tone),
+          leading: IconBox(icon: Icons.add_rounded),
           title: 'Добавьте первую оценку',
           subtitle: 'Приложение посчитает средний балл по каждому предмету',
           onTap: () => showGradeSheet(context),
@@ -542,11 +540,11 @@ class _LimitNote extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
                     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Icon(reached ? Icons.error_rounded : Icons.warning_amber_rounded, color: tone.fg),
+                      IconBox(icon: reached ? Icons.error_rounded : Icons.warning_amber_rounded, size: 36, glyphSize: 20),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          for (final l in lines) Text(l, style: tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w500, height: 1.3)),
+                          for (final l in lines) Text(l, style: tt.titleSmall?.copyWith(color: tone.fg, fontWeight: JournalType.emphasis, height: 1.3)),
                           Text('Нажмите, чтобы открыть пропуски', style: tt.bodySmall?.copyWith(color: tone.fg.withValues(alpha: 0.85))),
                         ]),
                       ),
@@ -593,10 +591,9 @@ class _TasksBlock extends StatelessWidget {
 
     final Widget body;
     if (open.isEmpty) {
-      final tone = hueTone(context, kHueTeal);
       body = JournalRow(
       padding: const EdgeInsets.symmetric(vertical: 10),
-        leading: IconBox(icon: store.tasks.isEmpty ? Icons.add_task_rounded : Icons.task_alt_rounded, tone: tone),
+        leading: IconBox(icon: store.tasks.isEmpty ? Icons.add_task_rounded : Icons.task_alt_rounded),
         title: store.tasks.isEmpty ? 'Добавьте первое задание' : 'Всё сделано',
         subtitle: store.tasks.isEmpty ? 'Домашнее задание и заметки со сроком' : 'Невыполненных заданий нет',
         onTap: () => store.tasks.isEmpty ? showTaskSheet(context) : _openAll(context),
@@ -635,7 +632,7 @@ class _GestureTip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tt = context.tt;
-    final tone = hueTone(context, kHueViolet);
+    final tone = iconTone(context.cs);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Container(
@@ -647,7 +644,7 @@ class _GestureTip extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Подсказка', style: tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w600)),
+                Text('Подсказка', style: tt.titleSmall?.copyWith(color: tone.fg, fontWeight: JournalType.heading)),
                 const SizedBox(height: 2),
                 Text(
                   'Коротко удержите пару в расписании, чтобы отметить пропуск, а смахните запись влево, чтобы удалить её.',
@@ -674,7 +671,7 @@ class _GestureTip extends StatelessWidget {
                 Haptics.selection();
                 store.setTipGestures(true);
               },
-              child: const Text('Понятно', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: const Text('Понятно', style: TextStyle(fontWeight: JournalType.heading)),
             ),
           ]),
         ]),

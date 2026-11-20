@@ -11,6 +11,7 @@ import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/overview.dart';
+import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
 
 /// Предупреждения о лимитах над счётчиками.
@@ -103,7 +104,6 @@ class _Banner extends StatelessWidget {
   Widget build(BuildContext context) {
     final reached = kind == _BannerKind.reached;
     final tone = reached ? absenceTone(context, excused: false) : warnTone(context);
-    final accent = reached ? absenceAccent(context, excused: false) : warnAccent(context);
     final bg = tone.bg;
     final fg = tone.fg;
     return Padding(
@@ -122,16 +122,7 @@ class _Banner extends StatelessWidget {
                 duration: Motion.ms(650),
                 curve: Motion.spring,
                 builder: (context, v, child) => Transform.scale(scale: v, child: child),
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
-                  child: Icon(
-                    reached ? Icons.priority_high_rounded : Icons.hourglass_bottom_rounded,
-                    size: 28,
-                    color: onColorFor(accent),
-                  ),
-                ),
+                child: IconBox(icon: reached ? Icons.priority_high_rounded : Icons.hourglass_bottom_rounded, size: 48, glyphSize: 28),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -140,7 +131,7 @@ class _Banner extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w600),
+                      style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: JournalType.heading),
                     ),
                     const SizedBox(height: 2),
                     Text(text, style: context.tt.bodyMedium?.copyWith(color: fg.withValues(alpha: 0.92), height: 1.3)),
@@ -205,7 +196,7 @@ class LimitCounters extends StatelessWidget {
         children: [
           Text(
             'Запас часов',
-            style: context.tt.headlineSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w600),
+            style: context.tt.headlineSmall?.copyWith(color: tone.fg, fontWeight: JournalType.heading),
           ),
           Text('Без уважительной причины', style: context.tt.bodyMedium?.copyWith(color: tone.fg)),
           const SizedBox(height: 16),
@@ -275,7 +266,7 @@ class _LimitGauge extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w500),
+                style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: JournalType.emphasis),
               ),
               if (onTap != null) Icon(Icons.expand_more_rounded, color: tone.fg, size: 18),
             ],
@@ -302,7 +293,7 @@ class _LimitGauge extends StatelessWidget {
                   fit: BoxFit.scaleDown,
                   child: Text(
                     '$remaining',
-                    style: context.tt.headlineMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w600),
+                    style: context.tt.headlineMedium?.copyWith(color: tone.fg, fontWeight: JournalType.heading),
                   ),
                 ),
               ),

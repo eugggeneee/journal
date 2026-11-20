@@ -42,7 +42,6 @@ class GoalCard extends StatelessWidget {
     final avg = values.isEmpty ? null : values.fold<int>(0, (a, v) => a + v) / values.length;
     final f = goal == null ? Forecast.none : Forecast.to(values, goal);
     final accent = f.reached ? hueAccent(context, kHueGreen) : hueAccent(context, kHueAmber);
-    final tone = hueTone(context, f.reached ? kHueGreen : kHueAmber);
 
     return SegmentCard(
       index: 0,
@@ -52,11 +51,11 @@ class GoalCard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
-            IconBox(icon: Icons.flag_rounded, tone: tone),
+            IconBox(icon: Icons.flag_rounded),
             const SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Цель по предмету', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w500, height: 1.2)),
+                Text('Цель по предмету', style: tt.titleMedium?.copyWith(fontWeight: JournalType.emphasis, height: 1.2)),
                 Text(
                   goal == null ? 'Не задана: нажмите, чтобы выбрать' : 'Средний балл $goal',
                   style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
@@ -68,7 +67,7 @@ class GoalCard extends StatelessWidget {
           if (goal != null && avg != null) ...[
             const SizedBox(height: 14),
             Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-              Text(fmtAvg(avg), style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w600)),
+              Text(fmtAvg(avg), style: tt.headlineSmall?.copyWith(fontWeight: JournalType.heading)),
               Text(' из $goal', style: tt.titleMedium?.copyWith(color: cs.onSurfaceVariant)),
             ]),
             const SizedBox(height: 8),
@@ -80,7 +79,7 @@ class GoalCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Icon(f.reached ? Icons.check_circle_rounded : Icons.trending_up_rounded, size: 20, color: accent),
+              Icon(f.reached ? Icons.check_circle_rounded : Icons.trending_up_rounded, size: 20, color: cs.primary),
               const SizedBox(width: 8),
               Expanded(child: Text(forecastText(f, goal), style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w600, height: 1.3))),
             ]),

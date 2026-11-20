@@ -11,6 +11,7 @@ import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/ctx.dart';
 import '../kit/inputs/pickers.dart';
+import '../kit/inputs/settings_tiles.dart';
 import '../kit/sheets/sheet.dart';
 import '../theme/app_theme.dart';
 
@@ -151,7 +152,7 @@ class _ChoiceTile extends StatelessWidget {
                 item.label,
                 textAlign: TextAlign.center,
                 style: context.tt.labelSmall?.copyWith(
-                  fontWeight: sel ? FontWeight.w600 : FontWeight.w500,
+                  fontWeight: sel ? JournalType.emphasis : FontWeight.w500,
                   color: sel ? cs.onSurface : cs.onSurfaceVariant,
                 ),
               ),
@@ -257,10 +258,10 @@ class ThemePreview extends StatelessWidget {
           width: 44,
           height: 28,
           decoration: BoxDecoration(
-            color: selected ? cs.primaryContainer : Colors.transparent,
+            color: selected ? iconTone(cs).bg : Colors.transparent,
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Icon(icon, size: 18, color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant),
+          child: Icon(icon, size: 18, color: selected ? iconTone(cs).fg : cs.onSurfaceVariant),
         );
 
     return ExcludeSemantics(
@@ -269,7 +270,7 @@ class ThemePreview extends StatelessWidget {
         decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(JournalLayout.heroRadius)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
-            Expanded(child: Text('Расписание', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w600))),
+            Expanded(child: Text('Расписание', style: tt.titleLarge?.copyWith(fontWeight: JournalType.heading))),
             Pill('Группа 6312', tone: Tone(cs.secondaryContainer, cs.onSecondaryContainer), icon: Icons.groups_rounded),
           ]),
           const SizedBox(height: 14),
@@ -315,7 +316,7 @@ class AppIconSection extends StatefulWidget {
 }
 
 class _AppIconSectionState extends State<AppIconSection> {
-  final ValueNotifier<String?> _current = ValueNotifier<String?>(null);
+  ValueNotifier<String?> get _current => AppIcons.actual;
   final ValueNotifier<bool> _busy = ValueNotifier<bool>(false);
   bool _loaded = false;
 
@@ -327,15 +328,13 @@ class _AppIconSectionState extends State<AppIconSection> {
 
   @override
   void dispose() {
-    _current.dispose();
     _busy.dispose();
     super.dispose();
   }
 
   Future<void> _load() async {
-    final v = await AppIcons.current();
+    await AppIcons.refresh();
     if (!mounted) return;
-    _current.value = v;
     setState(() => _loaded = true);
   }
 
@@ -343,13 +342,11 @@ class _AppIconSectionState extends State<AppIconSection> {
     if (_busy.value || id == _current.value) return;
     final messenger = ScaffoldMessenger.of(context);
     final android = Theme.of(context).platform == TargetPlatform.android;
-    final prev = _current.value;
-    _current.value = id;
+
     _busy.value = true;
-    final ok = await AppIcons.set(id);
+    final ok = await AppIcons.select(id);
     if (!mounted) return;
     _busy.value = false;
-    if (!ok) _current.value = prev;
     if (!ok) {
       showNote(messenger, 'Система не сменила значок. Попробуйте ещё раз.');
     } else if (android) {
@@ -367,7 +364,11 @@ class _AppIconSectionState extends State<AppIconSection> {
   @override
   Widget build(BuildContext context) {
     if (!AppIcons.platformOk) return const SizedBox.shrink();
-    return ValueListenableBuilder<String?>(
+    final store = StoreScope.of(context);
+    return Column(children: [
+      SettingsTile(icon: Icons.palette_outlined, title: 'Значок в цвет темы',
+        trailing: SettingsSwitch(value: store.settings.followThemeIcon, onChanged: store.setFollowThemeIcon)),
+      ValueListenableBuilder<String?>(
       valueListenable: _current,
       builder: (context, current, _) {
         final known = current != null && AppPalette.has(current);
@@ -389,10 +390,10 @@ class _AppIconSectionState extends State<AppIconSection> {
                   child: Image.asset('assets/icons/preview/$current.png', width: 28, height: 28, fit: BoxFit.cover),
                 )
               : Icon(Icons.apps_rounded, color: context.cs.onSurfaceVariant),
-          onTap: _loaded && current != null ? _open : null,
+          onTap: !store.settings.followThemeIcon && _loaded && current != null ? _open : null,
         );
       },
-    );
+    )]);
   }
 }
 
@@ -404,8 +405,6 @@ class _AppIconSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final store = StoreScope.of(context);
-    final themeId = AppPalette.has(store.settings.themeColor) ? store.settings.themeColor : AppPalette.standardId;
     return ValueListenableBuilder<String?>(
       valueListenable: current,
       builder: (context, cur, _) => ValueListenableBuilder<bool>(
@@ -413,17 +412,7 @@ class _AppIconSheet extends StatelessWidget {
         builder: (context, isBusy, _) => SheetScaffold(
           title: 'Значок приложения',
           subtitle: 'У каждой темы свой значок',
-          footer: Row(children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.auto_fix_high_rounded, size: 20),
-                label: const Text('Под тему'),
-                onPressed: isBusy ? null : () => onPick(themeId),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Готово'))),
-          ]),
+          footer: FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Готово')),
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 4),

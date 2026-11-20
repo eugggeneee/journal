@@ -33,7 +33,8 @@ jobs:
           tag=$(jq -er '.tag_name' "$RUNNER_TEMP/release.json")
           ipa="Journal-$tag-ios.ipa"
           gh release download "$tag" --pattern "$ipa" --dir "$RUNNER_TEMP"
-          cp docs/logo.png site/ios/icon.png
+          git fetch --depth=1 origin "refs/tags/$tag:refs/tags/$tag"
+          git show "$tag:docs/logo.png" > site/ios/icon.png
           python3 scripts/release/altstore_source.py "$RUNNER_TEMP/release.json" "$RUNNER_TEMP/$ipa" site/ios/source.json
           sed -i "s|releases/latest#assets|releases/download/$tag/$ipa|" site/ios/index.html
       - uses: actions/upload-pages-artifact@v4
