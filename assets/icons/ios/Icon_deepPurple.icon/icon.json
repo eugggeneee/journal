@@ -1,30 +1,14 @@
 {
   "fill": {
-    "solid": "srgb:0.12549,0.08235,0.19608,1.00000"
+    "solid": "srgb:0.79216,0.72941,0.90196,1.00000"
   },
   "groups": [
     {
       "layers": [
         {
-          "glass": true,
           "image-name": "bell.png",
-          "name": "bell"
-        }
-      ],
-      "shadow": {
-        "kind": "neutral",
-        "opacity": 0.5
-      },
-      "translucency": {
-        "enabled": true,
-        "value": 0.35
-      }
-    },
-    {
-      "layers": [
-        {
-          "image-name": "plates.png",
-          "name": "plates"
+          "name": "bell",
+          "glass": false
         }
       ],
       "shadow": {
