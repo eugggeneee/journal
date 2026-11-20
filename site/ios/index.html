@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Journal для iPhone и iPad</title>
+<style>
+  :root { font: 100%/1.5 system-ui, sans-serif; color: #202332; background: #f8f9ff; }
+  body { max-width: 29rem; margin: auto; padding: clamp(2rem, 11vh, 6rem) 1.25rem; }
+  img { width: 5rem; height: 5rem; border-radius: 23%; }
+  h1 { margin: 1rem 0 .25rem; font-size: 2rem; line-height: 1.2; }
+  p { margin: .5rem 0 1.25rem; }
+  nav { display: grid; gap: .5rem; }
+  nav a { padding: .85rem 1rem; border-radius: 1rem; font-weight: 600; text-decoration: none; background: #dfe4ff; color: #202d62; }
+  a { color: #384d99; }
+  details { margin-top: 1.5rem; }
+  summary { cursor: pointer; padding: .5rem 0; }
+  code { overflow-wrap: anywhere; user-select: all; }
+  @media (prefers-color-scheme: dark) {
+    :root { color: #ebeaf2; background: #171820; }
+    nav a { background: #343f68; color: #e3e7ff; }
+    a { color: #b7c5ff; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <img src="icon.png" alt="" width="80" height="80">
+  <h1>Journal для iPhone и iPad</h1>
+  <p>Откройте страницу на устройстве. Выберите установленный магазин, подтвердите добавление источника и нажмите «Установить» у Journal.</p>
+  <nav aria-label="Добавить источник Journal">
+    <a href="altstore-classic://source?url=https%3A%2F%2Feugggeneee.github.io%2Fjournal%2Fios%2Fsource.json">Добавить в AltStore Classic</a>
+    <a href="sidestore://source?url=https%3A%2F%2Feugggeneee.github.io%2Fjournal%2Fios%2Fsource.json">Добавить в SideStore</a>
+  </nav>
+  <p>Следующие стабильные версии появятся в магазине в разделе My Apps.</p>
+  <details>
+    <summary>Добавить источник вручную</summary>
+    <p>В разделе Sources нажмите «+» и вставьте адрес источника.</p>
+    <code>https://eugggeneee.github.io/journal/ios/source.json</code>
+  </details>
+  <details>
+    <summary>Магазин ещё не установлен</summary>
+    <p>Установите <a href="https://altstore.io/download">AltStore Classic</a> или <a href="https://docs.sidestore.io/docs/installation/prerequisites">SideStore</a> по инструкции магазина, затем вернитесь на эту страницу.</p>
+  </details>
+</main>
+</body>
+</html>

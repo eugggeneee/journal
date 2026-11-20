@@ -1,0 +1,62 @@
+"""Собирает каталог AltStore Classic и SideStore из опубликованного стабильного IPA."""
+
+import hashlib
+import json
+import plistlib
+import re
+import sys
+import zipfile
+from pathlib import Path
+
+BUNDLE_ID = 'eugggeneee.journal'
+BASE_URL = 'https://eugggeneee.github.io/journal/ios/'
+
+
+def make_source(release: dict, ipa: Path) -> dict:
+    tag = release['tag_name']
+    if release['draft'] or release['prerelease'] or not re.fullmatch(r'v\d+\.\d+\.\d+', tag):
+        raise ValueError('Каталог принимает только опубликованные стабильные версии')
+    name = f'Journal-{tag}-ios.ipa'
+    asset = next(a for a in release['assets'] if a['name'] == name)
+    if ipa.stat().st_size != asset['size'] or 'sha256:' + hashlib.sha256(ipa.read_bytes()).hexdigest() != asset['digest']:
+        raise ValueError('IPA отличается от файла релиза')
+    with zipfile.ZipFile(ipa) as archive:
+        info = plistlib.loads(archive.read('Payload/Runner.app/Info.plist'))
+    if info['CFBundleIdentifier'] != BUNDLE_ID or info['CFBundleShortVersionString'] != tag[1:]:
+        raise ValueError('Идентификатор приложения или версия IPA не совпадают с релизом')
+
+    version = {
+        'version': info['CFBundleShortVersionString'],
+        'buildVersion': info['CFBundleVersion'],
+        'date': release['published_at'],
+        'downloadURL': asset['browser_download_url'],
+        'size': asset['size'],
+        'minOSVersion': info['MinimumOSVersion'],
+    }
+    notes = Path('.github/releases') / f'{tag}.md'
+    if notes.is_file():
+        version['localizedDescription'] = notes.read_text(encoding='utf-8').strip()
+    app = {
+        'name': 'Journal',
+        'bundleIdentifier': BUNDLE_ID,
+        'developerName': 'eugggeneee',
+        'localizedDescription': 'Дневник студента МГТЭК. Расписание, оценки, пропуски и задания с доступом офлайн.',
+        'iconURL': BASE_URL + 'icon.png',
+        'versions': [version],
+        # В release.yml Journal собирается без подписи и использует только основной пакет.
+        'appPermissions': {'entitlements': [], 'privacy': {k: v for k, v in info.items() if 'UsageDescription' in k}},
+    }
+    return {
+        'name': 'Journal',
+        'identifier': BUNDLE_ID + '.source',
+        'sourceURL': BASE_URL + 'source.json',
+        'website': BASE_URL,
+        'apps': [app],
+        'news': [],
+    }
+
+
+if __name__ == '__main__':
+    metadata, ipa_file, output = map(Path, sys.argv[1:])
+    source = make_source(json.loads(metadata.read_text(encoding='utf-8-sig')), ipa_file)
+    output.write_text(json.dumps(source, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')

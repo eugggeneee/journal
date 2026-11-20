@@ -9,6 +9,8 @@
 | Android | `Journal-{{TAG}}-android.apk` | Открыть файл и разрешить установку из этого источника |
 | iPhone, iPad | `Journal-{{TAG}}-ios.ipa` | Установить через [AltStore](https://altstore.io) или [Sideloadly](https://sideloadly.io) |
 
+Для установки стабильной версии и дальнейших обновлений [добавьте источник Journal в AltStore Classic или SideStore](https://eugggeneee.github.io/journal/ios/).
+
 - Android-сборка {{ANDROID_SIGNING}}.
 - iOS-сборка не подписана Apple: подпись ставит AltStore или Sideloadly при установке.
 
