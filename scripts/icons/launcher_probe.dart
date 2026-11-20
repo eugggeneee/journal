@@ -32,6 +32,10 @@ Future<void> main() async {
   record('Lifecycle: ${WidgetsBinding.instance.lifecycleState}');
   final previous = await AppIcons.current();
   record('Initial icon: $previous');
+  if (Platform.environment['JOURNAL_READ_ICON'] == '1') {
+    record(previous == 'teal' ? 'JOURNAL_LAUNCHER_VERIFIED' : 'JOURNAL_LAUNCHER_FAILED current=$previous');
+    return;
+  }
   if (previous == 'default') {
     for (var attempt = 0; attempt < 3; attempt++) {
       await Future<void>.delayed(const Duration(seconds: 3));

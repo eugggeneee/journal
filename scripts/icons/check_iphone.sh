@@ -21,11 +21,21 @@ xcrun simctl install "$device" "$app"
 xcrun simctl io "$device" screenshot "$out-default.png"
 flutter run -d "$device" --no-pub --no-publish-port --use-application-binary="$app" --target scripts/icons/launcher_probe.dart --no-resident
 data=$(xcrun simctl get_app_container "$device" eugggeneee.journal data)
-for attempt in {1..90}; do
-  marker=$(find "$data" -name journal-launcher-probe.txt -print -quit)
-  if [[ -n "$marker" ]] && grep -q 'JOURNAL_LAUNCHER_' "$marker"; then break; fi
-  sleep 2
-done
+wait_for_result() {
+  for attempt in {1..35}; do
+    marker=$(find "$data" -name journal-launcher-probe.txt -print -quit)
+    if [[ -n "$marker" ]] && grep -q 'JOURNAL_LAUNCHER_' "$marker"; then return 0; fi
+    sleep 2
+  done
+  return 1
+}
+if ! wait_for_result; then
+  # UIKit может ждать закрытия своего окна, когда SpringBoard уже применил значок.
+  xcrun simctl io "$device" screenshot "$out-confirmation.png"
+  xcrun simctl terminate "$device" eugggeneee.journal
+  SIMCTL_CHILD_JOURNAL_READ_ICON=1 xcrun simctl launch "$device" eugggeneee.journal
+  wait_for_result
+fi
 cat "$marker"
 xcrun simctl io "$device" screenshot "$out-app.png"
 xcrun simctl terminate "$device" eugggeneee.journal
