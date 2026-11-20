@@ -18,7 +18,7 @@ permissions:
 jobs:
   iphone:
     runs-on: macos-15
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
@@ -45,7 +45,6 @@ jobs:
           set -euo pipefail
           flutter create --platforms=ios --org eugggeneee --project-name journal .
           python3 scripts/icons/setup_ios.py
-          device=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; ds=json.load(sys.stdin)["devices"]; print(next(d["udid"] for runtime in reversed(list(ds)) for d in ds[runtime] if "iPhone" in d["name"]))')
           flutter build ios --simulator --debug --target scripts/icons/launcher_probe.dart
           app=build/ios/iphonesimulator/Runner.app
           python3 - "$app" <<'PY'
@@ -57,27 +56,8 @@ jobs:
           assert icons['CFBundlePrimaryIcon']['CFBundleIconName'] == 'AppIcon'
           assert set(icons['CFBundleAlternateIcons']) == expected
           PY
-          xcrun simctl bootstatus "$device" -b
-          xcrun simctl install "$device" "$app"
-          mkdir -p build/icon-review/preview
-          xcrun simctl io "$device" screenshot build/icon-review/iphone-default.png
-          flutter run -d "$device" --no-pub --no-publish-port --use-application-binary="$app" --target scripts/icons/launcher_probe.dart --no-resident > "$RUNNER_TEMP/launcher.log" 2>&1
-          data=$(xcrun simctl get_app_container "$device" eugggeneee.journal data)
-          for attempt in {1..75}; do
-            marker=$(find "$data" -name journal-launcher-probe.txt -print -quit)
-            if [[ -n "$marker" ]] && grep -q 'JOURNAL_LAUNCHER_' "$marker"; then break; fi
-            sleep 2
-          done
-          cat "$RUNNER_TEMP/launcher.log"
-          xcrun simctl spawn "$device" log show --last 3m --style compact --predicate 'eventMessage CONTAINS[c] "alternate icon"' | tail -60
-          xcrun simctl io "$device" screenshot build/icon-review/iphone-app.png
-          [[ -n "$marker" ]] && cat "$marker"
-          grep -F JOURNAL_LAUNCHER_VERIFIED "$marker"
-          xcrun simctl terminate "$device" eugggeneee.journal
-          for appearance in light dark; do
-            xcrun simctl ui "$device" appearance "$appearance"
-            sleep 2
-            xcrun simctl io "$device" screenshot "build/icon-review/iphone-$appearance.png"
+          for runtime in 26-0 26-2; do
+            bash scripts/icons/check_iphone.sh "$runtime" "$app"
           done
       - uses: actions/upload-artifact@v5
         if: always()

@@ -349,7 +349,7 @@ class _AppIconSectionState extends State<AppIconSection> {
     _busy.value = false;
     if (!ok) _current.value = prev;
     if (!ok) {
-      showNote(messenger, 'Не удалось сменить значок');
+      showNote(messenger, 'Система не сменила значок. Попробуйте ещё раз.');
     } else if (android) {
       showNote(messenger, 'Значок обновится через пару секунд');
     }

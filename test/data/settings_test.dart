@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:journal/core/app_icons.dart';
 import 'package:journal/core/palette.dart';
 import 'package:journal/data/models.dart';
 
@@ -54,6 +57,36 @@ void main() {
     expect(AppPalette.has('teal'), isTrue);
     expect(AppPalette.has('nope'), isFalse);
     expect(AppPalette.byId('nope').id, AppPalette.standardId);
+  });
+
+  testWidgets('при временном отказе iOS смена значка повторяется один раз', (tester) async {
+    const channel = MethodChannel('eugggeneee.journal/app_icon');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      var attempts = 0;
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        expect(call.arguments['id'], 'teal');
+        if (++attempts == 1) throw PlatformException(code: 'NSPOSIXErrorDomain', details: 35);
+        return true;
+      });
+      final change = AppIcons.set('teal');
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(await change, isTrue);
+      expect(attempts, 2);
+
+      attempts = 0;
+      messenger.setMockMethodCallHandler(channel, (_) async {
+        attempts++;
+        throw PlatformException(code: 'unsupported');
+      });
+      expect(await AppIcons.set('teal'), isFalse);
+      expect(attempts, 1);
+    } finally {
+      messenger.setMockMethodCallHandler(channel, null);
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   test('для каждой темы есть значок приложения', () {

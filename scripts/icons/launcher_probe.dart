@@ -14,6 +14,15 @@ void record(String message) {
 
 /// Точка входа только для проверки установки в симуляторе и эмуляторе.
 Future<void> main() async {
+  if (Platform.isIOS) {
+    final console = debugPrint;
+    debugPrint = (message, {wrapWidth}) {
+      if (message != null && message.startsWith('App icon:')) {
+        File('${Directory.systemTemp.path}/journal-launcher-probe.txt').writeAsStringSync('$message\n', mode: FileMode.append);
+      }
+      console(message, wrapWidth: wrapWidth);
+    };
+  }
   record('Starting Journal');
   await journal.main();
   await WidgetsBinding.instance.endOfFrame;
@@ -37,5 +46,5 @@ Future<void> main() async {
       }
     }
   }
-  record('JOURNAL_LAUNCHER_FAILED');
+  record('JOURNAL_LAUNCHER_FAILED current=${await AppIcons.current()}');
 }
