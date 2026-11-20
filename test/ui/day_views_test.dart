@@ -8,6 +8,11 @@ import 'package:journal/data/store.dart';
 import 'package:journal/logic/schedule/schedule_service.dart';
 import 'package:journal/ui/app/scope.dart';
 import 'package:journal/ui/home/day_card.dart';
+import 'package:journal/ui/home/day_metrics.dart';
+import 'package:journal/ui/absences/absence_limit.dart';
+import 'package:journal/ui/grades/grades_page.dart';
+import 'package:journal/ui/settings/home_layout_page.dart';
+import 'package:journal/ui/kit/inputs/settings_tiles.dart';
 import 'package:journal/ui/home/day_bar.dart';
 import 'package:journal/ui/kit/inputs/pickers.dart';
 import 'package:journal/ui/kit/sheets/select_sheet.dart';
@@ -51,10 +56,12 @@ final now = DateTime(2026, 11, 18, 12, 16);
 class _FixtureRepo extends ScheduleRepo {
   _FixtureRepo(super.store);
   final refreshed = <DateTime>[];
+  DayStatus status = DayStatus.ok;
 
   @override
   Future<DayState> load(DateTime date, {bool force = false}) async {
     if (force) refreshed.add(date);
+    if (status != DayStatus.ok) return DayState(status);
     final cached = store.cachedSchedule(store.settings.group, date);
     return DayState(
       DayStatus.ok,
@@ -102,6 +109,7 @@ void main() {
 
   Widget hero(DateTime time, {double viewportHeight = 812}) => DayCard(
     viewportHeight: viewportHeight,
+    metrics: (tone, compact) => DayMetrics(store: store, onTab: (_) {}, tone: tone, compact: compact),
     now: time,
     slots: slots,
     profile: profile,
@@ -146,6 +154,9 @@ void main() {
         reason: '${width}×$height, масштаб $scale',
       );
       expect(tester.widget<Text>(find.text('34')).style!.fontSize, 148);
+      final surface = find.byType(HeroSurface);
+      expect(find.descendant(of: surface, matching: find.byType(DayMetrics)), findsOneWidget);
+      expect(find.descendant(of: surface, matching: find.byType(DayBar)), findsOneWidget);
     }
   });
 
@@ -239,6 +250,9 @@ void main() {
     const inset = 59.0;
     tester.view.padding = const FakeViewPadding(top: inset);
     tester.view.viewPadding = const FakeViewPadding(top: inset);
+    for (var i = 0; i < 3; i++) {
+      store.saveTask(Task(id: 't$i', date: today(), lesson: 1, due: today(), text: 'Задание $i', subject: 'Физика'));
+    }
     final key = GlobalKey();
     await screen(
       tester,
@@ -274,8 +288,8 @@ void main() {
     }
 
     final heroHeight = tester.getSize(find.byType(HeroSurface)).height;
-    checkClock(scheme.primary);
-    await check(scheme.primary, [0, 32, 58, 60]);
+    checkClock(scheme.primaryContainer);
+    await check(scheme.primaryContainer, [0, 32, 58, 60]);
     final gesture = await tester.startGesture(const Offset(80, 160));
     await gesture.moveBy(const Offset(0, 32));
     await tester.pump();
@@ -283,12 +297,12 @@ void main() {
     await tester.pump();
     final position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
     expect(position.pixels, lessThan(-30));
-    checkClock(scheme.primary);
-    await check(scheme.primary, [0, 32, 58, 60, 80]);
+    checkClock(scheme.primaryContainer);
+    await check(scheme.primaryContainer, [0, 32, 58, 60, 80]);
     await gesture.up();
     await tester.pumpAndSettle();
     expect(repo.refreshed, isNotEmpty);
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -680));
+    await tester.drag(find.byType(CustomScrollView), Offset(0, -heroHeight - 200));
     await tester.pumpAndSettle();
     expect(position.pixels, greaterThan(0));
     expect(position.pixels, greaterThan(heroHeight));
@@ -306,6 +320,74 @@ void main() {
     await bottomPull.up();
     await tester.pumpAndSettle();
     await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('показатели закреплены, старый порядок и видимость читаются независимо', (tester) async {
+    store.setHomeLayout([kBlockRecent, kBlockTasks, kBlockMetrics, kBlockWeek, kBlockTomorrow], [kBlockMetrics]);
+    Widget home() => HomePage(onTab: (_) {}, onDay: (_) {});
+    await screen(tester, home(), scroll: false);
+    expect(find.byType(DayMetrics), findsNothing);
+    await screen(tester, const HomeLayoutPage(), scroll: false);
+    final pinned = find.byKey(const ValueKey('layout-metrics'));
+    expect(find.descendant(of: pinned, matching: find.byTooltip('Ниже')), findsNothing);
+    await tester.tap(find.descendant(of: pinned, matching: find.byType(SettingsSwitch)));
+    await tester.pumpAndSettle();
+    expect(store.settings.homeOrder.where((id) => id != kBlockMetrics), [
+      kBlockRecent,
+      kBlockTasks,
+      kBlockWeek,
+      kBlockTomorrow,
+    ]);
+    await screen(tester, home(), scroll: false);
+    expect(find.descendant(of: find.byType(HeroSurface), matching: find.byType(DayMetrics)), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('локальные показатели доступны в выходной и без сети', (tester) async {
+    for (final status in [DayStatus.sunday, DayStatus.offline]) {
+      repo.status = status;
+      await screen(tester, HomePage(key: ValueKey(status), onTab: (_) {}, onDay: (_) {}), scroll: false);
+      expect(find.text(status == DayStatus.sunday ? 'Сегодня выходной' : 'Не удалось загрузить'), findsOneWidget);
+      expect(find.descendant(of: find.byType(HeroSurface), matching: find.byType(DayMetrics)), findsOneWidget);
+    }
+  });
+
+  testWidgets('кольца показывают запас и превышение, включая крупный шрифт', (tester) async {
+    for (final (hours, expected) in [
+      (0, 'Осталось часов'),
+      (7, 'Близко к лимиту'),
+      (10, 'Лимит достигнут'),
+      (12, 'Превышено на 2 часа'),
+    ]) {
+      await screen(
+        tester,
+        LimitCounters(monthHours: hours, semesterHours: 15, semester: store.semesterOn(now), onSemesterTap: () {}),
+        width: 320,
+        scale: 2,
+      );
+      expect(find.text(expected), findsAtLeastNWidgets(1));
+      expect(find.text('$hours из 10 ч'), findsOneWidget);
+      expect(find.text('57'), findsOneWidget);
+      expect(find.text('${(10 - hours).clamp(0, 10)}'), findsOneWidget);
+    }
+  });
+
+  testWidgets('первая оценка сразу обновляет сводку и доступное описание графика', (tester) async {
+    store.putSchedule(DaySchedule(date: today(), group: store.settings.group, slots: slots, fetchedAt: now));
+    const early = BellProfile(slots: {2: BellSlot(start: 0, end: 60)});
+    store.setBellProfile(store.bellKeyOn(today()), early);
+    await screen(tester, const GradesPage(), width: 320, scale: 2, scroll: false);
+    await tester.tap(find.text('Добавить оценку'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('9').last);
+    await tester.tap(find.text('9').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Сохранить'));
+    await tester.tap(find.text('Сохранить'));
+    await tester.pumpAndSettle();
+    expect(store.grades.single.value, 9);
+    expect(find.text('Распределение оценок'), findsOneWidget);
+    expect(find.bySemanticsLabel('Оценка 9, 1 оценка'), findsOneWidget);
   });
 
   testWidgets('в календаре тон меняется только при смене предмета', (tester) async {

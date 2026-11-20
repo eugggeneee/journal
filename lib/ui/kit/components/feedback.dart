@@ -9,6 +9,7 @@ void showUndo(ScaffoldMessengerState m, String message, VoidCallback onUndo) {
     content: Text(message),
     persist: false,
     duration: const Duration(seconds: 5),
+    showCloseIcon: false,
     action: SnackBarAction(
       label: 'Отменить',
       onPressed: () {

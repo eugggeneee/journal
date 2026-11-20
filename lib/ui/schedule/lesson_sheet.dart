@@ -216,7 +216,7 @@ class _LessonSheetState extends State<_LessonSheet> {
                 ? Text('ОКР, зачёт, практика или своя', style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant))
                 : Align(
                     alignment: Alignment.centerLeft,
-                    child: Pill(dayMark.label, tone: markTone(context), icon: markIcon(dayMark.label)),
+                    child: MarkPill(dayMark),
                   ),
           ),
           const SizedBox(width: 12),
@@ -235,30 +235,13 @@ class _LessonSheetState extends State<_LessonSheet> {
         for (final t in lessonTasks)
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
-            child: Row(children: [
-              TaskCheck(task: t, store: store),
-              Expanded(
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                    final host = Navigator.of(context).context;
-                    Navigator.of(context).pop();
-                    showTaskSheet(host, edit: t);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      '${t.text} · ${dueText(t.due).toLowerCase()}',
-                      style: context.tt.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        decoration: t.done ? TextDecoration.lineThrough : TextDecoration.none,
-                        color: t.done ? cs.onSurfaceVariant : cs.onSurface,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ]),
+            child: InkWell(borderRadius: BorderRadius.circular(JournalLayout.panelRadius),
+              onTap: () {
+                final host = Navigator.of(context).context;
+                Navigator.of(context).pop();
+                showTaskSheet(host, edit: t);
+              },
+              child: TaskSummary(task: t, store: store)),
           ),
         Wrap(spacing: 8, runSpacing: 8, children: [
           for (final hw in const [true, false])

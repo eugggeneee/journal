@@ -264,7 +264,7 @@ class ThemePreview extends StatelessWidget {
     return ExcludeSemantics(
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(32)),
+        decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(JournalLayout.heroRadius)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
             Expanded(child: Text('Расписание', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800))),
@@ -273,9 +273,9 @@ class ThemePreview extends StatelessWidget {
           const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: cs.surfaceContainer, borderRadius: BorderRadius.circular(24)),
-            child: Row(children: [
-              SizedBox(
+            decoration: BoxDecoration(color: cs.surfaceContainer, borderRadius: BorderRadius.circular(JournalLayout.panelRadius)),
+            child: JournalRow(padding: EdgeInsets.zero, title: 'Математика', subtitle: 'ауд. 214 · Иванова И. И.',
+              leading: SizedBox(
                 width: 46,
                 height: 46,
                 child: Stack(clipBehavior: Clip.none, children: [
@@ -286,20 +286,12 @@ class ThemePreview extends StatelessWidget {
                     child: AbsenceBadge(hours: 2, excused: false, ringColor: cs.surfaceContainer),
                   ),
                 ]),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Математика', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                  Text('ауд. 214 · Иванова И. И.', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-                ]),
-              ),
-            ]),
+              )),
           ),
           const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(color: cs.surfaceContainer, borderRadius: BorderRadius.circular(24)),
+            decoration: BoxDecoration(color: cs.surfaceContainer, borderRadius: BorderRadius.circular(JournalLayout.panelRadius)),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
               navIcon(Icons.home_rounded, selected: true),
               navIcon(Icons.calendar_month_outlined),
@@ -357,7 +349,7 @@ class _AppIconSectionState extends State<AppIconSection> {
     _busy.value = false;
     if (!ok) _current.value = prev;
     if (!ok) {
-      showNote(messenger, 'Не удалось сменить значок');
+      showNote(messenger, 'Система не сменила значок. Попробуйте ещё раз.');
     } else if (android) {
       showNote(messenger, 'Значок обновится через пару секунд');
     }

@@ -6,7 +6,8 @@ import '../kit/foundation/ctx.dart';
 /// Верх главной: цветная поверхность во всю ширину с закруглением снизу. Шапка (приветствие, настройки)
 /// стоит прямо на ней, поэтому экран читается как один цельный блок, а не набор карточек.
 class HeroSurface extends StatelessWidget {
-  const HeroSurface({super.key, required this.tone, required this.child, this.header});
+  const HeroSurface({super.key, required this.tone, required this.child, this.header, this.footer});
+  final Widget? footer;
   final Tone tone;
   final Widget child;
 
@@ -22,7 +23,7 @@ class HeroSurface extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 4, 20, 16),
         decoration: BoxDecoration(
           color: tone.bg,
-          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(JournalLayout.heroRadius)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -30,6 +31,7 @@ class HeroSurface extends StatelessWidget {
           children: [
             if (header != null) ...[header!(tone.fg), const SizedBox(height: 8)],
             child,
+            if (footer != null) ...[const SizedBox(height: 8), footer!],
           ],
         ),
       ),

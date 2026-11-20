@@ -26,7 +26,9 @@ class DayCard extends StatelessWidget {
     required this.header,
     required this.onOpenDay,
     required this.viewportHeight,
+    this.metrics,
   });
+  final Widget Function(Tone, bool)? metrics;
   final double viewportHeight;
   final DateTime now;
   final List<LessonSlot> slots;
@@ -57,7 +59,7 @@ class DayCard extends StatelessWidget {
   Widget _day(BuildContext context, double width) {
     final cs = context.cs;
     final tt = context.tt;
-    final tone = Tone(cs.primary, cs.onPrimary);
+    final tone = Tone(cs.primaryContainer, cs.onPrimaryContainer);
     final fg = tone.fg;
     final minute = now.hour * 60 + now.minute;
     final numbers = slots.map((s) => s.number).toList();
@@ -118,7 +120,8 @@ class DayCard extends StatelessWidget {
     )..layout(maxWidth: (columnWidth - 48 - (focus == null ? 0 : 66)).clamp(1, double.infinity).toDouble());
     final longSummary = summaryText.height > availableHeight * .40;
     summaryText.dispose();
-    final detailsBelow = !folded && reason.isNotEmpty && (availableHeight < scale.scale(320) || longSummary);
+    final compact = folded || availableHeight < scale.scale(560) || longSummary;
+    final detailsBelow = !folded && reason.isNotEmpty && (availableHeight < scale.scale(440) || longSummary);
     final summaryFg = detailsBelow ? cs.onSurface : fg;
     final summaryBg = detailsBelow ? cs.surface : tone.bg;
     final summary = Row(
@@ -201,9 +204,12 @@ class DayCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'мин',
-                            style: tt.headlineMedium?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'мин',
+                              style: tt.headlineMedium?.copyWith(color: fg, fontWeight: FontWeight.w800, height: 1),
+                            ),
                           ),
                           if (!separateLabel) Text(endLabel, style: endStyle),
                         ],
@@ -233,52 +239,75 @@ class DayCard extends StatelessWidget {
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [summary, timer]);
     }
 
+    final overview = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (end != null) ...[
+          const SizedBox(height: 8),
+          if (!compact)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                spacing: 8,
+                children: [
+                  Text(
+                    'Ход дня',
+                    style: tt.labelLarge?.copyWith(color: fg, fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    remaining > 0
+                        ? 'ещё ${pairsText(remaining)} · до ${fmtMin(end)}'
+                        : 'Последний звонок в ${fmtMin(end)}',
+                    style: tt.labelLarge?.copyWith(color: fg),
+                  ),
+                ],
+              ),
+            ),
+          DayBar(
+            slots: slots,
+            profile: profile,
+            minute: minute,
+            fg: fg,
+            bg: tone.bg,
+            compact: compact,
+            onOpen: (slot) => showLessonSheet(context, now, slot),
+          ),
+        ],
+        if (metrics != null) ...[const SizedBox(height: 8), metrics!(tone, compact)],
+      ],
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        HeroSurface(tone: tone, header: (fg) => header(fg, inLesson && current != null), child: heroContent()),
+        HeroSurface(
+          tone: tone,
+          header: (fg) => header(fg, inLesson && current != null),
+          child: sideBySide && detailsBelow
+              ? Row(
+                  children: [
+                    Expanded(child: timer),
+                    const SizedBox(width: 16),
+                    Expanded(child: overview),
+                  ],
+                )
+              : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [heroContent(), overview]),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (detailsBelow) ...[const SizedBox(height: 12), summary],
               if (inLesson && current != null) ...[
                 const SizedBox(height: 12),
                 _LessonActions(date: now, slot: current, store: store, fg: cs.onSurface),
-              ],
-              if (end != null) ...[
-                const SizedBox(height: 12),
-                if (!folded)
+                if (store.markFor(now, current.number) case final mark?)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Wrap(
-                      alignment: WrapAlignment.spaceBetween,
-                      spacing: 8,
-                      children: [
-                        Text(
-                          'Ход дня',
-                          style: tt.labelLarge?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w700),
-                        ),
-                        Text(
-                          remaining > 0
-                              ? 'ещё ${pairsText(remaining)} · до ${fmtMin(end)}'
-                              : 'Последний звонок в ${fmtMin(end)}',
-                          style: tt.labelLarge?.copyWith(color: cs.onSurface),
-                        ),
-                      ],
-                    ),
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Align(alignment: Alignment.centerLeft, child: MarkPill(mark)),
                   ),
-                DayBar(
-                  slots: slots,
-                  profile: profile,
-                  minute: minute,
-                  fg: cs.onSurface,
-                  bg: cs.surface,
-                  compact: folded,
-                  onOpen: (slot) => showLessonSheet(context, now, slot),
-                ),
               ],
+              if (detailsBelow) ...[const SizedBox(height: 12), summary],
               if (!folded) ...[
                 if (!completeTimes && slots.isNotEmpty)
                   Align(
@@ -377,29 +406,24 @@ class _LessonActions extends StatelessWidget {
           for (var i = 0; i < actions.length; i++) ...[
             if (i != 0) const SizedBox(width: 4),
             Expanded(
-              child: Material(
-                color: fg.withValues(alpha: .10),
-                clipBehavior: Clip.antiAlias,
-                borderRadius: BorderRadius.horizontal(
-                  left: Radius.circular(i == 0 ? 20 : 6),
-                  right: Radius.circular(i == 2 ? 20 : 6),
-                ),
-                child: InkWell(
-                  onTap: actions[i].$3,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(actions[i].$1, color: fg, size: 20),
-                        const SizedBox(height: 4),
-                        Text(
-                          actions[i].$2,
-                          textAlign: TextAlign.center,
-                          style: context.tt.labelMedium?.copyWith(color: fg, fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    ),
+              child: GroupTile(
+                index: i,
+                count: actions.length,
+                color: fg.withValues(alpha: .1),
+                onTap: actions[i].$3,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(actions[i].$1, color: fg, size: 20),
+                      const SizedBox(height: 4),
+                      Text(
+                        actions[i].$2,
+                        textAlign: TextAlign.center,
+                        style: context.tt.labelMedium?.copyWith(color: fg, fontWeight: FontWeight.w700),
+                      ),
+                    ],
                   ),
                 ),
               ),

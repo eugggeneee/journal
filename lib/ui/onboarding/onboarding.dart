@@ -240,7 +240,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           scale: 0.99,
           child: Material(
             color: has ? cs.primaryContainer : cs.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(JournalLayout.cardRadius),
             clipBehavior: Clip.antiAlias,
             child: ArtCircles(
               color: has ? cs.primary : cs.secondary,
@@ -297,7 +297,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           scale: 0.99,
           child: Material(
             color: cs.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(JournalLayout.cardRadius),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
               onTap: () {
@@ -376,9 +376,9 @@ class _Backdrop extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.cs;
     return Stack(children: [
-      Positioned(top: -140, left: -100, child: _Orb(320, cs.primaryContainer.withValues(alpha: 0.9))),
-      Positioned(top: 220, right: -160, child: _Orb(340, cs.tertiaryContainer.withValues(alpha: 0.8))),
-      Positioned(bottom: -140, left: -80, child: _Orb(320, cs.secondaryContainer.withValues(alpha: 0.9))),
+      Positioned(top: -140, left: -100, child: _Orb(320, cs.primaryContainer.withValues(alpha: context.isDark ? .14 : .9))),
+      Positioned(top: 220, right: -160, child: _Orb(340, cs.tertiaryContainer.withValues(alpha: context.isDark ? .12 : .8))),
+      Positioned(bottom: -140, left: -80, child: _Orb(320, cs.secondaryContainer.withValues(alpha: context.isDark ? .14 : .9))),
     ]);
   }
 }
@@ -413,27 +413,8 @@ class _FeatureCard extends StatelessWidget {
         index: index + 1,
         child: Card(
           color: context.cs.surfaceContainerLow,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Container(
-                width: 52,
-                height: 52,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(18)),
-                child: Icon(icon, size: 26, color: fg),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(title, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 4),
-                  Text(text, style: context.tt.bodyMedium?.copyWith(height: 1.35, color: context.cs.onSurfaceVariant)),
-                ]),
-              ),
-            ]),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(JournalLayout.cardRadius)),
+          child: JournalRow(leading: IconBox(icon: icon, tone: Tone(bg, fg)), title: title, subtitle: text),
         ),
       );
 }

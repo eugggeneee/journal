@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:journal/core/app_icons.dart';
 import 'package:journal/core/palette.dart';
 import 'package:journal/data/models.dart';
 
@@ -56,12 +59,57 @@ void main() {
     expect(AppPalette.byId('nope').id, AppPalette.standardId);
   });
 
+  testWidgets('при временном отказе iOS смена значка повторяется один раз', (tester) async {
+    const channel = MethodChannel('eugggeneee.journal/app_icon');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      var attempts = 0;
+      final requested = <String>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        requested.add(call.arguments['id'] as String);
+        if (++attempts == 1) throw PlatformException(code: 'NSPOSIXErrorDomain', details: 35);
+        return true;
+      });
+      final change = AppIcons.set('teal');
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(await change, isTrue);
+      expect(attempts, 2);
+      expect(requested, ['teal', 'teal']);
+
+      attempts = 0;
+      messenger.setMockMethodCallHandler(channel, (_) async {
+        attempts++;
+        throw PlatformException(code: 'unsupported');
+      });
+      expect(await AppIcons.set('teal'), isFalse);
+      expect(attempts, 1);
+    } finally {
+      messenger.setMockMethodCallHandler(channel, null);
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
   test('для каждой темы есть значок приложения', () {
     final ids = (jsonDecode(File('assets/icons/icons.json').readAsStringSync()) as List).cast<String>();
     expect(AppPalette.choices.map((c) => c.id).toList(), ids);
     for (final id in ids) {
-      for (final f in ['ios', 'ios_dark', 'ios_tinted', 'fg', 'bg', 'legacy']) {
-        expect(File('assets/icons/$id/$f.png').existsSync(), isTrue, reason: '$id/$f.png');
+      final name = id == 'default' ? 'AppIcon' : 'Icon_$id';
+      final base = 'assets/icons/ios/$name.icon';
+      final spec = jsonDecode(File('$base/icon.json').readAsStringSync());
+      for (final group in spec['groups']) {
+        for (final layer in group['layers']) {
+          expect(File('$base/Assets/${layer['image-name']}').existsSync(), isTrue);
+        }
+      }
+      final key = id.replaceAllMapped(RegExp('[A-Z]'), (m) => '_${m[0]!.toLowerCase()}');
+      final launcher = id == 'default' ? 'ic_launcher' : 'ic_launcher_$key';
+      for (final suffix in ['', '_round']) {
+        expect(File('assets/icons/android/mipmap-anydpi-v26/$launcher$suffix.xml').existsSync(), isTrue);
+        for (final density in ['mdpi','hdpi','xhdpi','xxhdpi','xxxhdpi']) {
+          expect(File('assets/icons/android/mipmap-$density/$launcher$suffix.png').existsSync(), isTrue);
+        }
       }
       expect(File('assets/icons/preview/$id.png').existsSync(), isTrue, reason: 'preview/$id.png');
     }

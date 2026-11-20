@@ -1,0 +1,100 @@
+name: Native icons
+on:
+  pull_request:
+    paths:
+      - 'assets/icons/ios/**'
+      - 'assets/icons/android/**'
+      - 'scripts/icons/**'
+      - '.github/workflows/native-icons.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: native-icons-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  iphone:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Выбрать Xcode для сборки значков
+        run: bash scripts/icons/select_xcode.sh
+      - name: Экспортировать иконки для README и настроек
+        if: github.event_name == 'workflow_dispatch'
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          mkdir -p build/icon-review/preview
+          bash scripts/icons/export_ios.sh
+      - uses: actions/upload-artifact@v5
+        if: github.event_name == 'workflow_dispatch' && success()
+        with:
+          name: icon-composer
+          path: build/icon-review/
+      - name: Собрать iOS и проверить все варианты значка
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          flutter create --platforms=ios --org eugggeneee --project-name journal .
+          python3 scripts/icons/setup_ios.py
+          flutter build ios --simulator --debug --target scripts/icons/launcher_probe.dart
+          app=build/ios/iphonesimulator/Runner.app
+          python3 - "$app" <<'PY'
+          import json, pathlib, plistlib, sys
+          bundle = pathlib.Path(sys.argv[1])
+          info = plistlib.loads((bundle/'Info.plist').read_bytes())
+          icons = info['CFBundleIcons']
+          expected = {'Icon_' + k for k in json.loads(pathlib.Path('assets/icons/icons.json').read_text()) if k != 'default'}
+          assert icons['CFBundlePrimaryIcon']['CFBundleIconName'] == 'AppIcon'
+          assert set(icons['CFBundleAlternateIcons']) == expected
+          PY
+      - name: Проверить установку и значок на iOS 26.0
+        run: bash scripts/icons/check_iphone.sh 26-0 build/ios/iphonesimulator/Runner.app
+      - name: Проверить установку и значок на iOS 26.2
+        run: bash scripts/icons/check_iphone.sh 26-2 build/ios/iphonesimulator/Runner.app
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: iphone-icons
+          path: build/icon-review/iphone-*.png
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Собрать приложение
+        run: |
+          flutter create --platforms=android --org eugggeneee --project-name journal .
+          python3 scripts/icons/setup_android.py
+          flutter build apk --debug --target scripts/icons/launcher_probe.dart
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: bash scripts/icons/check_launcher.sh
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: android-icons
+          path: build/icon-review/

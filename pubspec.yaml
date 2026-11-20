@@ -1,7 +1,7 @@
 name: journal
 description: "Journal — МГТЭК · Дневник: расписание, оценки и пропуски."
 publish_to: none
-version: 1.0.1-beta.14+15
+version: 1.0.1-beta.15+16
 
 environment:
   sdk: '>=3.13.0 <4.0.0'
@@ -23,16 +23,6 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_launcher_icons: ^0.14.1
-
-# Здесь генерируются только обычные (legacy) значки Android и значок iOS.
-# Адаптивный значок Android собирает scripts/icons/setup_android.py: launcher_icons сжимал бы рисунок на 16 %.
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: assets/icon/icon.png            # Android до 8.0 — скруглённый
-  image_path_ios: assets/icon/icon_ios.png    # iOS — квадрат без прозрачности
-  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true

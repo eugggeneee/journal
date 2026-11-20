@@ -32,10 +32,17 @@ class AppIcons {
 
   static Future<bool> set(String id) async {
     if (!platformOk || !ids.contains(id)) return false;
-    try {
-      return (await _channel.invokeMethod<bool>('set', {'id': id})) ?? false;
-    } catch (_) {
-      return false;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        return (await _channel.invokeMethod<bool>('set', {'id': id})) ?? false;
+      } on PlatformException catch (e) {
+        if (kDebugMode) debugPrint('App icon: ${e.code} ${e.message} (${e.details})');
+        if (attempt != 0 || e.code != 'NSPOSIXErrorDomain' || e.details != 35) return false;
+        await Future<void>.delayed(const Duration(seconds: 1));
+      } catch (_) {
+        return false;
+      }
     }
+    return false;
   }
 }

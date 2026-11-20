@@ -62,15 +62,19 @@ class AppTheme {
   }
 
   static ThemeData build(ColorScheme source) {
-    // Сохраняем цвет выбранной темы и тон соответствующих on-ролей.
+    final dark = source.brightness == Brightness.dark;
     final s = source.copyWith(
-      primary: Color.lerp(source.primary, source.secondary, .16),
-      tertiary: Color.lerp(source.tertiary, source.secondary, .12),
-      error: Color.lerp(source.error, source.onErrorContainer, .08),
+      primaryContainer: dark ? source.primaryFixedDim : source.primaryFixed,
+      onPrimaryContainer: source.onPrimaryFixed,
+      secondaryContainer: dark ? source.secondaryFixedDim : source.secondaryFixed,
+      onSecondaryContainer: source.onSecondaryFixed,
+      tertiaryContainer: dark ? source.tertiaryFixedDim : source.tertiaryFixed,
+      onTertiaryContainer: source.onTertiaryFixed,
     );
-    final shape24 = RoundedRectangleBorder(borderRadius: BorderRadius.circular(24));
-    return ThemeData(
-      colorScheme: s,
+    final shape24 = RoundedRectangleBorder(borderRadius: BorderRadius.circular(JournalLayout.panelRadius));
+    final base = ThemeData(colorScheme: s);
+    final actionLabel = base.textTheme.labelLarge!;
+    return base.copyWith(
       scaffoldBackgroundColor: s.surface,
       // Экраны скользят по горизонтали: вперёд справа налево, назад обратно.
       pageTransitionsTheme: const PageTransitionsTheme(builders: {
@@ -103,8 +107,7 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         backgroundColor: s.surfaceContainer,
         indicatorColor: s.secondaryContainer,
-        labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
-              fontSize: 12,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) => base.textTheme.labelMedium!.copyWith(
               fontWeight: states.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w500,
               color: states.contains(WidgetState.selected) ? s.onSurface : s.onSurfaceVariant,
             )),
@@ -118,21 +121,21 @@ class AppTheme {
         style: FilledButton.styleFrom(
           minimumSize: const Size(64, 52),
           shape: const StadiumBorder(),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: actionLabel.copyWith(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(64, 52),
           shape: const StadiumBorder(),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: actionLabel.copyWith(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           minimumSize: const Size(64, 48),
           shape: const StadiumBorder(),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle: actionLabel.copyWith(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
@@ -143,7 +146,7 @@ class AppTheme {
         hoverElevation: 0,
         highlightElevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        extendedTextStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+        extendedTextStyle: actionLabel.copyWith(fontSize: 15, fontWeight: FontWeight.w700),
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -151,7 +154,9 @@ class AppTheme {
         side: WidgetStateBorderSide.resolveWith(
           (states) => BorderSide(color: states.contains(WidgetState.selected) ? Colors.transparent : s.outlineVariant),
         ),
-        labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: s.onSurface),
+        labelStyle: WidgetStateTextStyle.resolveWith((states) => actionLabel.copyWith(
+              color: states.contains(WidgetState.selected) ? s.onSecondaryContainer : s.onSurface,
+            )),
         showCheckmark: false,
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -174,19 +179,19 @@ class AppTheme {
         elevation: 0,
         modalElevation: 0,
         shadowColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(JournalLayout.cardRadius))),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: s.surfaceContainerHigh,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shadowColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(JournalLayout.cardRadius)),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         elevation: 0,
-        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        insetPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
@@ -199,7 +204,7 @@ class AppTheme {
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
-          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          textStyle: actionLabel.copyWith(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
       dividerTheme: DividerThemeData(color: s.outlineVariant.withValues(alpha: 0.6), space: 1, thickness: 1),

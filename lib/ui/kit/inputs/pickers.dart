@@ -103,7 +103,7 @@ class FieldTile extends StatelessWidget {
       excludeSemantics: true,
       child: Material(
         color: cs.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(JournalLayout.panelRadius),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: tap,
@@ -518,7 +518,7 @@ class ExcuseTile extends StatelessWidget {
           animationDuration: context.motion(Motion.short),
           color: tone.bg,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(JournalLayout.panelRadius),
             side: BorderSide(color: selected ? tone.fg : Colors.transparent, width: 2.5),
           ),
           clipBehavior: Clip.antiAlias,
