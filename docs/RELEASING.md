@@ -96,4 +96,4 @@ gh attestation verify Journal-vX.Y.Z-android.apk --repo eugggeneee/journal
 
 - Название приложения на устройстве: Journal (задаётся в workflow).
 - Исходники в `assets/icons/ios` и `assets/icons/android` собираются скриптами `scripts/icons/setup_ios.py` и `scripts/icons/setup_android.py`. Имена вариантов используются при обновлении установленного приложения.
-- При изменении платформенных ресурсов проверка Native icons устанавливает приложения на симулятор и эмулятор. Артефакт icon-composer содержит экспорт Icon Composer для README и экрана выбора значка.
+- При изменении платформенных ресурсов проверка Native icons устанавливает приложения на симулятор и эмулятор. Для обновления изображений в README и настройках запустите Native icons вручную. Артефакт icon-composer содержит нативный экспорт.
