@@ -2,14 +2,21 @@
 set -euo pipefail
 runtime=$1
 app=$2
-device=$(xcrun simctl list devices available -j | python3 -c '
-import json, sys
-devices = json.load(sys.stdin)["devices"]
-print(next(d["udid"] for key, ds in devices.items() if key.endswith("iOS-" + sys.argv[1]) for d in ds if d["name"] == "iPhone 17 Pro"))
-' "$runtime")
+# Используем отдельное устройство для каждого запуска. Открываем Simulator до ожидания SpringBoard.
+device=$(xcrun simctl create "Journal-$runtime" com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro "com.apple.CoreSimulator.SimRuntime.iOS-$runtime")
 out="$PWD/build/icon-review/iphone-$runtime"
-xcrun simctl bootstatus "$device" -b
-open -a "$(xcode-select -p)/Applications/Simulator.app" --args -CurrentDeviceUDID "$device"
+mkdir -p "$(dirname "$out")"
+boot() {
+  xcrun simctl boot "$device" && open -a "$(xcode-select -p)/Applications/Simulator.app" --args -CurrentDeviceUDID "$device" &&
+    python3 - "$device" <<'PY'
+import subprocess, sys
+subprocess.run(['xcrun', 'simctl', 'bootstatus', sys.argv[1], '-b'], timeout=300, check=True)
+PY
+}
+if ! boot; then
+  xcrun simctl shutdown "$device"
+  boot
+fi
 xcrun simctl install "$device" "$app"
 xcrun simctl io "$device" screenshot "$out-default.png"
 flutter run -d "$device" --no-pub --no-publish-port --use-application-binary="$app" --target scripts/icons/launcher_probe.dart --no-resident
