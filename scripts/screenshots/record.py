@@ -70,7 +70,7 @@ def capture(app, output):
     try:
         target = 'integration_test/journal_screens_test.dart'
         version = '--dart-define=JOURNAL_VERSION=' + os.environ['TAG'][1:]
-        subprocess.run(['flutter','test','--no-pub','--no-dds','-v','-d',device,'--reporter','expanded',version,
+        subprocess.run(['flutter','test','--no-pub','-v','-d',device,'--reporter','expanded',version,
                         '--dart-define=JOURNAL_CLOCK=2026-11-18T11:10:00',target],
                        cwd=app,check=True,timeout=1800)
     finally:
