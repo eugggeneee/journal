@@ -31,7 +31,8 @@ jobs:
           if git ls-remote --exit-code origin refs/heads/screenshots >/dev/null; then
             git clone --quiet --depth 1 --branch screenshots "https://github.com/$GITHUB_REPOSITORY.git" "$RUNNER_TEMP/previous"
             python3 -m pip install --quiet Pillow
-            ready=$(python3 scripts/screenshots/pack.py check "$RUNNER_TEMP/previous/pack" "$tag")
+            git show "$tag:assets/icons/icons.json" > "$RUNNER_TEMP/palette.json"
+            ready=$(python3 scripts/screenshots/pack.py check "$RUNNER_TEMP/previous/pack" "$tag" "$RUNNER_TEMP/palette.json")
           fi
           echo "ready=$ready" >> "$GITHUB_OUTPUT"
           if [[ "$ready" == true ]]; then

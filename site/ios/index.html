@@ -4,49 +4,31 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Journal для iPhone и iPad</title>
+<title>Установить Journal на iPhone и iPad</title>
 <style>
-  :root { font: 100%/1.5 system-ui, sans-serif; color: #202332; background: #f8f9ff; }
-  body { max-width: 29rem; margin: auto; padding: clamp(2rem, 11vh, 6rem) 1.25rem; }
-  img { width: 5rem; height: 5rem; border-radius: 23%; }
-  h1 { margin: 1rem 0 .25rem; font-size: 2rem; line-height: 1.2; }
-  p { margin: .5rem 0 1.25rem; }
-  nav { display: grid; gap: .5rem; }
-  nav a { padding: .85rem 1rem; border-radius: 1rem; font-weight: 600; text-decoration: none; background: #dfe4ff; color: #202d62; }
-  a { color: #384d99; }
-  details { margin-top: 1.5rem; }
-  summary { cursor: pointer; padding: .5rem 0; }
-  code { overflow-wrap: anywhere; user-select: all; }
-  @media (prefers-color-scheme: dark) {
-    :root { color: #ebeaf2; background: #171820; }
-    nav a { background: #343f68; color: #e3e7ff; }
-    a { color: #b7c5ff; }
-  }
+:root{color-scheme:light dark;--page:#f8f8fd;--paper:#fff;--ink:#1b2036;--soft:#515970;--line:#d8dbe6;--accent:#374d91;--button:#314784;--on-button:#fff;--hero:#e6eaff;font:100%/1.5 system-ui,sans-serif;background:var(--page);color:var(--ink)}
+*{box-sizing:border-box}body{margin:0}main{max-width:65rem;margin:auto;padding:clamp(1rem,5vw,3.5rem)}
+a{color:var(--accent);text-underline-offset:.2em}a:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+.hero{color:var(--ink);background:var(--hero);padding:clamp(1.5rem,5vw,3.75rem);border-radius:2rem;display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:start}
+h1,h2,p,figure{margin:0}h1{font-size:clamp(3.3rem,10vw,6.4rem);line-height:1.03;letter-spacing:-.07em;font-weight:650}.icon{width:clamp(4rem,11vw,7rem);height:auto;border-radius:23%}.sub{margin-top:.65rem;color:var(--soft);font-size:1.1rem}
+.actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:.75rem;align-items:center}.action{display:inline-block;padding:.7rem 1.05rem;border-radius:2rem;font-weight:620;text-decoration:none}.primary{background:var(--button);color:var(--on-button)}.secondary{border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+small{font-size:.88rem;color:var(--soft)}h2{font-size:clamp(1.35rem,4vw,1.75rem);line-height:1.25;letter-spacing:-.025em}.gallery{display:flex;gap:1rem;overflow-x:auto;scroll-snap-type:x proximity;padding:.25rem 0 1rem;margin:1.6rem 0}.gallery:empty{display:none}.gallery figure{flex:0 0 clamp(9rem,21vw,13rem);scroll-snap-align:start}.gallery img{display:block;width:100%;height:auto;border-radius:1rem;border:1px solid var(--line)}figcaption{margin-top:.4rem;font-size:.93rem;color:var(--soft)}
+section.subsection, details{padding:1.2rem 0;border-bottom:1px solid var(--line)}section.subsection p{margin:.55rem 0 .8rem;max-width:62ch;color:var(--soft)}
+summary{cursor:pointer;font-weight:600}details p{margin-top:.65rem}code{overflow-wrap:anywhere;user-select:all}footer{padding:1.2rem 0}#beta:target,#ipa:target{scroll-margin-top:1.5rem}
+@media(prefers-color-scheme:dark){:root{--page:#13151d;--paper:#242735;--ink:#eceefb;--soft:#b9bfd5;--line:#424858;--accent:#b5c5ff;--button:#bbc8ff;--on-button:#18244b;--hero:#252d49}}
 </style>
 </head>
-<body>
-<main>
-  <img src="icon.png" alt="" width="80" height="80">
-  <h1>Journal для iPhone и iPad</h1>
-  <p>Откройте страницу на устройстве. Выберите установленный магазин, подтвердите добавление источника и нажмите «Установить» у Journal.</p>
-  <nav aria-label="Добавить источник Journal">
-    <a href="altstore-classic://source?url=https%3A%2F%2Feugggeneee.github.io%2Fjournal%2Fios%2Fsource.json">Добавить в AltStore Classic</a>
-    <a href="sidestore://source?url=https%3A%2F%2Feugggeneee.github.io%2Fjournal%2Fios%2Fsource.json">Добавить в SideStore</a>
-  </nav>
-  <p>Следующие стабильные версии появятся в магазине в разделе My Apps.</p>
-  <section id="ipa">
-    <h2>Установить из файла IPA</h2>
-    <p><a href="https://github.com/eugggeneee/journal/releases/latest#assets">Скачать IPA</a>. В AltStore Classic или SideStore откройте <strong>My Apps → +</strong> и выберите скачанный файл. На компьютере его можно установить через <a href="https://sideloadly.io">Sideloadly</a>.</p>
-  </section>
-  <details>
-    <summary>Добавить источник вручную</summary>
-    <p>В разделе Sources нажмите «+» и вставьте адрес источника.</p>
-    <code>https://eugggeneee.github.io/journal/ios/source.json</code>
-  </details>
-  <details>
-    <summary>Магазин ещё не установлен</summary>
-    <p>Установите <a href="https://altstore.io/download">AltStore Classic</a> или <a href="https://docs.sidestore.io/docs/installation/prerequisites">SideStore</a> по инструкции магазина, затем вернитесь на эту страницу.</p>
-  </details>
-</main>
-</body>
-</html>
+<body><main>
+<header class="hero"><div><h1>Journal</h1><p class="sub">Расписание, оценки и пропуски МГТЭК</p></div><img class="icon" src="icon.png" alt="" width="112" height="112">
+<div class="actions"><a class="action primary" href="altstore-classic://source?url=https%3A%2F%2Feugggeneee.github.io%2Fjournal%2Fios%2Fsource.json">Добавить в AltStore Classic</a>
+<a class="action secondary" href="sidestore://source?url=https%3A%2F%2Feugggeneee.github.io%2Fjournal%2Fios%2Fsource.json">В SideStore</a></div>
+<small>Стабильная версия {{stable}} · iPhone и iPad</small></header>
+<div class="gallery" aria-label="Скриншоты стабильной версии">{{gallery}}</div>
+<section class="subsection" id="beta"><h2>Подписаться на беты</h2><p>Здесь появляются тестовые версии и кандидаты в релиз. Последняя сборка канала — {{beta}}. Стабильная и тестовая сборки используют один дневник.</p>
+<div class="actions"><a class="action secondary" href="altstore-classic://source?url=https%3A%2F%2Feugggeneee.github.io%2Fjournal%2Fios%2Fbeta.json">Беты в AltStore Classic</a>
+<a class="action secondary" href="sidestore://source?url=https%3A%2F%2Feugggeneee.github.io%2Fjournal%2Fios%2Fbeta.json">Беты в SideStore</a></div></section>
+<section class="subsection" id="ipa"><h2>Установить из файла</h2><p>Скачайте IPA, откройте <strong>My Apps → +</strong> в AltStore Classic или SideStore и выберите файл. Для установки с компьютера подойдёт <a href="https://sideloadly.io/">Sideloadly</a>.</p><a href="{{ipa}}">Скачать IPA {{stable}}</a></section>
+<details><summary>Добавить адрес вручную</summary><p>В разделе <strong>Sources → +</strong> вставьте адрес нужного канала.</p><p>Стабильный<br><code>https://eugggeneee.github.io/journal/ios/source.json</code></p><p>Тестовый<br><code>https://eugggeneee.github.io/journal/ios/beta.json</code></p></details>
+<details><summary>Как установить магазин</summary><p>Настройте <a href="https://altstore.io/download">AltStore Classic</a> или <a href="https://docs.sidestore.io/docs/installation/install.html">SideStore</a> по инструкции разработчика. Затем откройте эту страницу на iPhone, добавьте источник и выберите Journal.</p></details>
+<footer><a href="https://github.com/eugggeneee/journal/releases">Все выпуски на GitHub</a></footer>
+</main></body></html>

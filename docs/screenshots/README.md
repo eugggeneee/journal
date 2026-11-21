@@ -1,6 +1,6 @@
 # Скриншоты Journal
 
-[Открыть последний полный пак](https://github.com/eugggeneee/journal/tree/screenshots/pack) · [Запустить сборку](https://github.com/eugggeneee/journal/actions/workflows/screenshots.yml)
+[Открыть последний полный пак](https://github.com/eugggeneee/journal/tree/screenshots/pack) · [Скачать ZIP](https://github.com/eugggeneee/journal/archive/refs/heads/screenshots.zip) · [Запустить сборку](https://github.com/eugggeneee/journal/actions/workflows/screenshots.yml)
 
 В GitHub Actions выберите **Пак скриншотов Journal → Run workflow** на ветке `main`. Процесс сам находит последний стабильный релиз и фиксирует его коммит. Повторный запуск проверяет комплект и контрольные суммы. Если всё уже готово, эмуляторы не запускаются.
 
