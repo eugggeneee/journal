@@ -7,7 +7,8 @@
 Дневник студента МГТЭК: расписание, оценки, пропуски и задания.<br>
 Android и iOS. Без рекламы и аккаунтов, работает офлайн.
 
-[![Релиз](https://img.shields.io/github/v/release/eugggeneee/journal?include_prereleases&style=flat-square&labelColor=1E1F25&color=BEC3FF)](https://github.com/eugggeneee/journal/releases)
+[![Последний стабильный релиз](https://img.shields.io/github/v/release/eugggeneee/journal?style=flat-square&labelColor=1E1F25&color=BEC3FF&label=%D1%81%D1%82%D0%B0%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F)](https://github.com/eugggeneee/journal/releases/latest)
+[![Последняя бета](https://img.shields.io/github/v/release/eugggeneee/journal?include_prereleases=&filter=v%2A-beta.%2A&sort=semver&style=flat-square&labelColor=1E1F25&color=CAF0DF&label=%D0%B1%D0%B5%D1%82%D0%B0)](https://github.com/eugggeneee/journal/releases?q=beta&expanded=true)
 [![CI](https://img.shields.io/github/actions/workflow/status/eugggeneee/journal/ci.yml?branch=main&style=flat-square&labelColor=1E1F25&label=CI)](https://github.com/eugggeneee/journal/actions/workflows/ci.yml)
 [![Лицензия](https://img.shields.io/badge/лицензия-MIT-E9B9DA?style=flat-square&labelColor=1E1F25)](LICENSE)
 
