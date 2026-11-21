@@ -61,7 +61,7 @@ gh attestation verify Journal-vX.Y.Z-android.apk --repo eugggeneee/journal
 
 ## Скриншоты интерфейса
 
-[Галерея последнего стабильного релиза](https://github.com/eugggeneee/journal/tree/screenshots/pack) содержит обе платформы, светлые и тёмные экраны и главную во всех цветах. На каждом снимке вымышленные данные группы 0000. Доступны исходники и варианты с рамкой устройства. [Как собрать новый пак](docs/screenshots/README.md)
+[Галерея последнего стабильного релиза](https://github.com/eugggeneee/journal/tree/screenshots/pack) содержит обе платформы, светлые и тёмные экраны и главную во всех цветах. На каждом снимке вымышленные данные группы 0000. [Скачать ZIP с исходниками и рамками](https://github.com/eugggeneee/journal/archive/refs/heads/screenshots.zip). [Как собрать новый пак](docs/screenshots/README.md)
 
 ## Конфиденциальность
 

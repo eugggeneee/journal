@@ -15,14 +15,19 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def complete(root, tag):
+def names(ids):
+    return sorted(SCENES+[f'home-{key}' for key in ids]+[f'welcome-{i}' for i in range(1,6)])
+
+
+def complete(root, tag, expected):
     try:
         manifest = json.loads((root/'manifest.json').read_text())
-        if manifest['tag'] != tag or set(manifest['devices']) != {'ios','android'}:
+        if (manifest['tag'] != tag or set(manifest['devices']) != {'ios','android'}
+                or manifest['scenes'] != expected):
             return False
         wanted = {f'{platform}/{mode}/{name}-{kind}.webp' for platform in manifest['devices']
                   for mode in ('light','dark') for name in manifest['scenes'] for kind in ('raw','framed')}
-        return (len(manifest['scenes']) >= 45 and wanted == set(manifest['files'])
+        return (wanted == set(manifest['files'])
                 and all(digest(root/name) == manifest['files'][name] for name in wanted))
     except (FileNotFoundError, KeyError, ValueError):
         return False
@@ -83,7 +88,7 @@ def framed(image, platform):
 
 def make(source, output, app, tag, commit):
     ids=json.loads((app/'assets/icons/icons.json').read_text())
-    scenes=sorted(SCENES+[f'home-{key}' for key in ids]+[f'welcome-{i}' for i in range(1,6)])
+    scenes=names(ids)
     manifest={'tag':tag, 'commit':commit, 'group':'0000', 'scenes':scenes, 'devices':{}, 'files':{}}
     for platform in ('ios','android'):
         folder=source/platform
@@ -106,7 +111,7 @@ def make(source, output, app, tag, commit):
                     img.save(dest, lossless=True,method=2)
                     manifest['files'][key]=digest(dest)
     (output/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    assert complete(output,tag)
+    assert complete(output,tag,scenes)
     lines=['# Journal '+tag,'','Группа 0000. Все записи, аудитории и преподаватели вымышлены.','']
     for platform,device in manifest['devices'].items():
         lines.extend([f"## {device['model']}",'',f"{device['environment']} · {device['os']} · {device['width']} × {device['height']} px.",
@@ -117,6 +122,7 @@ def make(source, output, app, tag, commit):
 
 if __name__=='__main__':
     if sys.argv[1]=='check':
-        print('true' if complete(Path(sys.argv[2]),sys.argv[3]) else 'false')
+        ids=json.loads(Path(sys.argv[4]).read_text())
+        print('true' if complete(Path(sys.argv[2]),sys.argv[3],names(ids)) else 'false')
     else:
         make(*(Path(s) for s in sys.argv[2:5]),*sys.argv[5:7])
