@@ -129,8 +129,13 @@ jobs:
             git fetch --depth=1 origin screenshots
             git reset --hard FETCH_HEAD
             if [[ -f pack/manifest.json ]]; then
-              mkdir -p pack/stable
-              git mv pack/{ios,frames,mockups,README.md,manifest.json} pack/stable/
+              legacy=(pack/{ios,frames,mockups,README.md,manifest.json})
+              if [[ "$CHANNEL" == stable ]]; then
+                git rm -rq -- "${legacy[@]}"
+              else
+                mkdir -p pack/stable
+                git mv "${legacy[@]}" pack/stable/
+              fi
             fi
             git rm -rq --ignore-unmatch -- "pack/$CHANNEL"
           fi
