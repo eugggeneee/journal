@@ -1,0 +1,150 @@
+name: Пак скриншотов Journal
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: stable-screenshot-pack
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      ready: ${{ steps.release.outputs.ready }}
+      sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq 'select(.draft == false and .prerelease == false) | .tag_name')
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          git fetch --depth=1 origin "refs/tags/$tag:refs/tags/$tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse "$tag^{commit}")" >> "$GITHUB_OUTPUT"
+          ready=false
+          if git ls-remote --exit-code origin refs/heads/screenshots >/dev/null; then
+            git clone --quiet --depth 1 --branch screenshots "https://github.com/$GITHUB_REPOSITORY.git" "$RUNNER_TEMP/previous"
+            python3 -m pip install --quiet Pillow
+            ready=$(python3 scripts/screenshots/pack.py check "$RUNNER_TEMP/previous/pack" "$tag")
+          fi
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+          if [[ "$ready" == true ]]; then
+            echo "Для $tag всё готово. Повторите после следующего стабильного релиза." >> "$GITHUB_STEP_SUMMARY"
+          fi
+  capture:
+    needs: plan
+    if: needs.plan.outputs.ready == 'false'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ios
+            runner: macos-15
+          - platform: android
+            runner: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 55
+    env:
+      TAG: ${{ needs.plan.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          path: stable-app
+      - uses: actions/setup-java@v5
+        if: matrix.platform == 'android'
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Подготовить исходники стабильного релиза
+        run: |
+          set -euo pipefail
+          cd stable-app
+          flutter create --platforms=${{ matrix.platform }} --org eugggeneee --project-name journal .
+          if [[ "${{ matrix.platform }}" == ios ]]; then python3 scripts/icons/setup_ios.py; else python3 scripts/icons/setup_android.py; fi
+          cd ..
+          python3 scripts/screenshots/prepare.py stable-app
+          cd stable-app
+          flutter pub get
+      - name: Снять экраны iPhone
+        if: matrix.platform == 'ios'
+        run: |
+          bash scripts/icons/select_xcode.sh
+          python3 scripts/screenshots/record.py ios stable-app "$RUNNER_TEMP/frames"
+      - name: Включить ускорение эмулятора
+        if: matrix.platform == 'android'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        if: matrix.platform == 'android'
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: python3 scripts/screenshots/record.py android stable-app "$RUNNER_TEMP/frames"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: capture-${{ matrix.platform }}
+          path: ${{ runner.temp }}/frames
+          retention-days: 3
+          if-no-files-found: error
+  publish:
+    needs: [plan, capture]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ needs.plan.outputs.tag }}
+      SOURCE_SHA: ${{ needs.plan.outputs.sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          path: stable-app
+      - uses: actions/download-artifact@v5
+        with:
+          name: capture-ios
+          path: frames/ios
+      - uses: actions/download-artifact@v5
+        with:
+          name: capture-android
+          path: frames/android
+      - name: Собрать и проверить обе версии каждого кадра
+        run: |
+          python3 -m pip install --quiet Pillow
+          python3 scripts/screenshots/pack.py build frames "$RUNNER_TEMP/new-pack" stable-app "$TAG" "$SOURCE_SHA"
+      - name: Заменить предыдущий полный пак
+        run: |
+          set -euo pipefail
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)" == "$TAG" ]]
+          repo="$RUNNER_TEMP/gallery"
+          git init --quiet -b screenshots "$repo"
+          cd "$repo"
+          git remote add origin "https://github.com/$GITHUB_REPOSITORY.git"
+          gh auth setup-git
+          if git ls-remote --exit-code origin refs/heads/screenshots >/dev/null; then
+            git fetch --depth=1 origin screenshots
+            git reset --hard FETCH_HEAD
+            git rm -rq --ignore-unmatch -- pack
+          fi
+          cp -R "$RUNNER_TEMP/new-pack" pack
+          git add pack
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "docs(screenshots): обновить галерею $TAG"
+          git push origin HEAD:refs/heads/screenshots
+          echo "[Готовый пак $TAG](https://github.com/$GITHUB_REPOSITORY/tree/screenshots/pack)" >> "$GITHUB_STEP_SUMMARY"
