@@ -9,7 +9,7 @@ import '../../logic/schedule/schedule_service.dart';
 import '../app/scope.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import 'day_actions.dart';
 import 'day_timeline.dart';
 import 'marks.dart';
@@ -112,7 +112,7 @@ class _DayViewState extends State<DayView> {
           children: [
             DayToolbar(date: date, slots: s.slots, store: store),
             MarksSection(date: date, store: store, slots: s.slots),
-            DayTimeline(date: date, slots: s.slots, store: store, now: DateTime.now()),
+            DayTimeline(date: date, slots: s.slots, store: store, now: journalNow()),
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Center(

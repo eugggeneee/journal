@@ -11,7 +11,7 @@ import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/overview.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import '../settings/settings_button.dart';
 import '../kit/sheets/select_sheet.dart';
 import 'grade_sheet.dart';

@@ -211,6 +211,7 @@ jobs:
     needs: [meta, android, ios]
     runs-on: ubuntu-latest
     permissions:
+      actions: write         # запустить съёмку после стабильного выпуска
       contents: write        # создать релиз и загрузить файлы
       id-token: write        # подпись-аттестация сборок
       attestations: write
@@ -286,3 +287,7 @@ jobs:
               --target "$GITHUB_SHA" \
               "${FLAGS[@]}"
           fi
+
+      - name: Собрать галерею опубликованного стабильного релиза
+        if: ${{ !contains(needs.meta.outputs.tag, '-') }}
+        run: gh workflow run screenshots.yml --ref main -f channel=stable

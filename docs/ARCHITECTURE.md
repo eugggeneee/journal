@@ -7,7 +7,7 @@
 ```
 journal/
   .github/
-    workflows/          ci.yml, release.yml, setup-signing.yml
+    workflows/          CI, release, native-icons, upgrade, site, screenshots
     releases/           vX.Y.Z.md: текст релиза стабильной версии
     ISSUE_TEMPLATE/     шаблоны issue
     release-notes.md    шаблон оформления релиза
@@ -35,6 +35,7 @@ journal/
       home/ schedule/ grades/ absences/ tasks/ settings/ onboarding/   экраны
   scripts/
     icons/              генерация и подключение значков тем; мастер bell.svg, подготовка растров и экспорт нативных превью
+    screenshots/        сценарий iOS, сборка галерей и фирменных макетов
     project/            check.py, layers.py, version.py
     release/            ключ подписи Android и генератор каталога AltStore из опубликованного IPA
   site/ios/             страница добавления источника в AltStore Classic и SideStore
@@ -58,6 +59,8 @@ journal/
 
 Правила проверяет `scripts/project/check.py` (разбор импортов в `layers.py`; запускается и в CI).
 
+
+Общие элементы из `components/widgets.dart` сгруппированы в `page_layout.dart`, `badges.dart` и `grouped_cards.dart`. Разделы расписания, пропусков, поведения и данных из `settings_pages.dart` живут в отдельных файлах рядом. Обе точки импорта сохранены для сценария съёмки прежних выпусков. Цветовые роли прежнего `ctx.dart` находятся в `foundation/journal_theme.dart`.
 
 ## Данные
 
@@ -85,8 +88,8 @@ journal/
 - Оценки: `grades/goal_card.dart` (цель по предмету и прогноз), расчёт в `logic/forecast.dart` (целочисленный, без ошибок округления). Пропуски: `absences/absence_heatmap.dart` (календарь месяца), расчёт в `logic/heatmap.dart`.
 - Главная настраивается: порядок и скрытие блоков в `Settings.homeOrder`/`homeHidden`, экран `settings/home_layout_page.dart`. Подсказка о жестах закрывается флагом `Settings.tipGestures`. Неделя сеткой: `schedule/week_view.dart`, на экранах от 720 dp.
 - Файлы: `core/file_io.dart` (единственное место, где используются `share_plus` и `file_picker`): резервная копия в .json и восстановление из файла.
-- Цвета: `hueTone`, `hueAccent`, `settingHue` в `kit/foundation/ctx.dart`: тональные цвета Material 3 для оценок, статусов и значков. Текст не обрезается: длинное переносится или уменьшается.
-- Цвета оценок, пропусков и лимитов: `ui/kit/foundation/ctx.dart`.
+- Цвета: `hueTone`, `hueAccent`, `settingHue` в `kit/foundation/journal_theme.dart`: тональные цвета Material 3 для оценок, статусов и значков. Текст не обрезается: длинное переносится или уменьшается.
+- Цвета оценок, пропусков и лимитов: `ui/kit/foundation/journal_theme.dart`.
 
 ## Платформенная часть
 

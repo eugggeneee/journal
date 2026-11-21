@@ -7,7 +7,7 @@ import '../../data/store.dart';
 import '../kit/animation/motion.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import 'task_sheet.dart';
 
 /// Срок задания словами: «Сегодня», «Завтра», день недели, дата или «Просрочено на 2 дня».

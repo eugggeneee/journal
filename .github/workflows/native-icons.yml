@@ -28,7 +28,7 @@ jobs:
       - name: Выбрать Xcode для сборки значков
         run: bash scripts/icons/select_xcode.sh
       - name: Экспортировать иконки для README и настроек
-        timeout-minutes: 6
+        timeout-minutes: 12
         run: |
           set -euo pipefail
           mkdir -p build/icon-review/preview

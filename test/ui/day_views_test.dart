@@ -122,6 +122,39 @@ void main() {
     onOpenDay: () {},
   );
 
+  testWidgets('сегодня сохраняет цифру при выборе другого дня', (tester) async {
+    for (final brightness in Brightness.values) {
+      for (final selected in [false, true]) {
+        final date = today();
+        await screen(tester, CalendarDate(date: date, selected: selected, onTap: () {}), brightness: brightness);
+        final digit = find.text('${date.day}');
+        final cs = Theme.of(tester.element(digit)).colorScheme;
+        final circle = tester.widgetList<Container>(find.byType(Container))
+            .map((c) => c.decoration).whereType<BoxDecoration>()
+            .singleWhere((d) => d.shape == BoxShape.circle);
+        expect(circle.color, selected ? cs.primary : null);
+        expect(circle.border != null, !selected);
+        expect(tester.widget<Text>(digit).style!.color, selected ? cs.onPrimary : cs.primary);
+        expect(find.bySemanticsLabel('Сегодня, ${longDate(date)}'), findsOneWidget);
+      }
+    }
+  });
+
+  testWidgets('в обоих размерах края хода дня одинаковы', (tester) async {
+    for (final count in [1, 2]) {
+      for (final compact in [true, false]) {
+        await screen(tester, DayBar(slots: slots.take(count).toList(), profile: profile,
+          minute: 720, fg: Colors.white, bg: Colors.black, compact: compact, onOpen: (_) {}));
+        final clips = tester.widgetList<ClipRRect>(find.descendant(of: find.byType(DayBar), matching: find.byType(ClipRRect)));
+        expect(clips.map((c) => c.borderRadius), [
+          for (var i = 0; i < count; i++) BorderRadius.horizontal(
+            left: Radius.circular(i == 0 ? 16 : 7),
+            right: Radius.circular(i == count - 1 ? 16 : 7)),
+        ]);
+      }
+    }
+  });
+
   testWidgets('выбор звонков доступен на узком экране и завершает обязательную настройку', (tester) async {
     await screen(tester, const OnboardingFlow(), width: 320, height: 640, scale: 2, scroll: false);
     FilledButton next() => tester.widget(find.widgetWithText(FilledButton, 'Продолжить'));

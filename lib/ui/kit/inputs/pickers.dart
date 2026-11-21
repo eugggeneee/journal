@@ -5,7 +5,7 @@ import '../../../core/haptics.dart';
 import '../../app/scope.dart';
 import '../animation/motion.dart';
 import '../animation/reveal.dart';
-import '../foundation/ctx.dart';
+import '../foundation/journal_theme.dart';
 import '../components/widgets.dart';
 import '../sheets/select_sheet.dart';
 import '../sheets/sheet.dart';

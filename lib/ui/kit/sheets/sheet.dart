@@ -4,7 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/dates.dart';
 import '../animation/motion.dart';
-import '../foundation/ctx.dart';
+import '../foundation/journal_theme.dart';
 import '../components/widgets.dart';
 
 const double _wideBreakpoint = 700;

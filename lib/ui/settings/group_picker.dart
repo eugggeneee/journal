@@ -4,7 +4,7 @@ import '../../core/haptics.dart';
 import '../app/scope.dart';
 import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import '../kit/sheets/sheet.dart';
 
 /// Открывает нижнюю шторку выбора группы (из профиля и меню расписания).

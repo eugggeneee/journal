@@ -6,7 +6,7 @@ import '../../data/store.dart';
 import '../../logic/forecast.dart';
 import '../kit/animation/motion.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import '../kit/sheets/select_sheet.dart';
 
 /// Цель по предмету: свой целевой средний балл, полоса прогресса к нему и прогноз

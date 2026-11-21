@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 
 FRAMES = Path(__file__).parent / 'frames'
 FINISHES = ('light', 'dark')
-POSTERS = ('day', 'schedule', 'journal')
+POSTERS = ('overview', 'day', 'schedule', 'journal')
 
 
 @lru_cache(maxsize=4)
@@ -71,6 +71,16 @@ def posters(pack, logo):
     folder.mkdir()
     with Image.open(logo) as source:
         icon = source.convert('RGBA')
+
+    cover = Image.new('RGB', (1800, 1200), '#f2f3ff')
+    draw = ImageDraw.Draw(cover)
+    draw.ellipse((335, 420, 1465, 1550), fill='#d9dfff')
+    brand(cover, icon, (80, 72), '#232e55')
+    draw.text((72, 163), 'От первой пары до последней оценки', font=font(65, True), fill='#242f55')
+    phone(cover, pack, 'dark/schedule', 'dark', (450, 755), 684)
+    phone(cover, pack, 'light/grades', 'light', (1350, 755), 684)
+    phone(cover, pack, 'light/home-default', 'light', (900, 706), 804)
+    cover.save(folder / 'overview.webp', quality=94, method=4)
 
     day = Image.new('RGB', (1600, 1000), '#edefff')
     d = ImageDraw.Draw(day)

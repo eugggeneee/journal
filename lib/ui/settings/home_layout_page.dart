@@ -5,7 +5,7 @@ import '../../data/models.dart';
 import '../app/scope.dart';
 import '../kit/animation/motion.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import '../kit/inputs/settings_tiles.dart';
 
 /// Главная: какие блоки показывать и в каком порядке. Переключатель скрывает блок, стрелки двигают его

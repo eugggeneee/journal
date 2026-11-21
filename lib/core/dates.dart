@@ -17,7 +17,9 @@ const _monthsNom = [
 String two(int n) => n.toString().padLeft(2, '0');
 
 DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
-DateTime today() => dateOnly(DateTime.now());
+const _galleryClock = String.fromEnvironment('JOURNAL_CLOCK');
+DateTime journalNow() => _galleryClock.isEmpty ? DateTime.now() : DateTime.parse(_galleryClock);
+DateTime today() => dateOnly(journalNow());
 
 /// Безопасное прибавление дней (без ошибок на переходе летнего/зимнего времени).
 DateTime addDays(DateTime d, int n) => DateTime(d.year, d.month, d.day + n);

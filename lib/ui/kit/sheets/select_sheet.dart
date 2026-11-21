@@ -2,7 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/haptics.dart';
 import '../animation/motion.dart';
-import '../foundation/ctx.dart';
+import '../foundation/journal_theme.dart';
 import 'sheet.dart';
 
 /// Пункт списка выбора. [section] — подпись группы (появляется, когда меняется от пункта к пункту).

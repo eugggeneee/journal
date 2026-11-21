@@ -12,7 +12,7 @@ import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/overview.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import '../settings/settings_button.dart';
 import '../kit/sheets/select_sheet.dart';
 import '../kit/sheets/sheet.dart';
@@ -60,7 +60,7 @@ class _AbsencesPageState extends State<AbsencesPage> with WidgetsBindingObserver
     final store = StoreScope.of(context);
     final empty = store.absences.isEmpty;
     final stats = AbsenceStats.of(store.absences);
-    final now = DateTime.now();
+    final now = journalNow();
     final semester = store.semesterOn(now);
     final monthHours = monthUnexcusedHours(store.absences, now);
     final semesterHours = semesterUnexcusedHours(store.absences, semester);

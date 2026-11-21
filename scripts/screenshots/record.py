@@ -24,13 +24,20 @@ def iphone():
         for device in runtime.get('supportedDeviceTypes', []):
             ident = device['identifier']
             name = types.get(ident, device['name'])
-            if re.fullmatch(r'iPhone \d+', name):
-                choices.append((int(name.split()[-1]), tuple(map(int, runtime['version'].split('.'))),
-                                ident, runtime['identifier'], name, runtime['version']))
-    _, _, typ, runtime, name, version = max(choices)
+            if name == 'iPhone 17' and runtime['version'] == '26.2':
+                choices.append((ident, runtime['identifier'], name, runtime['version']))
+    if not choices:
+        raise RuntimeError('gallery-v1 требует симулятор iPhone 17 с iOS 26.2')
+    typ, runtime, name, version = choices[0]
     udid = run('xcrun', 'simctl', 'create', 'Journal pack', typ, runtime)
     run('xcrun', 'simctl', 'boot', udid)
+    run('open', '-a', run('xcode-select', '-p') + '/Applications/Simulator.app',
+        '--args', '-CurrentDeviceUDID', udid)
     subprocess.run(['xcrun', 'simctl', 'bootstatus', udid, '-b'], timeout=360, check=True)
+    run('xcrun', 'simctl', 'spawn', udid, 'defaults', 'write', 'NSGlobalDomain', 'AppleLanguages', '-array', 'ru', 'en')
+    run('xcrun', 'simctl', 'spawn', udid, 'defaults', 'write', 'NSGlobalDomain', 'AppleLocale', 'ru_BY')
+    os.environ['TZ'] = 'Europe/Minsk'
+    os.environ['SIMCTL_CHILD_TZ'] = 'Europe/Minsk'
     run('xcrun', 'simctl', 'status_bar', udid, 'override', '--time', '11:10', '--batteryState',
         'discharging', '--batteryLevel', '100', '--cellularBars', '4', '--wifiBars', '3')
     return udid, {'model': name, 'environment': 'iOS Simulator', 'os': version}
@@ -63,7 +70,8 @@ def capture(app, output):
     try:
         target = 'integration_test/journal_screens_test.dart'
         version = '--dart-define=JOURNAL_VERSION=' + os.environ['TAG'][1:]
-        subprocess.run(['flutter','test','--no-pub','-d',device,'--reporter','expanded',version,target],
+        subprocess.run(['flutter','test','--no-pub','--no-dds','-v','-d',device,'--reporter','expanded',version,
+                        '--dart-define=JOURNAL_CLOCK=2026-11-18T11:10:00',target],
                        cwd=app,check=True,timeout=1800)
     finally:
         server.shutdown()

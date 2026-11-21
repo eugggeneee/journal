@@ -4,7 +4,7 @@ import '../../core/dates.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../logic/bells.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import 'lesson_card.dart';
 import 'calendar_grid.dart';
 

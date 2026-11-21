@@ -6,7 +6,7 @@ import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../logic/bells.dart';
 import '../kit/components/feedback.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 
 /// Пометка «Сокращённый день» на весь день: ставится одним нажатием, повторное нажатие снимает.
 /// Вместе с пометкой день переходит на сокращённые звонки (пары по часу): они подставляются сами.

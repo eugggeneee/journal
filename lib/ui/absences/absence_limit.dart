@@ -12,7 +12,7 @@ import '../kit/animation/reveal.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/overview.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 
 /// Предупреждения о лимитах над счётчиками.
 ///
@@ -28,7 +28,7 @@ class LimitBanners extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
-    final now = DateTime.now();
+    final now = journalNow();
     final monthKeyStr = monthDismissKey(now);
     final semKeyStr = semesterDismissKey(semester);
 
@@ -171,7 +171,7 @@ class LimitCounters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
+    final now = journalNow();
     final semSubtitle = semester.upcoming ? 'Каникулы · с 1 сентября' : '${semester.title} · ${semester.years}';
     final tone = Tone(context.cs.primaryContainer, context.cs.onPrimaryContainer);
     final month = _LimitGauge(

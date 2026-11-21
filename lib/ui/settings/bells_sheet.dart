@@ -5,7 +5,7 @@ import '../../data/models.dart';
 import '../../logic/bells.dart';
 import '../app/scope.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import '../kit/sheets/sheet.dart';
 import 'bells_page.dart';
 

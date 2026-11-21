@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../core/haptics.dart';
 import '../animation/motion.dart';
 import '../animation/reveal.dart';
-import '../foundation/ctx.dart';
+import '../foundation/journal_theme.dart';
 import '../inputs/pickers.dart';
 import 'widgets.dart';
 

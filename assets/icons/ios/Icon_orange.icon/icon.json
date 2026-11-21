@@ -3,32 +3,48 @@
     {
       "layers": [
         {
-          "image-name": "bell.png",
-          "name": "bell",
+          "image-name": "clapper.png",
+          "name": "clapper",
+          "glass": true,
+          "fill-specializations": [
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:1.00000,0.78824,0.47451,1.00000"
+              }
+            }
+          ]
+        },
+        {
+          "image-name": "dome.png",
+          "name": "dome",
+          "glass": true,
+          "fill-specializations": [
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:1.00000,0.75294,0.38431,1.00000"
+              }
+            }
+          ]
+        },
+        {
+          "image-name": "lip.png",
+          "name": "lip",
           "glass": false,
           "fill-specializations": [
             {
               "appearance": "dark",
               "value": {
-                "solid": "srgb:1.00000,0.91765,0.80000,1.00000"
-              }
-            },
-            {
-              "appearance": "tinted",
-              "value": {
-                "solid": "extended-gray:1.00000,1.00000"
+                "solid": "srgb:0.76078,0.53725,0.22353,1.00000"
               }
             }
           ]
         }
       ],
-      "shadow": {
-        "kind": "none",
-        "opacity": 0
-      },
       "translucency": {
-        "enabled": false,
-        "value": 0
+        "enabled": true,
+        "value": 0.45
       }
     }
   ],
@@ -42,8 +58,8 @@
     {
       "value": {
         "linear-gradient": [
-          "srgb:1.00000,0.94118,0.85098,1.00000",
-          "srgb:1.00000,0.81176,0.52941,1.00000"
+          "srgb:1.00000,0.98431,0.96078,1.00000",
+          "srgb:0.98824,0.94510,0.89020,1.00000"
         ],
         "orientation": {
           "start": {
@@ -61,8 +77,8 @@
       "appearance": "dark",
       "value": {
         "linear-gradient": [
-          "srgb:0.33333,0.22745,0.09020,1.00000",
-          "srgb:0.12941,0.11765,0.11765,1.00000"
+          "srgb:0.23137,0.17255,0.10588,1.00000",
+          "srgb:0.14118,0.12157,0.11765,1.00000"
         ],
         "orientation": {
           "start": {

@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:journal/ui/settings/theme_widgets.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:journal/core/palette.dart';
-import 'package:journal/ui/kit/foundation/ctx.dart';
+import 'package:journal/ui/kit/foundation/journal_theme.dart';
 import 'package:journal/ui/theme/app_theme.dart';
 
 void main() {
@@ -77,11 +77,16 @@ void main() {
     for (final theme in AppPalette.choices) {
       for (final brightness in Brightness.values) {
         final cs = AppTheme.themeFor(theme.id, brightness).colorScheme;
+        if (brightness == Brightness.dark) {
+          expect(cs.primaryContainer.computeLuminance(), lessThan(.25), reason: theme.id);
+        }
         for (final tone in [
           Tone(cs.primaryContainer, cs.onPrimaryContainer),
           Tone(cs.secondaryContainer, cs.onSecondaryContainer),
           Tone(cs.tertiaryContainer, cs.onTertiaryContainer),
           Tone(cs.surface, cs.onSurface),
+          Tone(cs.primary, cs.onPrimary),
+          Tone(cs.surface, cs.primary),
         ]) {
           final light = [tone.bg.computeLuminance(), tone.fg.computeLuminance()]..sort();
           expect(
@@ -101,6 +106,11 @@ void main() {
           theme: ThemeData(brightness: b),
           home: Builder(
             builder: (context) {
+              for (var g = 1; g <= 10; g++) {
+                final levels = [gradeTone(context, g).bg.computeLuminance(),
+                  gradeAccent(context, g).computeLuminance()]..sort();
+                expect((levels.last + .05) / (levels.first + .05), greaterThanOrEqualTo(3), reason: 'Оценка $g, $b');
+              }
               final tones = [
                 for (var g = 1; g <= 10; g++) gradeTone(context, g),
                 absenceTone(context, excused: true),

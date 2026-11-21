@@ -2,6 +2,7 @@
 import hashlib
 import json
 import shutil
+import os
 import sys
 from pathlib import Path
 
@@ -18,6 +19,20 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def recipe_hashes(scenes):
+    tool = Path(__file__).resolve().parent
+    spec = hashlib.sha256()
+    for file in [tool / 'pack.py', tool / 'mockups.py', tool / 'record.py', tool / 'prepare.py',
+                 *(FRAMES / f'iphone-{finish}.png' for finish in FINISHES)]:
+        data = file.read_bytes()
+        if file.suffix == '.py':
+            data = data.replace(b'\r\n', b'\n')
+        spec.update(hashlib.sha256(data).digest())
+    spec.update(json.dumps(scenes).encode())
+    fixture = (tool / 'scenes.dart.in').read_text(encoding='utf-8')
+    return {'specSHA256': spec.hexdigest(), 'fixtureSHA256': hashlib.sha256(fixture.encode()).hexdigest()}
+
+
 def names(ids):
     return sorted(SCENES + [f'home-{key}' for key in ids] + [f'welcome-{i}' for i in range(1, 6)])
 
@@ -30,17 +45,22 @@ def media_names(scenes):
             | {f'mockups/{name}.webp' for name in POSTERS})
 
 
-def complete(root, tag, scenes):
+def complete(root, tag, scenes, commit):
     try:
         manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
         files = manifest['files']
         expected = media_names(scenes)
-        return (manifest['tag'] == tag and set(manifest['devices']) == {'ios'}
-                and manifest['scenes'] == scenes and set(files) == expected
+        return (manifest['tag'] == tag and manifest.get('commit') == commit
+                and manifest.get('channel') == os.environ['CHANNEL']
+                and all(manifest.get(k) == v for k, v in recipe_hashes(scenes).items())
+                and manifest.get('spec') == 'gallery-v1' and manifest.get('fixture') == 'trade-0000-v1' and set(manifest['devices']) == {'ios'}
+                and manifest['devices']['ios'] == {'model': 'iPhone 17', 'environment': 'iOS Simulator',
+                    'os': '26.2', 'width': 1206, 'height': 2622}
+                and manifest.get('group') == '0000' and manifest['scenes'] == scenes and set(files) == expected
                 and {p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file()}
                 == expected | {'manifest.json', 'README.md'}
                 and all(digest(root / name) == files[name] for name in expected))
-    except (FileNotFoundError, KeyError, ValueError):
+    except (OSError, KeyError, TypeError, ValueError):
         return False
 
 
@@ -48,6 +68,8 @@ def make(source, output, app, tag, commit):
     ids = json.loads((app / 'assets/icons/icons.json').read_text(encoding='utf-8'))
     scenes = names(ids)
     device = json.loads((source / 'device.json').read_text(encoding='utf-8'))
+    if len(scenes) != 57 or len(set(scenes)) != 57:
+        raise ValueError('gallery-v1 требует 57 различных сцен')
     size = None
     for mode in ('light', 'dark'):
         folder = source / mode
@@ -59,7 +81,7 @@ def make(source, output, app, tag, commit):
             with Image.open(folder / (name + '.png')) as png:
                 raw = png.convert('RGB')
             size = size or raw.size
-            if raw.size != size or raw.width < 1000 or raw.height <= raw.width or raw.getbbox() is None:
+            if raw.size != size or raw.size != (1206, 2622) or raw.getbbox() is None:
                 raise ValueError(f'Некорректный кадр {folder / name}')
             raw.save(dest / (name + '-raw.webp'), lossless=True, method=2)
             for finish in FINISHES:
@@ -67,9 +89,13 @@ def make(source, output, app, tag, commit):
 
     device['width'], device['height'] = size
     shutil.copytree(FRAMES, output / 'frames')
+    for finish in FINISHES:
+        with Image.open(output / 'frames' / f'iphone-{finish}.png') as frame:
+            if frame.mode != 'RGBA' or frame.getpixel((0, 0))[3] or frame.getchannel('A').getextrema() != (0, 255):
+                raise ValueError(f'Рамка {finish} должна иметь прозрачные поля')
     posters(output, app / 'docs/logo.png')
     files = {key: digest(output / key) for key in sorted(media_names(scenes))}
-    manifest = {'tag': tag, 'commit': commit, 'group': '0000', 'scenes': scenes,
+    manifest = {**recipe_hashes(scenes), 'spec': 'gallery-v1', 'fixture': 'trade-0000-v1', 'channel': os.environ['CHANNEL'], 'tag': tag, 'commit': commit, 'group': '0000', 'scenes': scenes,
                 'devices': {'ios': device}, 'files': files}
     (output / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     lines = [f'# Journal {tag} · iOS', '',
@@ -77,15 +103,15 @@ def make(source, output, app, tag, commit):
              'Группа 0000. Все записи и имена вымышлены.', '',
              '[Светлая тема](ios/light/) · [Тёмная тема](ios/dark/) · [Рамки PNG](frames/) · [Фирменные макеты](mockups/)', '',
              'raw — исходный кадр. framed-light и framed-dark — светлый и тёмный корпус на прозрачном фоне.', '',
-             '![Journal — ход дня](mockups/day.webp)', '']
+             '![Journal — расписание, главная и оценки](mockups/overview.webp)', '']
     (output / 'README.md').write_text('\n'.join(lines), encoding='utf-8')
-    if not complete(output, tag, scenes):
+    if not complete(output, tag, scenes, commit):
         raise ValueError('Не удалось подтвердить целостность галереи')
 
 
 if __name__ == '__main__':
     if sys.argv[1] == 'check':
         ids = json.loads(Path(sys.argv[4]).read_text(encoding='utf-8'))
-        print('true' if complete(Path(sys.argv[2]), sys.argv[3], names(ids)) else 'false')
+        print('true' if complete(Path(sys.argv[2]), sys.argv[3], names(ids), sys.argv[5]) else 'false')
     else:
         make(*(Path(s) for s in sys.argv[2:5]), *sys.argv[5:7])

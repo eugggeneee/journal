@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -29,8 +28,8 @@ import 'package:journal/ui/tasks/tasks_page.dart';
 import 'package:journal/ui/tasks/task_sheet.dart';
 
 final day = DateTime(2026, 11, 18);
-const subjects = ['Математика', 'Основы дизайна', 'Информатика', 'История искусства', 'Физика', 'Композиция'];
-const teachers = ['Л. А. Примерова', 'А. С. Макетов', 'М. В. Эскизова'];
+const subjects = ['Математика', 'Товароведение продовольственных товаров', 'Экономика организации', 'Товароведение непродовольственных товаров'];
+const teachers = ['И. И. Иванова', 'А. С. Миронова', 'Н. В. Ларина', 'М. П. Соколов'];
 
 class DemoService extends ScheduleService {
   @override
@@ -48,7 +47,8 @@ class DemoRepo extends ScheduleRepo {
 }
 
 Future<AppStore> fixture() async {
-  SharedPreferences.setMockInitialValues({'release.checked': DateTime.now().millisecondsSinceEpoch});
+  SharedPreferences.setMockInitialValues({'data_v1': '{"version":3,"settings":{"followThemeIcon":false}}',
+    'release.checked': DateTime.now().millisecondsSinceEpoch});
   final store = await AppStore.load();
   store.settings
     ..group = '0000'
@@ -75,16 +75,17 @@ Future<AppStore> fixture() async {
       store.saveGrade(Grade(id: 'grade-$delta', date: date, subject: s.subject, value: [9,8,10,7,9][delta.abs()%5],
         kind: delta.isEven ? 'Практика' : 'Ответ', note: 'Разбор учебного примера'));
       if (delta % 5 == 0) {
-        store.saveAbsence(Absence(id: 'absence-$delta', date: date, lesson: s.number, subject: s.subject,
+        final missed = slots[s.number % slots.length];
+        store.saveAbsence(Absence(id: 'absence-$delta', date: date, lesson: missed.number, subject: missed.subject,
           hours: delta.isEven ? 1 : 2, excused: delta.isOdd, note: 'Учебная запись'));
       }
     }
   }
   store.setGoal(subjects.first, 9);
-  store.saveMark(DayMark(id: 'mark', date: day, lesson: 2, label: 'Защита эскиза'));
-  final titles = ['Подготовить три эскиза', 'Решить задачи по теме', 'Собрать примеры композиции', 'Проверить расчёты'];
+  store.saveMark(DayMark(id: 'mark', date: day, lesson: 2, label: 'Проверочная работа'));
+  final titles = ['Решить задачи по процентам', 'Сравнить маркировку товаров', 'Рассчитать торговую надбавку', 'Проверить условия хранения'];
   for (var i = 0; i < titles.length; i++) {
-    store.saveTask(Task(id: 'task-$i', text: titles[i], subject: subjects[(i + 1) % subjects.length],
+    store.saveTask(Task(id: 'task-$i', text: titles[i], subject: subjects[i],
       lesson: i + 1, date: day, due: day.add(Duration(days: i + 1)), done: i == 3));
   }
   return store;
@@ -93,7 +94,6 @@ Future<AppStore> fixture() async {
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets('Каталог экранов Journal', (tester) async {
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     final store = await fixture();
     final repo = DemoRepo(store);
     final client = HttpClient();
@@ -115,12 +115,17 @@ void main() {
     BuildContext context() => nav().overlay!.context;
     Future<void> page(String name, Widget child) async {
       nav().push(MaterialPageRoute<void>(builder: (_) => child));
+      await settle();
+      expect(find.byType(child.runtimeType), findsWidgets, reason: name);
       await shot(name);
       nav().pop();
       await settle();
     }
     Future<void> sheet(String name, void Function() open) async {
+      final route = ModalRoute.of(tester.element(find.byType(NavigationBar).first));
       open();
+      await settle();
+      expect(route?.isCurrent, isFalse, reason: name);
       await shot(name);
       nav().pop();
       await settle();
@@ -129,6 +134,7 @@ void main() {
       final tiles = find.byType(NavigationDestination);
       await tester.tap(tiles.at(index));
       await settle();
+      expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, index);
     }
 
     Future<void> scroll(double distance) async {
@@ -142,6 +148,8 @@ void main() {
       }
       final mode = tester.widget<ModeSwitch>(find.byType(ModeSwitch).first);
       mode.onChanged(1);
+      await settle();
+      expect(tester.widget<ModeSwitch>(find.byType(ModeSwitch).first).value, 1, reason: name);
       await shot(name);
       mode.onChanged(0);
       await settle();
@@ -182,15 +190,15 @@ void main() {
       await shot('$brightness/grades');
       await journal('$brightness/grade-journal');
       await page('$brightness/subject', const SubjectPage(subject: 'Математика'));
-      await sheet('$brightness/grade-form', () => showGradeSheet(context(), edit: store.grades.first));
+      await sheet('$brightness/grade-form', () => showGradeSheet(context(), edit: store.grades.firstWhere((row) => row.id == 'grade-0')));
       await tab(3);
       await shot('$brightness/absences');
       await scroll(-370);
       await shot('$brightness/absence-calendar');
       await journal('$brightness/absence-journal');
-      await sheet('$brightness/absence-form', () => showAbsenceForm(context(), edit: store.absences.first));
+      await sheet('$brightness/absence-form', () => showAbsenceForm(context(), edit: store.absences.firstWhere((row) => row.id == 'absence-0')));
       await page('$brightness/tasks', const TasksPage());
-      await sheet('$brightness/task-form', () => showTaskSheet(context(), edit: store.tasks.first));
+      await sheet('$brightness/task-form', () => showTaskSheet(context(), edit: store.tasks.firstWhere((row) => row.id == 'task-0')));
       await page('$brightness/settings', const SettingsHomePage());
       await page('$brightness/appearance', const ThemePage());
       await sheet('$brightness/theme-picker', () => showThemeColorSheet(context()));
@@ -209,6 +217,8 @@ void main() {
       final pager = tester.widget<PageView>(find.byType(PageView).last).controller!;
       for (var i = 0; i < 5; i++) {
         pager.jumpToPage(i);
+        await settle();
+        expect(pager.page, closeTo(i.toDouble(), .01));
         await shot('$brightness/welcome-${i + 1}');
       }
       nav().pop();
