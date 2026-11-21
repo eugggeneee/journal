@@ -24,10 +24,11 @@ def iphone():
         for device in runtime.get('supportedDeviceTypes', []):
             ident = device['identifier']
             name = types.get(ident, device['name'])
-            if re.fullmatch(r'iPhone \d+', name):
-                choices.append((int(name.split()[-1]), tuple(map(int, runtime['version'].split('.'))),
-                                ident, runtime['identifier'], name, runtime['version']))
-    _, _, typ, runtime, name, version = max(choices)
+            if name == 'iPhone 17' and runtime['version'] == '26.2':
+                choices.append((ident, runtime['identifier'], name, runtime['version']))
+    if not choices:
+        raise RuntimeError('gallery-v1 требует симулятор iPhone 17 с iOS 26.2')
+    typ, runtime, name, version = choices[0]
     udid = run('xcrun', 'simctl', 'create', 'Journal pack', typ, runtime)
     run('xcrun', 'simctl', 'boot', udid)
     subprocess.run(['xcrun', 'simctl', 'bootstatus', udid, '-b'], timeout=360, check=True)

@@ -62,15 +62,7 @@ class AppTheme {
   }
 
   static ThemeData build(ColorScheme source) {
-    final dark = source.brightness == Brightness.dark;
-    final s = source.copyWith(
-      primaryContainer: dark ? source.primaryFixedDim : source.primaryContainer,
-      onPrimaryContainer: dark ? source.onPrimaryFixed : source.onPrimaryContainer,
-      secondaryContainer: dark ? source.secondaryFixedDim : source.secondaryFixed,
-      onSecondaryContainer: source.onSecondaryFixed,
-      tertiaryContainer: dark ? source.tertiaryFixedDim : source.tertiaryFixed,
-      onTertiaryContainer: source.onTertiaryFixed,
-    );
+    final s = source;
     final icons = iconTone(s);
     final shape24 = RoundedRectangleBorder(borderRadius: BorderRadius.circular(JournalLayout.panelRadius));
     final base = ThemeData(colorScheme: s);
@@ -103,7 +95,8 @@ class AppTheme {
         clipBehavior: Clip.antiAlias,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        height: 72,
+        height: 76,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         elevation: 0,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -113,7 +106,9 @@ class AppTheme {
               color: states.contains(WidgetState.selected) ? icons.fg : s.onSurfaceVariant,
             )),
         labelTextStyle: WidgetStateProperty.resolveWith((states) => base.textTheme.labelMedium!.copyWith(
-              fontWeight: states.contains(WidgetState.selected) ? JournalType.emphasis : FontWeight.w500,
+              fontWeight: FontWeight.w500,
+              height: 1.25,
+              letterSpacing: .1,
               color: states.contains(WidgetState.selected) ? s.onSurface : s.onSurfaceVariant,
             )),
       ),
@@ -121,6 +116,8 @@ class AppTheme {
         backgroundColor: s.surfaceContainer,
         indicatorColor: icons.bg,
         selectedIconTheme: IconThemeData(color: icons.fg),
+        selectedLabelTextStyle: type.labelMedium?.copyWith(color: s.onSurface, fontWeight: FontWeight.w500),
+        unselectedLabelTextStyle: type.labelMedium?.copyWith(color: s.onSurfaceVariant, fontWeight: FontWeight.w500),
         useIndicator: true,
       ),
       filledButtonTheme: FilledButtonThemeData(

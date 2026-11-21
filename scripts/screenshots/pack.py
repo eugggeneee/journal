@@ -2,6 +2,7 @@
 import hashlib
 import json
 import shutil
+import os
 import sys
 from pathlib import Path
 
@@ -30,12 +31,14 @@ def media_names(scenes):
             | {f'mockups/{name}.webp' for name in POSTERS})
 
 
-def complete(root, tag, scenes):
+def complete(root, tag, scenes, commit):
     try:
         manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
         files = manifest['files']
         expected = media_names(scenes)
-        return (manifest['tag'] == tag and set(manifest['devices']) == {'ios'}
+        return (manifest['tag'] == tag and manifest.get('commit') == commit
+                and manifest.get('channel') == os.environ['CHANNEL']
+                and manifest.get('spec') == 'gallery-v1' and manifest.get('fixture') == 'trade-0000-v1' and set(manifest['devices']) == {'ios'}
                 and manifest['scenes'] == scenes and set(files) == expected
                 and {p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file()}
                 == expected | {'manifest.json', 'README.md'}
@@ -59,7 +62,7 @@ def make(source, output, app, tag, commit):
             with Image.open(folder / (name + '.png')) as png:
                 raw = png.convert('RGB')
             size = size or raw.size
-            if raw.size != size or raw.width < 1000 or raw.height <= raw.width or raw.getbbox() is None:
+            if raw.size != size or raw.size != (1206, 2622) or raw.getbbox() is None:
                 raise ValueError(f'Некорректный кадр {folder / name}')
             raw.save(dest / (name + '-raw.webp'), lossless=True, method=2)
             for finish in FINISHES:
@@ -69,7 +72,7 @@ def make(source, output, app, tag, commit):
     shutil.copytree(FRAMES, output / 'frames')
     posters(output, app / 'docs/logo.png')
     files = {key: digest(output / key) for key in sorted(media_names(scenes))}
-    manifest = {'tag': tag, 'commit': commit, 'group': '0000', 'scenes': scenes,
+    manifest = {'spec': 'gallery-v1', 'fixture': 'trade-0000-v1', 'channel': os.environ['CHANNEL'], 'tag': tag, 'commit': commit, 'group': '0000', 'scenes': scenes,
                 'devices': {'ios': device}, 'files': files}
     (output / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     lines = [f'# Journal {tag} · iOS', '',
@@ -77,15 +80,15 @@ def make(source, output, app, tag, commit):
              'Группа 0000. Все записи и имена вымышлены.', '',
              '[Светлая тема](ios/light/) · [Тёмная тема](ios/dark/) · [Рамки PNG](frames/) · [Фирменные макеты](mockups/)', '',
              'raw — исходный кадр. framed-light и framed-dark — светлый и тёмный корпус на прозрачном фоне.', '',
-             '![Journal — ход дня](mockups/day.webp)', '']
+             '![Journal — расписание, главная и оценки](mockups/overview.webp)', '']
     (output / 'README.md').write_text('\n'.join(lines), encoding='utf-8')
-    if not complete(output, tag, scenes):
+    if not complete(output, tag, scenes, commit):
         raise ValueError('Не удалось подтвердить целостность галереи')
 
 
 if __name__ == '__main__':
     if sys.argv[1] == 'check':
         ids = json.loads(Path(sys.argv[4]).read_text(encoding='utf-8'))
-        print('true' if complete(Path(sys.argv[2]), sys.argv[3], names(ids)) else 'false')
+        print('true' if complete(Path(sys.argv[2]), sys.argv[3], names(ids), sys.argv[5]) else 'false')
     else:
         make(*(Path(s) for s in sys.argv[2:5]), *sys.argv[5:7])

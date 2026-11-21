@@ -1,0 +1,102 @@
+[
+  {
+    "id": "default",
+    "name": "Стандартная",
+    "seed": "3B5BDB"
+  },
+  {
+    "id": "mono",
+    "name": "Чёрно-белая",
+    "seed": "757575"
+  },
+  {
+    "id": "red",
+    "name": "Красная",
+    "seed": "F44336"
+  },
+  {
+    "id": "pink",
+    "name": "Розовая",
+    "seed": "E91E63"
+  },
+  {
+    "id": "purple",
+    "name": "Пурпурная",
+    "seed": "9C27B0"
+  },
+  {
+    "id": "deepPurple",
+    "name": "Фиолетовая",
+    "seed": "673AB7"
+  },
+  {
+    "id": "indigo",
+    "name": "Индиго",
+    "seed": "3F51B5"
+  },
+  {
+    "id": "blue",
+    "name": "Синяя",
+    "seed": "2196F3"
+  },
+  {
+    "id": "lightBlue",
+    "name": "Голубая",
+    "seed": "03A9F4"
+  },
+  {
+    "id": "cyan",
+    "name": "Бирюзовая",
+    "seed": "00BCD4"
+  },
+  {
+    "id": "teal",
+    "name": "Изумрудная",
+    "seed": "009688"
+  },
+  {
+    "id": "green",
+    "name": "Зелёная",
+    "seed": "4CAF50"
+  },
+  {
+    "id": "lightGreen",
+    "name": "Салатовая",
+    "seed": "8BC34A"
+  },
+  {
+    "id": "lime",
+    "name": "Лаймовая",
+    "seed": "CDDC39"
+  },
+  {
+    "id": "yellow",
+    "name": "Жёлтая",
+    "seed": "FFEB3B"
+  },
+  {
+    "id": "amber",
+    "name": "Янтарная",
+    "seed": "FFC107"
+  },
+  {
+    "id": "orange",
+    "name": "Оранжевая",
+    "seed": "FF9800"
+  },
+  {
+    "id": "deepOrange",
+    "name": "Коралловая",
+    "seed": "FF5722"
+  },
+  {
+    "id": "brown",
+    "name": "Коричневая",
+    "seed": "795548"
+  },
+  {
+    "id": "blueGrey",
+    "name": "Серо-синяя",
+    "seed": "607D8B"
+  }
+]

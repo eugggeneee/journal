@@ -192,7 +192,7 @@ class CalendarDate extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: longDate(date),
+      label: isToday ? 'Сегодня, ${longDate(date)}' : longDate(date),
       excludeSemantics: true,
       child: Material(
         type: MaterialType.transparency,
@@ -216,11 +216,8 @@ class CalendarDate extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: selected
-                          ? cs.primary
-                          : isToday
-                          ? cs.primaryContainer
-                          : null,
+                      color: selected ? cs.primary : null,
+                      border: isToday && !selected ? Border.all(color: cs.primary, width: 1.5) : null,
                     ),
                     child: FittedBox(
                       fit: BoxFit.scaleDown,

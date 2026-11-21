@@ -96,6 +96,7 @@ class _ShellState extends State<Shell> {
   Widget _fab(BuildContext context) {
     switch (_tab) {
       case 2:
+        if (StoreScope.of(context).grades.isEmpty) return const SizedBox.shrink();
         return FloatingActionButton.extended(
           key: const ValueKey('fab-grade'),
           heroTag: null,
