@@ -6,11 +6,23 @@ mkdir -p "$out/preview"
 src="$PWD/assets/icons/ios"
 ictool="$(xcode-select -p)/../Applications/Icon Composer.app/Contents/Executables/ictool"
 render() {
-  for attempt in 1 2 3; do
-    if "$ictool" "$@" && [[ -s "${!#}" ]]; then return 0; fi
-    sleep 1
-  done
-  return 1
+  python3 - "$ictool" "$@" <<'PY'
+from pathlib import Path
+import subprocess, sys
+
+command = sys.argv[1:]
+output = Path(command[-1])
+for attempt in range(3):
+    try:
+        result = subprocess.run(command, timeout=12)
+    except subprocess.TimeoutExpired:
+        print(f"Icon Composer stalled while exporting {output.name}, attempt {attempt + 1}", flush=True)
+        continue
+    if result.returncode == 0 and output.is_file() and output.stat().st_size:
+        break
+else:
+    sys.exit(1)
+PY
 }
 render_all() {
   render "$src/AppIcon.icon" --export-preview iOS Light 1024 1024 1 "$out/logo.png" || return 1
