@@ -95,6 +95,8 @@ jobs:
           api-level: 35
           arch: x86_64
           target: google_apis
+          profile: pixel_5
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -skin 1080x2340
           disable-animations: true
           script: python3 scripts/screenshots/record.py android stable-app "$RUNNER_TEMP/frames"
       - uses: actions/upload-artifact@v5

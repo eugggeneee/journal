@@ -38,7 +38,9 @@ def iphone():
 
 def android():
     serial = run('adb', 'get-serialno')
-    run('adb', 'shell', 'wm', 'size', '1080x2340')
+    physical = run('adb', 'shell', 'wm', 'size')
+    if 'Physical size: 1080x2340' not in physical.splitlines():
+        raise RuntimeError(f'Unexpected native display size: {physical}')
     # 1080 × 2340 при 450 dpi дают ровно 384 × 832 логических пикселя.
     run('adb', 'shell', 'wm', 'density', '450')
     run('adb', 'shell', 'settings', 'put', 'global', 'sysui_demo_allowed', '1')
