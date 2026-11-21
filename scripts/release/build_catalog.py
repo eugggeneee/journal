@@ -58,14 +58,19 @@ def render_media(site, stable, temp):
                 raise ValueError(file)
         if pack['tag']==stable:
             for mode, view, label in VIEWS:
-                file=f'ios/{mode}/{view}-raw.webp'
+                file=f'ios/{mode}/{view}-framed-{mode}.webp'
                 local=temp/(view+'.webp')
                 verified(file,local)
                 with Image.open(local) as source:
-                    im=source.convert('RGB')
-                im.thumbnail((810,1800),Image.Resampling.LANCZOS)
-                im.save(media/(view+'.jpg'),quality=91,subsampling=0,optimize=True)
-                cards.append({'imageURL':BASE_URL+'media/'+view+'.jpg','width':im.width,'height':im.height})
+                    im = source.convert('RGBA')
+                im.thumbnail((810, 1800), Image.Resampling.LANCZOS)
+                filename = f'{view}-framed-{mode}.png'
+                im.save(media / filename, optimize=True)
+                cards.append({'imageURL': BASE_URL + 'media/' + filename, 'width': im.width, 'height': im.height})
+                # Предыдущие версии источника ссылаются на JPEG по постоянным адресам.
+                legacy = Image.new('RGB', im.size, '#f8f8fd' if mode == 'light' else '#13151d')
+                legacy.paste(im, mask=im.getchannel('A'))
+                legacy.save(media / (view + '.jpg'), quality=91, subsampling=0, optimize=True)
             cover = 'mockups/day.webp'
             if cover in pack['files']:
                 verified(cover, temp/'cover.webp')
@@ -142,8 +147,8 @@ def build():
         for filename, catalog in [('source.json',stable),('beta.json',beta)]:
             (site/filename).write_text(json.dumps(catalog,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         html=site/'index.html'
-        gallery=''.join(f'<figure><img src="media/{view}.jpg" width="{c["width"]}" height="{c["height"]}" alt="{label}"><figcaption>{label}</figcaption></figure>'
-                        for (_,view,label),c in zip(VIEWS,cards))
+        gallery=''.join(f'<figure><img src="{c["imageURL"]}" width="{c["width"]}" height="{c["height"]}" alt="{label}"><figcaption>{label}</figcaption></figure>'
+                        for (_,_,label),c in zip(VIEWS,cards))
         html.write_text(html.read_text(encoding='utf-8').replace('{{stable}}',latest['tag_name'][1:])
                         .replace('{{beta}}',entries[0][0]['tag_name'][1:])
                         .replace('{{ipa}}',stable['apps'][0]['versions'][0]['downloadURL'])
