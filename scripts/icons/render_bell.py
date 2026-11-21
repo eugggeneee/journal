@@ -5,7 +5,7 @@ import re
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 
 root = Path('assets/icons')
 master = Image.open(sys.argv[1]).convert('RGBA')
@@ -29,8 +29,24 @@ def blend(a, b, fraction):
     return tuple(round(x + (y - x) * fraction) for x, y in zip(a, b))
 
 
-def solid(rgb):
-    return {'solid': 'srgb:' + ','.join(f'{c/255:.5f}' for c in rgb) + ',1.00000'}
+def srgb(rgb):
+    return 'srgb:' + ','.join(f'{c/255:.5f}' for c in rgb) + ',1.00000'
+
+
+def gradient(start, stop):
+    return {'linear-gradient': [srgb(start), srgb(stop)],
+            'orientation': {'start': {'x': 0, 'y': 0}, 'stop': {'x': 1, 'y': 1}}}
+
+
+def diagonal(size):
+    mask = Image.new('L', (size, size))
+    draw = ImageDraw.Draw(mask)
+    for offset in range(2 * size - 1):
+        draw.line((offset, 0, 0, offset), fill=round(255 * offset / (2 * size - 2)))
+    return mask
+
+
+ramp = diagonal(1024)
 
 
 layer(624, 624, 'white').save(root / 'bell.png')
@@ -39,16 +55,23 @@ layer(432, 176, 'white').save(drawable / 'ic_mono_shared.png')
 palette = dict(re.findall(r"ThemeChoice\('(\w+)', '[^']+', Color\(0xFF([0-9A-F]{6})\)", Path('lib/core/palette.dart').read_text(encoding='utf-8')))
 for key in json.loads((root / 'icons.json').read_text()):
     seed = bytes.fromhex(palette[key])
-    bg = blend(seed, (255, 255, 255), .65)
+    pale = blend(seed, (255, 255, 255), .85)
+    mid = blend(seed, (255, 255, 255), .53)
+    background = ImageOps.colorize(ramp, pale, mid)
     fg = blend(seed, (23, 25, 35), .72)
     if key == 'mono':
         fg = (60, 60, 60)
     ios = root / 'ios' / ('AppIcon.icon' if key == 'default' else f'Icon_{key}.icon')
     layer(1024, 624, fg).save(ios / 'Assets/bell.png')
     doc = json.loads((ios / 'icon.json').read_text())
-    doc['fill'] = solid(bg)
+    doc.pop('fill', None)
+    base = (24, 24, 24) if key == 'mono' else (19, 22, 32)
+    doc['fill-specializations'] = [
+        {'value': gradient(pale, mid)},
+        {'appearance': 'dark', 'value': gradient(blend(base, seed, .28), blend(base, seed, .06))},
+    ]
     ink_modes = [
-        {'appearance': 'dark', 'value': solid(blend(seed, (255, 255, 255), .77))},
+        {'appearance': 'dark', 'value': {'solid': srgb(blend(seed, (255, 255, 255), .80))}},
         {'appearance': 'tinted', 'value': {'solid': 'extended-gray:1.00000,1.00000'}},
     ]
     doc['groups'] = [{'layers': [{'image-name': 'bell.png', 'name': 'bell', 'glass': False,
@@ -56,9 +79,9 @@ for key in json.loads((root / 'icons.json').read_text()):
                       'shadow': {'kind': 'none', 'opacity': 0}, 'translucency': {'enabled': False, 'value': 0}}]
     (ios / 'icon.json').write_text(json.dumps(doc, indent=2) + '\n', encoding='utf-8', newline='\n')
     suffix = re.sub(r'[A-Z]', lambda m: '_' + m[0].lower(), key)
-    Image.new('RGB', (432, 432), bg).save(drawable / f'ic_bg_{suffix}.png')
+    background.resize((432, 432), resize).save(drawable / f'ic_bg_{suffix}.png')
     layer(432, 176, fg).save(drawable / f'ic_fg_{suffix}.png')
-    picture = Image.new('RGBA', (1024, 1024), bg)
+    picture = background.convert('RGBA')
     picture.alpha_composite(layer(1024, 624, fg))
     name = 'ic_launcher' if key == 'default' else 'ic_launcher_' + suffix
     for density, size in [('mdpi', 48), ('hdpi', 72), ('xhdpi', 96), ('xxhdpi', 144), ('xxxhdpi', 192)]:
