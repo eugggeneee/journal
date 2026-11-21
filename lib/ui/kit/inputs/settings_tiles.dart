@@ -15,10 +15,8 @@ class SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Устроена так же, как строки расписания и оценок: значок в цветном квадрате, у каждой настройки свой оттенок.
     final row = BadgeRow(
       icon: icon,
-      tone: hueTone(context, settingHue(title)),
       title: title,
       subtitle: subtitle,
       trailing: trailing,
@@ -50,9 +48,8 @@ class SettingsSwitch extends StatelessWidget {
 /// Строка в стиле карточек расписания: значок в скруглённом квадрате, заголовок, пояснение и стрелка.
 /// Кладётся внутрь [SegmentCard].
 class BadgeRow extends StatelessWidget {
-  const BadgeRow({super.key, required this.icon, required this.tone, required this.title, this.subtitle, this.trailing, this.showChevron = true});
+  const BadgeRow({super.key, required this.icon, required this.title, this.subtitle, this.trailing, this.showChevron = true});
   final IconData icon;
-  final Tone tone;
   final String title;
   final String? subtitle;
   final Widget? trailing;
@@ -60,7 +57,7 @@ class BadgeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => JournalRow(
-    leading: IconBox(icon: icon, tone: tone), title: title, subtitle: subtitle,
+    leading: IconBox(icon: icon), title: title, subtitle: subtitle,
     trailing: trailing ?? (showChevron ? Icon(Icons.chevron_right_rounded, color: context.cs.onSurfaceVariant) : null),
   );
 }

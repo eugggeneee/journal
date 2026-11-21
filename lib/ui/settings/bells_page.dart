@@ -35,16 +35,15 @@ Future<int?> pickMinutes(BuildContext context, int initial, {String? help}) asyn
 /// Звонки: три расписания (будни, суббота, сокращённый день). Сверху готовые расписания колледжа в одно нажатие,
 /// ниже короткий список пар: нажали на пару и поправили время в понятной шторке. Всё остальное в «Дополнительно».
 class BellsPage extends StatefulWidget {
-  const BellsPage({super.key, this.initialKey = kBellWeek});
+  const BellsPage({super.key, this.initialKey = kBellWeek, this.setup = false});
   final String initialKey;
+  final bool setup;
   @override
   State<BellsPage> createState() => _BellsPageState();
 }
 
 class _BellsPageState extends State<BellsPage> {
   late String _key = kBellKeys.contains(widget.initialKey) ? widget.initialKey : kBellWeek;
-
-  static const _icons = {kBellWeek: Icons.work_outline_rounded, kBellSat: Icons.weekend_rounded, kBellShort: Icons.timelapse_rounded};
 
   BellProfile _profile(AppStore store) => store.settings.bell(_key);
 
@@ -71,6 +70,10 @@ class _BellsPageState extends State<BellsPage> {
     }
     if (n > kMaxPairs) return;
     final start = _suggestStart(p, n);
+    if (start >= 24 * 60 - 1) {
+      showNote(ScaffoldMessenger.of(context), 'После предыдущей пары не осталось времени в этом дне');
+      return;
+    }
     final end = (start + 90).clamp(start + 1, 24 * 60 - 1).toInt();
     Haptics.selection();
     store.setBellProfile(_key, p.withSlot(n, BellSlot(start: start, end: end)));
@@ -177,15 +180,47 @@ class _BellsPageState extends State<BellsPage> {
 
     return Scaffold(
       backgroundColor: cs.surface,
+      bottomNavigationBar: widget.setup ? SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text('Подтверждено ${store.settings.confirmedBells.length} из 3'),
+            const SizedBox(height: 6),
+            SizedBox(width: double.infinity, child: FilledButton(
+              onPressed: p.isEmpty || problem != null ? null : () {
+                if (!store.confirmBells(_key)) return;
+                if (store.bellsReady) {
+                  Navigator.pop(context);
+                } else {
+                  setState(() => _key = kBellKeys.firstWhere((key) => !store.settings.confirmedBells.contains(key)));
+                }
+              },
+              child: Text('Подтвердить · ${bellTitle(_key)}'),
+            )),
+          ]),
+        ),
+      ) : null,
       body: ContentFrame(
         child: CustomScrollView(
           slivers: [
             const SubHeader('Звонки', subtitle: 'Время пар и перерывы'),
             Inset(children: [
-              Wrap(spacing: 8, runSpacing: 8, children: [
-                for (final k in kBellKeys)
-                  ChoiceTag(label: bellTitle(k), icon: _icons[k], selected: _key == k, onTap: () => setState(() => _key = k)),
-              ]),
+              LayoutBuilder(builder: (context, box) => SegmentedButton<String>(
+                direction: box.maxWidth / MediaQuery.textScalerOf(context).scale(1) < 310 ? Axis.vertical : Axis.horizontal,
+                showSelectedIcon: false,
+                style: SegmentedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 6)),
+                segments: [
+                  for (final key in kBellKeys)
+                    ButtonSegment(
+                      value: key,
+                      label: Text(key == kBellShort ? 'Сокращённый' : bellTitle(key)),
+                      icon: widget.setup && store.settings.confirmedBells.contains(key) ? const Icon(Icons.check_rounded, size: 16) : null,
+                      tooltip: bellTitle(key),
+                    ),
+                ],
+                selected: {_key},
+                onSelectionChanged: (keys) => setState(() => _key = keys.single),
+              )),
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
                 child: Text(hint, style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.35)),
@@ -198,7 +233,6 @@ class _BellsPageState extends State<BellsPage> {
                   onTap: () => _applyPreset(store, presets[i]),
                   child: BadgeRow(
                     icon: Icons.schedule_rounded,
-                    tone: hueTone(context, kHueAmber),
                     title: presets[i].title,
                     subtitle: presets[i].subtitle,
                     trailing: Padding(
@@ -220,7 +254,7 @@ class _BellsPageState extends State<BellsPage> {
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(color: cs.errorContainer, borderRadius: BorderRadius.circular(20)),
                           child: Row(children: [
-                            Icon(Icons.error_outline_rounded, color: cs.onErrorContainer),
+                            const IconBox(icon: Icons.error_outline_rounded, size: 32, glyphSize: 20),
                             const SizedBox(width: 12),
                             Expanded(child: Text(problem, style: tt.bodyMedium?.copyWith(color: cs.onErrorContainer))),
                           ]),
@@ -292,7 +326,7 @@ class _PairRow extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(slotRange(slot), style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontFeatures: const [FontFeature.tabularFigures()])),
+                Text(slotRange(slot), style: tt.titleMedium?.copyWith(fontWeight: JournalType.heading, fontFeatures: const [FontFeature.tabularFigures()])),
                 Text(detail, style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
               ]),
             ),
@@ -390,7 +424,7 @@ class _PairSheet extends StatelessWidget {
       leading: NumberBadge('$n', tone: neutralTone(context), size: 52, round: false),
       trailing: IconButton(
         tooltip: 'Удалить пару',
-        icon: Icon(Icons.delete_outline_rounded, color: cs.error),
+        icon: Icon(Icons.delete_outline_rounded, color: iconTone(context.cs).fg),
         onPressed: () => _delete(context, store, p),
       ),
       footer: SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Готово'))),
@@ -425,7 +459,7 @@ class _PairSheet extends StatelessWidget {
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Перерыв внутри пары', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w500)),
+                    Text('Перерыв внутри пары', style: tt.titleSmall?.copyWith(fontWeight: JournalType.emphasis)),
                     Text(
                       s.hasBreak ? (s.lunchInside ? 'Обед внутри пары: ${halvesText(s)}' : 'Две половины: ${halvesText(s)}') : 'Например, две половины по 45 минут',
                       style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
@@ -490,7 +524,7 @@ class _HalvesBar extends StatelessWidget {
     Widget half(double w, int minutes) => block(
           w,
           cs.primaryContainer,
-          Text('$minutes', maxLines: 1, overflow: TextOverflow.clip, style: context.tt.labelLarge?.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w600)),
+          Text('$minutes', maxLines: 1, overflow: TextOverflow.clip, style: context.tt.labelLarge?.copyWith(color: cs.onPrimaryContainer, fontWeight: JournalType.heading)),
         );
 
     return Padding(
@@ -510,7 +544,7 @@ class _HalvesBar extends StatelessWidget {
           child: Row(children: [
             half(wa, slot.firstHalf),
             const SizedBox(width: _space),
-            block(gapW, cs.tertiaryContainer, Icon(slot.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded, size: 16, color: cs.onTertiaryContainer)),
+            block(gapW, iconTone(cs).bg, Icon(slot.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded, size: 16, color: iconTone(cs).fg)),
             const SizedBox(width: _space),
             half(wb, slot.secondHalf),
           ]),
@@ -558,7 +592,7 @@ class _AutoFillSheetState extends State<_AutoFillSheet> {
     return SheetScaffold(
       title: 'Автозаполнение',
       subtitle: widget.title,
-      leading: CookieIcon(icon: Icons.auto_fix_high_rounded, size: 52, bg: cs.secondaryContainer, fg: cs.onSecondaryContainer),
+      leading: IconBox(icon: Icons.auto_fix_high_rounded, size: 52),
       footer: SizedBox(
         width: double.infinity,
         child: FilledButton.icon(
@@ -666,7 +700,7 @@ class _Stepper extends StatelessWidget {
               child: Text(
                 value == 0 && zeroLabel != null ? zeroLabel! : '$value$suffix',
                 textAlign: TextAlign.center,
-                style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontFeatures: const [FontFeature.tabularFigures()]),
+                style: context.tt.titleMedium?.copyWith(fontWeight: JournalType.heading, fontFeatures: const [FontFeature.tabularFigures()]),
               ),
             ),
             IconButton(

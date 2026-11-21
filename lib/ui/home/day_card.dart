@@ -105,7 +105,7 @@ class DayCard extends StatelessWidget {
     final availableHeight = viewportHeight - MediaQuery.paddingOf(context).top;
     final sideBySide = width >= 560 && viewportHeight < 500;
     final columnWidth = sideBySide ? (width - 56) / 2 : width - 40;
-    final titleStyle = tt.headlineSmall!.copyWith(height: 1.1, fontWeight: FontWeight.w600);
+    final titleStyle = tt.headlineSmall!.copyWith(height: 1.1, fontWeight: JournalType.heading);
     final place = focus != null ? _place(focus) : '';
     final summaryText = TextPainter(
       text: TextSpan(
@@ -132,7 +132,7 @@ class DayCard extends StatelessWidget {
             bg: summaryFg,
             glyph: Text(
               '${focus.number}',
-              style: tt.headlineSmall?.copyWith(color: summaryBg, fontWeight: FontWeight.w600),
+              style: tt.headlineSmall?.copyWith(color: summaryBg, fontWeight: FontWeight.w900),
             ),
           ),
           const SizedBox(width: 12),
@@ -185,14 +185,7 @@ class DayCard extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       child: Text(
                         '$left',
-                        style: TextStyle(
-                          fontSize: 148,
-                          height: .93,
-                          letterSpacing: -5,
-                          fontWeight: FontWeight.w900,
-                          color: fg,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
+                        style: JournalType.countdown.copyWith(color: fg),
                       ),
                     ),
                   ),
@@ -208,7 +201,7 @@ class DayCard extends StatelessWidget {
                             fit: BoxFit.scaleDown,
                             child: Text(
                               'мин',
-                              style: tt.headlineMedium?.copyWith(color: fg, fontWeight: FontWeight.w600, height: 1),
+                              style: tt.headlineMedium?.copyWith(color: fg, fontWeight: JournalType.heading, height: 1),
                             ),
                           ),
                           if (!separateLabel) Text(endLabel, style: endStyle),
@@ -253,7 +246,7 @@ class DayCard extends StatelessWidget {
                 children: [
                   Text(
                     'Ход дня',
-                    style: tt.labelLarge?.copyWith(color: fg, fontWeight: FontWeight.w500),
+                    style: tt.labelLarge?.copyWith(color: fg, fontWeight: JournalType.emphasis),
                   ),
                   Text(
                     remaining > 0
@@ -346,7 +339,7 @@ class DayCard extends StatelessWidget {
                                   const SizedBox(height: 4),
                                   Text(
                                     _title(next),
-                                    style: tt.titleMedium?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w500),
+                                    style: tt.titleMedium?.copyWith(color: cs.onSurface, fontWeight: JournalType.emphasis),
                                   ),
                                   if (_place(next).isNotEmpty)
                                     Text(_place(next), style: tt.bodySmall?.copyWith(color: cs.onSurface)),
@@ -421,7 +414,7 @@ class _LessonActions extends StatelessWidget {
                       Text(
                         actions[i].$2,
                         textAlign: TextAlign.center,
-                        style: context.tt.labelMedium?.copyWith(color: fg, fontWeight: FontWeight.w500),
+                        style: context.tt.labelMedium?.copyWith(color: fg, fontWeight: JournalType.emphasis),
                       ),
                     ],
                   ),

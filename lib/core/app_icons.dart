@@ -30,6 +30,31 @@ class AppIcons {
     }
   }
 
+  static final actual = ValueNotifier<String?>(null);
+  static Future<bool> _pending = Future.value(true);
+  static int _revision = 0;
+
+  static Future<void> refresh() async {
+    final revision = _revision;
+    final value = await current();
+    if (_revision == revision) actual.value = value;
+  }
+
+  static void cancelQueued() => _revision++;
+
+  /// UIKit принимает только одну смену одновременно; очередь сохраняет последний выбор.
+  static Future<bool> select(String id) {
+    final revision = ++_revision;
+    return _pending = _pending.then((_) async {
+      if (revision != _revision) return false;
+      final before = await current();
+      if (revision != _revision) return false;
+      if (before != null && before != id) await set(id);
+      actual.value = before == id ? before : await current();
+      return actual.value == id;
+    });
+  }
+
   static Future<bool> set(String id) async {
     if (!platformOk || !ids.contains(id)) return false;
     for (var attempt = 0; attempt < 2; attempt++) {

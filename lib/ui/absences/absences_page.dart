@@ -249,7 +249,7 @@ class AbsencesHero extends StatelessWidget {
     return HeroCard(
       tone: tone,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('По причинам', style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w500)),
+        Text('По причинам', style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: JournalType.emphasis)),
         Text('${hoursText(stats.totalHours)} за всё время · $pairs', style: context.tt.bodyMedium?.copyWith(color: fg)),
         const SizedBox(height: 12),
         _SplitBar(unexcused: unex, excused: ex, unexColor: unexColor, exColor: exColor, gapColor: tone.bg, emptyColor: fg.withValues(alpha: 0.2)),
@@ -347,7 +347,7 @@ class _Legend extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('$hours ч', style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w600)),
+            Text('$hours ч', style: context.tt.titleMedium?.copyWith(color: fg, fontWeight: JournalType.heading)),
             Text(label, style: context.tt.bodySmall?.copyWith(color: fg.withValues(alpha: 0.85))),
           ]),
         ),
@@ -414,7 +414,7 @@ class _SemesterSheet extends StatelessWidget {
     return SheetScaffold(
       title: semester.title,
       subtitle: 'Учебный год ${semester.years}',
-      leading: CookieIcon(icon: Icons.school_rounded, size: 52, bg: cs.secondaryContainer, fg: cs.onSecondaryContainer),
+      leading: IconBox(icon: Icons.school_rounded, size: 52),
       footer: SizedBox(
         width: double.infinity,
         child: FilledButton.tonalIcon(
@@ -464,7 +464,7 @@ class _SemesterSheet extends StatelessWidget {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(title, style: context.tt.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
-            Text(value, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
+            Text(value, style: context.tt.titleMedium?.copyWith(fontWeight: JournalType.emphasis)),
           ]),
         ),
       ]),

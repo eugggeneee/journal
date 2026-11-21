@@ -59,6 +59,35 @@ void main() {
     expect(AppPalette.byId('nope').id, AppPalette.standardId);
   });
 
+  testWidgets('очередь применяет последний значок и сверяет ответ системы', (tester) async {
+    const channel = MethodChannel('eugggeneee.journal/app_icon');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    var actual = 'default';
+    final changed = <String>[];
+    try {
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'get') return actual;
+        final id = call.arguments['id'] as String;
+        changed.add(id);
+        if (id == 'teal') actual = id;
+        return true;
+      });
+      final first = AppIcons.select('red');
+      final last = AppIcons.select('teal');
+      expect(await first, isFalse);
+      expect(await last, isTrue);
+      expect(await AppIcons.select('teal'), isTrue);
+      expect(changed, ['teal']);
+      expect(await AppIcons.select('red'), isFalse);
+      expect(AppIcons.actual.value, 'teal');
+    } finally {
+      messenger.setMockMethodCallHandler(channel, null);
+      AppIcons.actual.value = null;
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
   testWidgets('при временном отказе iOS смена значка повторяется один раз', (tester) async {
     const channel = MethodChannel('eugggeneee.journal/app_icon');
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;

@@ -53,9 +53,9 @@ class _AbsenceHeatmapState extends State<AbsenceHeatmap> {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                 decoration: BoxDecoration(color: ctx.cs.surfaceContainerHigh, borderRadius: BorderRadius.circular(20)),
                 child: Row(children: [
-                  Expanded(child: Text(widget.store.subjectName(e.key), style: ctx.tt.titleSmall?.copyWith(fontWeight: FontWeight.w500))),
+                  Expanded(child: Text(widget.store.subjectName(e.key), style: ctx.tt.titleSmall?.copyWith(fontWeight: JournalType.emphasis))),
                   const SizedBox(width: 12),
-                  Text(hoursText(e.value), style: ctx.tt.labelLarge?.copyWith(color: ctx.cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
+                  Text(hoursText(e.value), style: ctx.tt.labelLarge?.copyWith(color: ctx.cs.onSurfaceVariant, fontWeight: JournalType.emphasis)),
                 ]),
               ),
             ),
@@ -102,8 +102,8 @@ class _AbsenceHeatmapState extends State<AbsenceHeatmap> {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Text('$day', style: tt.labelLarge?.copyWith(color: fg, fontWeight: k > 0 ? FontWeight.w600 : FontWeight.w500)),
-                      if (k > 0) Text('${data.hoursByDay[day]} ч', style: TextStyle(fontSize: 10, height: 1.1, color: fg.withValues(alpha: 0.9), fontWeight: FontWeight.w500)),
+                      Text('$day', style: tt.labelLarge?.copyWith(color: fg, fontWeight: k > 0 ? JournalType.heading : FontWeight.w500)),
+                      if (k > 0) Text('${data.hoursByDay[day]} ч', style: TextStyle(fontSize: 10, height: 1.1, color: fg.withValues(alpha: 0.9), fontWeight: JournalType.emphasis)),
                     ]),
                   ),
                 ),
@@ -140,7 +140,7 @@ class _AbsenceHeatmapState extends State<AbsenceHeatmap> {
             IconButton(tooltip: 'Предыдущий месяц', icon: const Icon(Icons.chevron_left_rounded), onPressed: () => _shift(-1)),
             Expanded(
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text(monthYear(_month), style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                Text(monthYear(_month), style: tt.titleMedium?.copyWith(fontWeight: JournalType.heading)),
                 Text(
                   data.totalHours == 0 ? 'Пропусков нет' : '${hoursText(data.totalHours)} пропущено',
                   style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),

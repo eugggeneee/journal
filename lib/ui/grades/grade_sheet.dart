@@ -144,7 +144,7 @@ class _GradeFormState extends State<_GradeForm> {
             child: Text(
               v == null ? '–' : '$v',
               key: ValueKey(v),
-              style: TextStyle(fontSize: v == 10 ? 26 : 30, fontWeight: FontWeight.w600, color: onAccent, height: 1),
+              style: TextStyle(fontSize: v == 10 ? 26 : 30, fontWeight: JournalType.heading, color: onAccent, height: 1),
             ),
           ),
         ),
@@ -153,7 +153,7 @@ class _GradeFormState extends State<_GradeForm> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
             Text(
               subject.isEmpty ? 'Предмет не выбран' : store.subjectName(subject),
-              style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w600),
+              style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: JournalType.heading),
             ),
             const SizedBox(height: 2),
             Text(
@@ -173,16 +173,15 @@ class _GradeFormState extends State<_GradeForm> {
     final suggested = <String>[if (sched != null) for (final s in sched.slots) ...s.subjects];
     final editing = widget.edit != null;
 
-    final headTone = value == null ? Tone(context.cs.primaryContainer, context.cs.onPrimaryContainer) : gradeTone(context, value!);
 
     return SheetScaffold(
       title: editing ? 'Изменить оценку' : 'Новая оценка',
       subtitle: _added > 0 ? 'Добавлено подряд: $_added' : (editing ? 'Редактирование' : 'Запись в журнал'),
-      leading: CookieIcon(icon: Icons.star_rounded, size: 52, bg: headTone.bg, fg: headTone.fg),
+      leading: IconBox(icon: Icons.star_rounded, size: 52),
       trailing: editing
           ? IconButton(
               tooltip: 'Удалить оценку',
-              icon: Icon(Icons.delete_outline_rounded, color: context.cs.error),
+              icon: Icon(Icons.delete_outline_rounded, color: iconTone(context.cs).fg),
               onPressed: _delete,
             )
           : null,

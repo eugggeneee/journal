@@ -45,6 +45,18 @@ class AppPalette {
     ThemeChoice('blueGrey', 'Серо-синяя', Color(0xFF607D8B)),
   ];
 
+  static String launcherFor(String id, Color? wallpaper) {
+    if (id != auto || wallpaper == null) return byId(id).id;
+    final target = HSLColor.fromColor(wallpaper);
+    if (target.saturation < .09) return 'mono';
+    double distance(ThemeChoice choice) {
+      final color = HSLColor.fromColor(choice.seed);
+      final hue = (color.hue - target.hue).abs();
+      return (hue > 180 ? 360 - hue : hue) + (color.saturation - target.saturation).abs() * 12;
+    }
+    return choices.where((c) => !c.mono).reduce((a, b) => distance(a) <= distance(b) ? a : b).id;
+  }
+
   static bool has(String id) => choices.any((c) => c.id == id);
 
   /// Неизвестный id (например, из чужой резервной копии) заменяется стандартной темой.

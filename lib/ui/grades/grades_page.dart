@@ -143,7 +143,7 @@ class GradesHero extends StatelessWidget {
           children: [
             Text(
               'Оценок пока нет',
-              style: context.tt.headlineSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w500),
+              style: context.tt.headlineSmall?.copyWith(color: tone.fg, fontWeight: JournalType.emphasis),
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
@@ -167,7 +167,7 @@ class GradesHero extends StatelessWidget {
             value: AnimatedNumber(
               value: avg,
               format: fmtAvg,
-              style: context.tt.displayMedium?.copyWith(color: tone.fg, fontWeight: FontWeight.w600, height: 1.05),
+              style: context.tt.displayMedium?.copyWith(color: tone.fg, fontWeight: JournalType.heading, height: 1.05),
             ),
             aside: [gradesText(stats.count), subjectsText(stats.subjects.length)],
           ),
@@ -211,7 +211,7 @@ class GradesHero extends StatelessWidget {
                               fit: BoxFit.scaleDown,
                               child: Text(
                                 '${i + 1}',
-                                style: context.tt.labelSmall?.copyWith(color: tone.fg, fontWeight: FontWeight.w500),
+                                style: context.tt.labelSmall?.copyWith(color: tone.fg, fontWeight: JournalType.emphasis),
                               ),
                             ),
                           ],

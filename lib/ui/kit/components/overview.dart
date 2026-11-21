@@ -64,7 +64,7 @@ class HeroHeader extends StatelessWidget {
       children: [
         Text(
           caption,
-          style: tt.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w500),
+          style: tt.titleSmall?.copyWith(color: fg, fontWeight: JournalType.emphasis),
         ),
         const SizedBox(height: 6),
         SizedBox(
@@ -102,7 +102,7 @@ class ValuePill extends StatelessWidget {
     child: AnimatedDefaultTextStyle(
       duration: Motion.short,
       curve: Motion.standard,
-      style: (context.tt.titleMedium ?? const TextStyle()).copyWith(color: tone.fg, fontWeight: FontWeight.w600),
+      style: (context.tt.titleMedium ?? const TextStyle()).copyWith(color: tone.fg, fontWeight: JournalType.heading),
       child: child,
     ),
   );
@@ -143,7 +143,7 @@ class OverviewCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
+                  Text(title, style: context.tt.titleMedium?.copyWith(fontWeight: JournalType.emphasis)),
                   const SizedBox(height: 2),
                   Text(subtitle, style: context.tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
                   const SizedBox(height: 10),

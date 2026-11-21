@@ -18,6 +18,37 @@ void main() {
   Absence abs(int lesson, {int hours = 2}) =>
       Absence(id: newId(), date: day, lesson: lesson, subject: 'S$lesson', hours: hours);
 
+  test('первый запуск сохраняет подтверждения и требует все три расписания', () async {
+    expect(store.settings.followThemeIcon, isTrue);
+    store.setGroup('6312');
+    expect(store.confirmBells(kBellWeek), isFalse);
+    store.setBellProfile(kBellWeek, kShortDayProfile);
+    expect(store.confirmBells(kBellWeek), isTrue);
+    store.finishOnboarding();
+    expect(store.onboarded, isFalse);
+    store = await AppStore.load();
+    expect(store.settings.confirmedBells, {kBellWeek});
+    store.setBellProfile(kBellSat, kShortDayProfile);
+    store.confirmBells(kBellSat);
+    expect(store.bellsReady, isFalse);
+    store.confirmBells(kBellShort);
+    expect(store.bellsReady, isTrue);
+    store.setBellProfile(kBellWeek, const BellProfile());
+    expect(store.bellsReady, isFalse);
+    store.setBellProfile(kBellWeek, kShortDayProfile);
+    store.confirmBells(kBellWeek);
+    store.finishOnboarding();
+    expect((await AppStore.load()).onboarded, isTrue);
+  });
+
+  test('старые настройки сохраняют ручной значок и пройденное приветствие', () {
+    final legacy = Settings.fromJson({'group': '6312'});
+    expect(legacy.onboarded, isTrue);
+    expect(legacy.followThemeIcon, isFalse);
+    final partial = Settings.fromJson({'confirmedBells': [...kBellKeys, 'invalid']});
+    expect(partial.confirmedBells, {kBellShort});
+  });
+
   test('повторный пропуск той же пары заменяет прежний', () {
     store.saveAbsence(abs(1));
     store.saveAbsence(abs(1, hours: 1));

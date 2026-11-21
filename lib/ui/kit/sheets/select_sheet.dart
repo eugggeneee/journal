@@ -76,7 +76,7 @@ class OptionTile extends StatelessWidget {
                       child: Text(
                         label,
                         style: context.tt.bodyLarge?.copyWith(
-                          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                          fontWeight: selected ? JournalType.emphasis : FontWeight.w500,
                           color: fg,
                         ),
                       ),
@@ -200,7 +200,7 @@ class _SelectSheetState<T> extends State<_SelectSheet<T>> {
             padding: EdgeInsets.fromLTRB(8, children.isEmpty ? 4 : 16, 8, 6),
             child: Text(
               o.section!,
-              style: context.tt.labelLarge?.copyWith(color: cs.primary, fontWeight: FontWeight.w500),
+              style: context.tt.labelLarge?.copyWith(color: cs.primary, fontWeight: JournalType.emphasis),
             ),
           ),
         );

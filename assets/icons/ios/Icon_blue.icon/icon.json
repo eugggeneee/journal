@@ -1,30 +1,25 @@
 {
-  "fill": {
-    "solid": "srgb:0.08235,0.14510,0.19608,1.00000"
-  },
   "groups": [
     {
       "layers": [
         {
-          "glass": true,
           "image-name": "bell.png",
-          "name": "bell"
-        }
-      ],
-      "shadow": {
-        "kind": "neutral",
-        "opacity": 0.5
-      },
-      "translucency": {
-        "enabled": true,
-        "value": 0.35
-      }
-    },
-    {
-      "layers": [
-        {
-          "image-name": "plates.png",
-          "name": "plates"
+          "name": "bell",
+          "glass": false,
+          "fill-specializations": [
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:0.82745,0.91765,0.99216,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:1.00000,1.00000"
+              }
+            }
+          ]
         }
       ],
       "shadow": {
@@ -42,5 +37,44 @@
       "watchOS"
     ],
     "squares": "shared"
-  }
+  },
+  "fill-specializations": [
+    {
+      "value": {
+        "linear-gradient": [
+          "srgb:0.87059,0.93725,0.99216,1.00000",
+          "srgb:0.59216,0.80784,0.97647,1.00000"
+        ],
+        "orientation": {
+          "start": {
+            "x": 0,
+            "y": 0
+          },
+          "stop": {
+            "x": 1,
+            "y": 1
+          }
+        }
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "linear-gradient": [
+          "srgb:0.09020,0.22745,0.35686,1.00000",
+          "srgb:0.07843,0.11765,0.17647,1.00000"
+        ],
+        "orientation": {
+          "start": {
+            "x": 0,
+            "y": 0
+          },
+          "stop": {
+            "x": 1,
+            "y": 1
+          }
+        }
+      }
+    }
+  ]
 }

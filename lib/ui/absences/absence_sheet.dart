@@ -151,7 +151,6 @@ class _QuickAbsenceState extends State<_QuickAbsence> {
     final slots = _slots(sched);
     final manual = !_locked && sched == null;
     final canSave = _canSave(slots);
-    final redTone = absenceTone(context, excused: false);
 
     final fixed = widget.fixedSlots;
     final single = fixed != null && fixed.length == 1 ? fixed.first : null;
@@ -177,7 +176,7 @@ class _QuickAbsenceState extends State<_QuickAbsence> {
     return SheetScaffold(
       title: title,
       subtitle: subtitle,
-      leading: CookieIcon(icon: Icons.event_busy_rounded, size: 52, bg: redTone.bg, fg: redTone.fg),
+      leading: IconBox(icon: Icons.event_busy_rounded, size: 52),
       footer: pinChoices ? choices : null,
       children: [
         if (!_locked) ...[
@@ -405,16 +404,15 @@ class _AbsenceFormState extends State<_AbsenceForm> {
     final sched = _schedule();
     final editing = widget.edit != null;
     final suggested = <String>[if (sched != null) for (final s in sched.slots) ...s.subjects];
-    final tone = absenceTone(context, excused: excused);
 
     return SheetScaffold(
       title: editing ? 'Изменить пропуск' : 'Новый пропуск',
       subtitle: 'Подробная форма',
-      leading: CookieIcon(icon: excused ? Icons.verified_rounded : Icons.event_busy_rounded, size: 52, bg: tone.bg, fg: tone.fg),
+      leading: IconBox(icon: excused ? Icons.verified_rounded : Icons.event_busy_rounded, size: 52),
       trailing: editing
           ? IconButton(
               tooltip: 'Удалить пропуск',
-              icon: Icon(Icons.delete_outline_rounded, color: cs.error),
+              icon: Icon(Icons.delete_outline_rounded, color: iconTone(context.cs).fg),
               onPressed: _delete,
             )
           : null,

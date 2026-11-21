@@ -26,7 +26,7 @@ class _BellsSheet extends StatelessWidget {
     return SheetScaffold(
       title: 'Звонки',
       subtitle: '${bellTitle(key)} · ${dayCaption(date)}',
-      leading: CookieIcon(icon: Icons.notifications_active_rounded, size: 52, bg: cs.secondaryContainer, fg: cs.onSecondaryContainer),
+      leading: IconBox(icon: Icons.notifications_active_rounded, size: 52),
       footer: SizedBox(
         width: double.infinity,
         child: FilledButton.tonalIcon(
@@ -73,10 +73,10 @@ class BellTimeline extends StatelessWidget {
         const SizedBox(width: 14),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(slotRange(slot), style: context.tt.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+            Text(slotRange(slot), style: context.tt.titleMedium?.copyWith(fontWeight: JournalType.heading)),
             if (slot.hasBreak)
               Row(children: [
-                Icon(slot.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded, size: 14, color: cs.tertiary),
+                Icon(slot.lunchInside ? Icons.restaurant_rounded : Icons.coffee_rounded, size: 14, color: cs.primary),
                 const SizedBox(width: 4),
                 Flexible(
                   child: Text(

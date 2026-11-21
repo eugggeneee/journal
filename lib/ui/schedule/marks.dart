@@ -97,7 +97,6 @@ class _MarkSheetState extends State<_MarkSheet> {
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
     final cs = context.cs;
-    final tone = markTone(context);
     final editing = widget.edit != null;
     final existing = store.markFor(date, lesson);
     final replaces = existing != null && existing.id != widget.edit?.id;
@@ -113,11 +112,11 @@ class _MarkSheetState extends State<_MarkSheet> {
     return SheetScaffold(
       title: editing ? 'Изменить пометку' : 'Новая пометка',
       subtitle: widget.customEntry ? '${widget.lesson} пара · ${dayCaption(date)}' : dayCaption(date),
-      leading: CookieIcon(icon: Icons.bookmark_rounded, size: 52, bg: tone.bg, fg: tone.fg),
+      leading: IconBox(icon: Icons.bookmark_rounded, size: 52),
       trailing: editing
           ? IconButton(
               tooltip: 'Удалить пометку',
-              icon: Icon(Icons.delete_outline_rounded, color: cs.error),
+              icon: Icon(Icons.delete_outline_rounded, color: iconTone(context.cs).fg),
               onPressed: _delete,
             )
           : null,
@@ -289,7 +288,7 @@ class _MarkTile extends StatelessWidget {
         showUndo(messenger, 'Пометка удалена', () => store.restoreMarks(m.date, before));
       },
       onTap: () => showMarkSheet(context, m.date, edit: m),
-      child: JournalRow(leading: IconBox(icon: markIcon(m.label), tone: tone), title: m.label,
+      child: JournalRow(leading: IconBox(icon: markIcon(m.label)), title: m.label,
         subtitle: m.wholeDay ? 'Весь день' : '${m.lesson} пара',
         trailing: Icon(Icons.edit_outlined, size: 20, color: cs.onSurfaceVariant)),
     );

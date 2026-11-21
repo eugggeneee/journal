@@ -9,17 +9,25 @@ import 'package:journal/ui/kit/foundation/ctx.dart';
 import 'package:journal/ui/theme/app_theme.dart';
 
 void main() {
-  test('значки настроек используют постоянный оттенок', () {
-    for (final s in ['Математика', 'Физика', 'Иностранный язык', '']) {
-      final h = settingHue(s);
-      expect(kSettingHues, contains(h));
-      expect(settingHue(s), h, reason: s);
+  test('значок следует теме и ближайшему оттенку обоев', () {
+    expect(AppPalette.launcherFor('red', Colors.blue), 'red');
+    expect(AppPalette.launcherFor('auto', null), AppPalette.standardId);
+    expect(AppPalette.launcherFor('auto', Colors.grey), 'mono');
+    final teal = AppPalette.byId('teal');
+    expect(AppPalette.launcherFor('auto', teal.seed), 'teal');
+  });
+
+  test('пиктограммы различимы во всех палитрах и обеих яркостях', () {
+    for (final mode in Brightness.values) {
+      for (final choice in AppPalette.choices) {
+        final tone = iconTone(AppTheme.themeFor(choice.id, mode).colorScheme);
+        final levels = [tone.bg.computeLuminance(), tone.fg.computeLuminance()]..sort();
+        expect((levels.last + .05) / (levels.first + .05), greaterThanOrEqualTo(3), reason: choice.id);
+        expect(tone.fg, isNot(Colors.black));
+      }
     }
   });
 
-  test('оттенки набора различаются', () {
-    expect(kSettingHues.toSet().length, kSettingHues.length);
-  });
   testWidgets('все светлые образцы показывают пастельные заливки карточек', (tester) async {
     final key = GlobalKey();
     await tester.pumpWidget(RepaintBoundary(
@@ -59,8 +67,8 @@ void main() {
     for (final theme in AppPalette.choices) {
       final data = AppTheme.themeFor(theme.id, Brightness.dark);
       final bar = data.navigationBarTheme;
-      expect(bar.indicatorColor, data.colorScheme.primaryContainer);
-      expect(bar.iconTheme?.resolve({WidgetState.selected})?.color, data.colorScheme.onPrimaryContainer);
+      expect(bar.indicatorColor, iconTone(data.colorScheme).bg);
+      expect(bar.iconTheme?.resolve({WidgetState.selected})?.color, iconTone(data.colorScheme).fg);
       expect(data.navigationRailTheme.indicatorColor, bar.indicatorColor);
     }
   });
@@ -98,7 +106,7 @@ void main() {
                 absenceTone(context, excused: true),
                 absenceTone(context, excused: false),
                 warnTone(context),
-                for (final h in kSettingHues) hueTone(context, h),
+                for (final h in [kHueAmber, kHueGreen]) hueTone(context, h),
               ];
               for (final tone in tones) {
                 final l = [tone.fg.computeLuminance(), tone.bg.computeLuminance()]..sort();

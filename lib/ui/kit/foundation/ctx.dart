@@ -12,6 +12,13 @@ abstract final class JournalLayout {
   static const rowPadding = EdgeInsets.symmetric(horizontal: inset, vertical: 12);
 }
 
+abstract final class JournalType {
+  static const heading = FontWeight.w800;
+  static const emphasis = FontWeight.w700;
+  static const countdown = TextStyle(fontSize: 148, height: .93, letterSpacing: -5,
+    fontWeight: FontWeight.w900, fontFeatures: [FontFeature.tabularFigures()]);
+}
+
 extension BuildContextX on BuildContext {
   ColorScheme get cs => Theme.of(this).colorScheme;
   TextTheme get tt => Theme.of(this).textTheme;
@@ -38,6 +45,17 @@ class Tone {
   const Tone(this.bg, this.fg);
   final Color bg;
   final Color fg;
+}
+
+/// Один акцент для пиктограмм. Семантические шкалы оценок и часов независимы.
+Tone iconTone(ColorScheme scheme) {
+  final dark = scheme.brightness == Brightness.dark;
+  return Tone(
+    Color.lerp(dark ? scheme.surfaceContainer : scheme.primaryContainer, scheme.primary, dark ? .23 : .10)!,
+    scheme.primary.r == scheme.primary.g && scheme.primary.g == scheme.primary.b
+          ? (dark ? const Color(0xFFDEDEDE) : const Color(0xFF424242))
+          : Color.lerp(scheme.onSurface, scheme.primary, dark ? .78 : .62)!,
+  );
 }
 
 // На диаграммах и в журналах один балл всегда относится к одному семейству Material.
@@ -103,20 +121,9 @@ const double kHueAmber = 42;
 const double kHueGreen = 146;
 const double kHueTeal = 180;
 
-/// Семейства оттенков для значков настроек.
-const List<double> kSettingHues = [kHueBlue, kHueViolet, kHueRose, kHueAmber, kHueGreen, kHueTeal, 16, 300];
 
 /// Пастельный фон и тёмный текст заданного оттенка (светлая и тёмная тема подбираются сами).
 Tone hueTone(BuildContext context, double hue) => _pastel(context, _hueFamily(hue));
 
 /// Насыщенный цвет заданного оттенка: для полос, точек и значков.
 Color hueAccent(BuildContext context, double hue) => _ink(context, _hueFamily(hue));
-
-/// Постоянный оттенок значка настройки.
-double settingHue(String title) {
-  var h = 0;
-  for (final u in title.codeUnits) {
-    h = (h * 31 + u) & 0x7fffffff;
-  }
-  return kSettingHues[h % kSettingHues.length];
-}

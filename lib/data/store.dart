@@ -306,6 +306,7 @@ class AppStore extends ChangeNotifier {
 
   void setBellProfile(String key, BellProfile profile) {
     if (!kBellKeys.contains(key)) return;
+    if (!onboarded) settings.confirmedBells.remove(key);
     if (profile.isEmpty && profile.lunchAfter == 0) {
       settings.bells.remove(key);
     } else {
@@ -366,8 +367,26 @@ class AppStore extends ChangeNotifier {
 
   bool get onboarded => settings.onboarded;
 
+  bool get bellsReady => kBellKeys.every((key) =>
+      settings.confirmedBells.contains(key) && !settings.bell(key).isEmpty && settings.bell(key).problem == null);
+
+  bool confirmBells(String key) {
+    if (!kBellKeys.contains(key)) return false;
+    final profile = settings.bell(key);
+    if (profile.isEmpty || profile.problem != null) return false;
+    settings.confirmedBells.add(key);
+    _changed();
+    return true;
+  }
+
+  void setFollowThemeIcon(bool value) {
+    if (settings.followThemeIcon == value) return;
+    settings.followThemeIcon = value;
+    _changed();
+  }
+
   void finishOnboarding() {
-    if (settings.onboarded) return;
+    if (settings.onboarded || !hasGroup || !bellsReady) return;
     settings.onboarded = true;
     _changed();
   }

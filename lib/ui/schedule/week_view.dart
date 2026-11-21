@@ -196,7 +196,7 @@ class _WeekViewState extends State<WeekView> {
                 child: Text(
                   '${shortDate(days.first)} – ${shortDate(days.last)}',
                   textAlign: TextAlign.center,
-                  style: context.tt.titleSmall?.copyWith(fontWeight: FontWeight.w500),
+                  style: context.tt.titleSmall?.copyWith(fontWeight: JournalType.emphasis),
                 ),
               ),
               IconButton(
@@ -315,7 +315,7 @@ class _WeekEvent extends StatelessWidget {
                 builder: (context, box) {
                   final titleStyle = context.tt.bodySmall!.copyWith(
                     color: fg,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: JournalType.heading,
                     height: 1.25,
                   );
                   final lineHeight = MediaQuery.textScalerOf(context).scale(titleStyle.fontSize!) * 1.25;

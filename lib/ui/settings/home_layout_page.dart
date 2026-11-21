@@ -14,11 +14,11 @@ class HomeLayoutPage extends StatelessWidget {
   const HomeLayoutPage({super.key});
 
   static const _info = {
-    kBlockMetrics: (Icons.insights_rounded, 'Показатели', 'Балл, пропуски и задания в карточке дня', kHueBlue),
-    kBlockTasks: (Icons.task_alt_rounded, 'Задания', 'Домашнее задание и заметки со сроком', kHueTeal),
-    kBlockTomorrow: (Icons.event_rounded, 'Завтра', 'Сколько пар и когда начало', kHueViolet),
-    kBlockWeek: (Icons.view_week_rounded, 'Эта неделя', 'Число пар по дням', kHueGreen),
-    kBlockRecent: (Icons.star_rounded, 'Последние оценки', 'Три последние записи', kHueAmber),
+    kBlockMetrics: (Icons.insights_rounded, 'Показатели', 'Балл, пропуски и задания в карточке дня'),
+    kBlockTasks: (Icons.task_alt_rounded, 'Задания', 'Домашнее задание и заметки со сроком'),
+    kBlockTomorrow: (Icons.event_rounded, 'Завтра', 'Сколько пар и когда начало'),
+    kBlockWeek: (Icons.view_week_rounded, 'Эта неделя', 'Число пар по дням'),
+    kBlockRecent: (Icons.star_rounded, 'Последние оценки', 'Три последние записи'),
   };
 
   @override
@@ -76,12 +76,12 @@ class HomeLayoutPage extends StatelessWidget {
                         AnimatedOpacity(
                           opacity: visible ? 1 : 0.5,
                           duration: Motion.short,
-                          child: IconBox(icon: info.$1, tone: hueTone(context, info.$4)),
+                          child: IconBox(icon: info.$1),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(info.$2, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w500, height: 1.2)),
+                            Text(info.$2, style: tt.titleMedium?.copyWith(fontWeight: JournalType.emphasis, height: 1.2)),
                             Text(info.$3, style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
                           ]),
                         ),

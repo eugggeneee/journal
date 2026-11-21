@@ -13,6 +13,8 @@ import 'package:journal/ui/absences/absence_limit.dart';
 import 'package:journal/ui/grades/grades_page.dart';
 import 'package:journal/ui/settings/home_layout_page.dart';
 import 'package:journal/ui/settings/settings_home.dart';
+import 'package:journal/ui/settings/bells_page.dart';
+import 'package:journal/ui/onboarding/onboarding.dart';
 import 'package:journal/logic/release_updates.dart';
 import 'package:journal/ui/kit/inputs/settings_tiles.dart';
 import 'package:journal/ui/home/day_bar.dart';
@@ -120,6 +122,24 @@ void main() {
     onOpenDay: () {},
   );
 
+  testWidgets('выбор звонков доступен на узком экране и завершает обязательную настройку', (tester) async {
+    await screen(tester, const OnboardingFlow(), width: 320, height: 640, scale: 2, scroll: false);
+    FilledButton next() => tester.widget(find.widgetWithText(FilledButton, 'Продолжить'));
+    expect(next().onPressed, isNull);
+    await tester.ensureVisible(find.text('Время пар'));
+    await tester.tap(find.text('Время пар'));
+    await tester.pumpAndSettle();
+    expect(find.byType(BellsPage), findsOneWidget);
+    expect(tester.widget<SegmentedButton<String>>(find.byType(SegmentedButton<String>)).direction, Axis.vertical);
+    for (final label in ['Будни', 'Суббота', 'Сокращённый день']) {
+      await tester.tap(find.text('Подтвердить · $label'));
+      await tester.pumpAndSettle();
+    }
+    expect(find.byType(BellsPage), findsNothing);
+    expect(next().onPressed, isNotNull);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('настройки показывают установленную версию и доступное обновление', (tester) async {
     SharedPreferences.setMockInitialValues({'release.latest': '99.0.0'});
     store = await AppStore.load();
@@ -141,6 +161,16 @@ void main() {
     expect(find.textContaining(RegExp(r'до продолжения\s+в 12:55')), findsOneWidget);
     await screen(tester, hero(DateTime(2026, 11, 18, 18)), width: 900, brightness: Brightness.light);
     expect(find.text('Без времени звонков'), findsOneWidget);
+  });
+
+  testWidgets('отсчёт при переходах 100 → 99 и 10 → 9 читается на узком экране', (tester) async {
+    for (final left in [100, 99, 10, 9]) {
+      final time = DateTime(2026, 11, 18, 11, 20).subtract(Duration(minutes: left));
+      await screen(tester, hero(time), width: 320, scale: 2);
+      expect(find.text('$left'), findsOneWidget);
+      expect(find.textContaining(RegExp(r'до начала\s+в 11:20')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
   });
 
   testWidgets('вся карточка с крупным отсчётом помещается над навигацией', (tester) async {
