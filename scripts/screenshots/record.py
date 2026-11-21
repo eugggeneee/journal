@@ -80,8 +80,7 @@ def capture(platform, app, output):
     try:
         target = 'integration_test/journal_screens_test.dart'
         version = '--dart-define=JOURNAL_VERSION=' + os.environ['TAG'][1:]
-        flags = ['--no-dds'] if platform == 'android' else []
-        subprocess.run(['flutter','test','--no-pub',*flags,'-d',device,'--reporter','expanded',version,target],
+        subprocess.run(['flutter','test','--no-pub','-d',device,'--reporter','expanded',version,target],
                        cwd=app,check=True,timeout=1800)
     finally:
         server.shutdown()
