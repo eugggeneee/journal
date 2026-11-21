@@ -1,0 +1,220 @@
+import 'dart:io';
+
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:journal/main.dart';
+import 'package:journal/core/palette.dart';
+import 'package:journal/data/models.dart';
+import 'package:journal/data/store.dart';
+import 'package:journal/logic/bells.dart';
+import 'package:journal/logic/schedule/schedule_service.dart';
+import 'package:journal/ui/absences/absence_sheet.dart';
+import 'package:journal/ui/grades/grade_sheet.dart';
+import 'package:journal/ui/kit/components/overview.dart';
+import 'package:journal/ui/grades/subject_page.dart';
+import 'package:journal/ui/onboarding/onboarding.dart';
+import 'package:journal/ui/schedule/lesson_sheet.dart';
+import 'package:journal/ui/schedule/marks.dart';
+import 'package:journal/ui/settings/bells_page.dart';
+import 'package:journal/ui/settings/group_picker.dart';
+import 'package:journal/ui/settings/home_layout_page.dart';
+import 'package:journal/ui/settings/settings_home.dart';
+import 'package:journal/ui/settings/settings_pages.dart';
+import 'package:journal/ui/settings/theme_page.dart';
+import 'package:journal/ui/settings/theme_widgets.dart';
+import 'package:journal/ui/tasks/tasks_page.dart';
+import 'package:journal/ui/tasks/task_sheet.dart';
+
+final day = DateTime(2026, 11, 18);
+const subjects = ['Математика', 'Основы дизайна', 'Информатика', 'История искусства', 'Физика', 'Композиция'];
+const teachers = ['Л. А. Примерова', 'А. С. Макетов', 'М. В. Эскизова'];
+
+class DemoService extends ScheduleService {
+  @override
+  Future<({List<String> groups, bool offline})> listGroups() async => (groups: ['0000'], offline: false);
+}
+
+class DemoRepo extends ScheduleRepo {
+  DemoRepo(AppStore store) : super(store, service: DemoService());
+
+  @override
+  Future<DayState> load(DateTime date, {bool force = false}) async {
+    final cached = store.cachedSchedule('0000', date);
+    return DayState(cached == null ? DayStatus.sunday : DayStatus.ok, schedule: cached);
+  }
+}
+
+Future<AppStore> fixture() async {
+  SharedPreferences.setMockInitialValues({'release.checked': DateTime.now().millisecondsSinceEpoch});
+  final store = await AppStore.load();
+  store.settings
+    ..group = '0000'
+    ..onboarded = true
+    ..themeColor = 'default'
+    ..autoRefresh = false
+    ..tipGestures = true
+    ..haptics = false
+    ..motion = 2;
+  for (final key in [kBellWeek, kBellSat]) {
+    store.setBellProfile(key, kBellPresets.firstWhere((p) => p.key == key).profile);
+  }
+  for (var delta = -28; delta <= 14; delta++) {
+    final date = day.add(Duration(days: delta));
+    if (date.weekday == DateTime.sunday) continue;
+    final slots = [
+      for (var i = 0; i < (date.weekday == DateTime.saturday ? 3 : 4); i++)
+        LessonSlot(number: i + 1, entries: [LessonEntry(subject: subjects[(i + delta.abs()) % subjects.length],
+          room: '${201 + 13 * i}', teacher: teachers[i % teachers.length])]),
+    ];
+    store.putSchedule(DaySchedule(date: date, group: '0000', slots: slots, fetchedAt: day));
+    if (delta <= 0) {
+      final s = slots[delta.abs() % slots.length];
+      store.saveGrade(Grade(id: 'grade-$delta', date: date, subject: s.subject, value: [9,8,10,7,9][delta.abs()%5],
+        kind: delta.isEven ? 'Практика' : 'Ответ', note: 'Разбор учебного примера'));
+      if (delta % 5 == 0) {
+        store.saveAbsence(Absence(id: 'absence-$delta', date: date, lesson: s.number, subject: s.subject,
+          hours: delta.isEven ? 1 : 2, excused: delta.isOdd, note: 'Учебная запись'));
+      }
+    }
+  }
+  store.setGoal(subjects.first, 9);
+  store.saveMark(DayMark(id: 'mark', date: day, lesson: 2, label: 'Защита эскиза'));
+  final titles = ['Подготовить три эскиза', 'Решить задачи по теме', 'Собрать примеры композиции', 'Проверить расчёты'];
+  for (var i = 0; i < titles.length; i++) {
+    store.saveTask(Task(id: 'task-$i', text: titles[i], subject: subjects[(i + 1) % subjects.length],
+      lesson: i + 1, date: day, due: day.add(Duration(days: i + 1)), done: i == 3));
+  }
+  return store;
+}
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  testWidgets('Каталог экранов Journal', (tester) async {
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    final store = await fixture();
+    final repo = DemoRepo(store);
+    final client = HttpClient();
+    Future<void> settle() async {
+      await tester.pump();
+      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+    }
+
+    Future<void> shot(String name) async {
+      await settle();
+      expect(tester.takeException(), isNull, reason: name);
+      final request = await client.postUrl(Uri.http('127.0.0.1:8765', '/$name'));
+      final response = await request.close().timeout(const Duration(seconds: 30));
+      await response.drain<void>();
+      expect(response.statusCode, 204, reason: name);
+    }
+
+    NavigatorState nav() => tester.state<NavigatorState>(find.byType(Navigator).first);
+    BuildContext context() => nav().overlay!.context;
+    Future<void> page(String name, Widget child) async {
+      nav().push(MaterialPageRoute<void>(builder: (_) => child));
+      await shot(name);
+      nav().pop();
+      await settle();
+    }
+    Future<void> sheet(String name, void Function() open) async {
+      open();
+      await shot(name);
+      nav().pop();
+      await settle();
+    }
+    Future<void> tab(int index) async {
+      final tiles = find.byType(NavigationDestination);
+      await tester.tap(tiles.at(index));
+      await settle();
+    }
+
+    Future<void> scroll(double distance) async {
+      final size = tester.view.physicalSize / tester.view.devicePixelRatio;
+      await tester.dragFrom(Offset(size.width / 2, size.height * .72), Offset(0, distance));
+      await settle();
+    }
+    Future<void> journal(String name) async {
+      for (var i = 0; i < 6 && find.byType(ModeSwitch).hitTestable().evaluate().isEmpty; i++) {
+        await scroll(-270);
+      }
+      final mode = tester.widget<ModeSwitch>(find.byType(ModeSwitch).first);
+      mode.onChanged(1);
+      await shot(name);
+      mode.onChanged(0);
+      await settle();
+      await scroll(1500);
+    }
+
+    await tester.pumpWidget(JournalApp(store: store, repo: repo));
+    await settle();
+    for (final brightness in ['light','dark']) {
+      store.setThemeMode(brightness == 'light' ? 1 : 2);
+      await tab(0);
+      for (final theme in AppPalette.choices) {
+        store.setThemeColor(theme.id);
+        await shot('$brightness/home-${theme.id}');
+      }
+      store.setThemeColor('default');
+      store.setDayCardFolded(true);
+      await shot('$brightness/home-compact');
+      store.setDayCardFolded(false);
+      await settle();
+      await scroll(-460);
+      await shot('$brightness/home-details');
+      await scroll(1200);
+      await tab(1);
+      await shot('$brightness/schedule');
+      for (final item in [('Выбрать дату','date-picker'),('Ещё','schedule-menu')]) {
+        await tester.tap(find.byTooltip(item.$1).first);
+        await shot('$brightness/${item.$2}');
+        nav().pop();
+        await settle();
+      }
+      final slot = store.cachedSchedule('0000', day)!.slots[1];
+      await sheet('$brightness/lesson', () => showLessonSheet(context(), day, slot));
+      await sheet('$brightness/mark', () => showMarkSheet(context(), day, edit: store.marks.first));
+      await sheet('$brightness/absence-quick', () => showLessonAbsence(context(), day, slot));
+      await sheet('$brightness/whole-day', () => showWholeDayAbsence(context(), day, store.cachedSchedule('0000', day)!.slots));
+      await tab(2);
+      await shot('$brightness/grades');
+      await journal('$brightness/grade-journal');
+      await page('$brightness/subject', const SubjectPage(subject: 'Математика'));
+      await sheet('$brightness/grade-form', () => showGradeSheet(context(), edit: store.grades.first));
+      await tab(3);
+      await shot('$brightness/absences');
+      await scroll(-370);
+      await shot('$brightness/absence-calendar');
+      await journal('$brightness/absence-journal');
+      await sheet('$brightness/absence-form', () => showAbsenceForm(context(), edit: store.absences.first));
+      await page('$brightness/tasks', const TasksPage());
+      await sheet('$brightness/task-form', () => showTaskSheet(context(), edit: store.tasks.first));
+      await page('$brightness/settings', const SettingsHomePage());
+      await page('$brightness/appearance', const ThemePage());
+      await sheet('$brightness/theme-picker', () => showThemeColorSheet(context()));
+      await page('$brightness/layout', const HomeLayoutPage());
+      await page('$brightness/schedule-settings', const ScheduleSettingsPage());
+      await sheet('$brightness/group', () => showGroupSheet(context(), selected: '0000', onSelected: (_) {}));
+      for (final key in kBellKeys) {
+        await page('$brightness/bells-$key', BellsPage(initialKey: key));
+      }
+      await sheet('$brightness/bell-editor', () => showPairSheet(context(), kBellWeek, 2));
+      await page('$brightness/absence-settings', const AbsenceSettingsPage());
+      await page('$brightness/behavior', const BehaviorSettingsPage());
+      await page('$brightness/data', const DataSettingsPage());
+      nav().push(MaterialPageRoute<void>(builder: (_) => const OnboardingFlow()));
+      await settle();
+      final pager = tester.widget<PageView>(find.byType(PageView).last).controller!;
+      for (var i = 0; i < 5; i++) {
+        pager.jumpToPage(i);
+        await shot('$brightness/welcome-${i + 1}');
+      }
+      nav().pop();
+      await settle();
+    }
+    client.close(force: true);
+    await tester.pumpWidget(const SizedBox.shrink());
+  }, timeout: const Timeout(Duration(minutes: 25)));
+}
