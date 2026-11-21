@@ -22,6 +22,9 @@ def names(ids):
 def complete(root, tag, expected):
     try:
         manifest = json.loads((root/'manifest.json').read_text())
+        android = manifest['devices']['android']
+        if (android['width'], android['height']) != (1080, 2340):
+            return False
         if (manifest['tag'] != tag or set(manifest['devices']) != {'ios','android'}
                 or manifest['scenes'] != expected):
             return False
@@ -101,6 +104,8 @@ def make(source, output, app, tag, commit):
             for name in scenes:
                 with Image.open(raw/(name+'.png')) as png:
                     im=png.convert('RGB')
+                if platform == 'android' and im.size != (1080, 2340):
+                    raise ValueError(f'Unexpected Galaxy S26 frame size: {im.size}')
                 if im.width < 1000 or im.height <= im.width or im.getextrema()[0][0]==im.getextrema()[0][1]:
                     raise ValueError(f'Некорректный кадр {raw/name}')
                 device['width'],device['height']=im.size
