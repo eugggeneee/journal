@@ -5,7 +5,7 @@ import '../../data/models.dart';
 import '../../data/store.dart';
 import '../../logic/bells.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import '../kit/inputs/settings_tiles.dart';
 
 /// Состояние дня без пар (выходной, нет занятий): что делать дальше и, по желанию, итоги недели.

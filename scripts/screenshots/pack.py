@@ -39,11 +39,13 @@ def complete(root, tag, scenes, commit):
         return (manifest['tag'] == tag and manifest.get('commit') == commit
                 and manifest.get('channel') == os.environ['CHANNEL']
                 and manifest.get('spec') == 'gallery-v1' and manifest.get('fixture') == 'trade-0000-v1' and set(manifest['devices']) == {'ios'}
-                and manifest['scenes'] == scenes and set(files) == expected
+                and manifest['devices']['ios'] == {'model': 'iPhone 17', 'environment': 'iOS Simulator',
+                    'os': '26.2', 'width': 1206, 'height': 2622}
+                and manifest.get('group') == '0000' and manifest['scenes'] == scenes and set(files) == expected
                 and {p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file()}
                 == expected | {'manifest.json', 'README.md'}
                 and all(digest(root / name) == files[name] for name in expected))
-    except (FileNotFoundError, KeyError, ValueError):
+    except (OSError, KeyError, TypeError, ValueError):
         return False
 
 

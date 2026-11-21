@@ -9,7 +9,7 @@ import '../app/scope.dart';
 import '../kit/animation/motion.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import '../kit/inputs/pickers.dart';
 import '../kit/inputs/settings_tiles.dart';
 import '../kit/sheets/sheet.dart';

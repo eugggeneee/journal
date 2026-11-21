@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
@@ -5,7 +7,7 @@ import '../../core/haptics.dart';
 import '../app/scope.dart';
 import '../kit/animation/motion.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import '../kit/sheets/sheet.dart';
 import '../settings/bells_sheet.dart';
 import '../settings/group_picker.dart';
@@ -65,6 +67,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
   int get _back => dayDiff(_base, _first);
   int get _total => dayDiff(_last, _first) + 1;
   int _refresh = 0;
+  Timer? _midnight;
   bool _wasWeek = false;
   int _weekIndex(int dayIndex) => (dayIndex + _first.weekday - 1) ~/ 7;
 
@@ -81,6 +84,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.controller.attach(_jumpTo);
+    _scheduleMidnight();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.controller.setSelected(_selected);
       _centerStrip(_indexOf(_selected));
@@ -89,6 +93,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
 
   @override
   void dispose() {
+    _midnight?.cancel();
     widget.controller.detach();
     WidgetsBinding.instance.removeObserver(this);
     _pc.dispose();
@@ -100,19 +105,25 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed || !mounted) return;
     StoreScope.repoOf(context).prefetch();
-    if (!sameDay(_base, today())) {
-      final old = _pc;
-      setState(() {
-        _base = today();
-        _selected = _base;
-        _pc = PageController(keepPage: false, initialPage: _back);
-      });
-      widget.controller.setSelected(_selected);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        old.dispose();
-        _centerStrip(_indexOf(_selected));
-      });
-    }
+    _updateDate();
+    _scheduleMidnight();
+  }
+
+  void _scheduleMidnight() {
+    _midnight?.cancel();
+    final now = journalNow();
+    _midnight = Timer(addDays(now, 1).difference(now), () {
+      _updateDate();
+      _scheduleMidnight();
+    });
+  }
+
+  void _updateDate() {
+    final current = today();
+    if (sameDay(_base, current)) return;
+    final followedToday = sameDay(_selected, _base);
+    setState(() => _base = current);
+    if (followedToday) _jumpTo(current);
   }
 
   /// Неделя включена и экран достаточно широк (от 720 dp), иначе всегда один день.

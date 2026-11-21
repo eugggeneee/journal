@@ -6,7 +6,7 @@ import '../../data/store.dart';
 import '../../logic/heatmap.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import '../kit/sheets/sheet.dart';
 
 /// Календарь пропусков: месяц сеткой, чем больше часов за день, тем насыщеннее клетка. Нажатие на клетку
@@ -20,12 +20,12 @@ class AbsenceHeatmap extends StatefulWidget {
 }
 
 class _AbsenceHeatmapState extends State<AbsenceHeatmap> {
-  late DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+  late DateTime _month = DateTime(journalNow().year, journalNow().month);
 
   static const _weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
   bool get _isCurrent {
-    final n = DateTime.now();
+    final n = journalNow();
     return _month.year == n.year && _month.month == n.month;
   }
 
@@ -72,7 +72,7 @@ class _AbsenceHeatmapState extends State<AbsenceHeatmap> {
     final leading = DateTime(_month.year, _month.month, 1).weekday - 1;
     final days = data.daysInMonth;
     final rowCount = ((leading + days) / 7).ceil();
-    final now = DateTime.now();
+    final now = journalNow();
 
     Widget cell(int index) {
       final day = index - leading + 1;

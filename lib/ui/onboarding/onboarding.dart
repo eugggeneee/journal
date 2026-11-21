@@ -11,7 +11,7 @@ import '../kit/animation/motion.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/gesture_guide.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import '../kit/inputs/selectors.dart';
 import '../kit/inputs/settings_tiles.dart';
 import '../settings/bells_page.dart';

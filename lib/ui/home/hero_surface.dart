@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:material_ui/material_ui.dart';
 
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 
 /// Верх главной: цветная поверхность во всю ширину с закруглением снизу. Шапка (приветствие, настройки)
 /// стоит прямо на ней, поэтому экран читается как один цельный блок, а не набор карточек.

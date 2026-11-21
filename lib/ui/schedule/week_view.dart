@@ -10,7 +10,7 @@ import '../../logic/bells.dart';
 import '../../logic/schedule/schedule_service.dart';
 import '../app/scope.dart';
 import '../kit/components/widgets.dart' show segmentRadius;
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import 'calendar_grid.dart';
 import 'lesson_card.dart';
 import 'lesson_sheet.dart';
@@ -93,7 +93,7 @@ class _WeekViewState extends State<WeekView> {
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
     final cs = context.cs;
-    final now = DateTime.now();
+    final now = journalNow();
     final days = List.generate(7, (i) => addDays(monday, i));
     final todayIndex = days.indexWhere((d) => sameDay(d, now));
     final minute = now.hour * 60 + now.minute;

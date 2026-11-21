@@ -6,7 +6,7 @@ import '../app/scope.dart';
 import '../app/release_link.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import '../kit/inputs/settings_tiles.dart';
 import 'bells_page.dart';
 import 'group_picker.dart';

@@ -15,7 +15,7 @@ import '../grades/grade_sheet.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/gesture_guide.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import '../kit/sheets/sheet.dart';
 import '../schedule/marks.dart';
 import '../settings/settings_button.dart';
@@ -156,7 +156,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
-    final now = DateTime.now();
+    final now = journalNow();
     final day = dateOnly(now);
     final slots = _st?.schedule?.slots ?? const <LessonSlot>[];
 
@@ -506,7 +506,7 @@ class _LimitNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tt = context.tt;
-    final now = DateTime.now();
+    final now = journalNow();
     final semester = store.semesterOn(now);
     final month = monthUnexcusedHours(store.absences, now);
     final sem = semesterUnexcusedHours(store.absences, semester);

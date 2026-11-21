@@ -60,6 +60,8 @@ journal/
 Правила проверяет `scripts/project/check.py` (разбор импортов в `layers.py`; запускается и в CI).
 
 
+Общие элементы из `components/widgets.dart` сгруппированы в `page_layout.dart`, `badges.dart` и `grouped_cards.dart`. Разделы расписания, пропусков, поведения и данных из `settings_pages.dart` живут в отдельных файлах рядом. Обе точки импорта сохранены для сценария съёмки прежних выпусков. Цветовые роли прежнего `ctx.dart` находятся в `foundation/journal_theme.dart`.
+
 ## Данные
 
 - Всё хранится локально в `shared_preferences`: данные пользователя (`data_v1`) и кэш расписания (`sched_v1`, не более 400 дней).
@@ -86,8 +88,8 @@ journal/
 - Оценки: `grades/goal_card.dart` (цель по предмету и прогноз), расчёт в `logic/forecast.dart` (целочисленный, без ошибок округления). Пропуски: `absences/absence_heatmap.dart` (календарь месяца), расчёт в `logic/heatmap.dart`.
 - Главная настраивается: порядок и скрытие блоков в `Settings.homeOrder`/`homeHidden`, экран `settings/home_layout_page.dart`. Подсказка о жестах закрывается флагом `Settings.tipGestures`. Неделя сеткой: `schedule/week_view.dart`, на экранах от 720 dp.
 - Файлы: `core/file_io.dart` (единственное место, где используются `share_plus` и `file_picker`): резервная копия в .json и восстановление из файла.
-- Цвета: `hueTone`, `hueAccent`, `settingHue` в `kit/foundation/ctx.dart`: тональные цвета Material 3 для оценок, статусов и значков. Текст не обрезается: длинное переносится или уменьшается.
-- Цвета оценок, пропусков и лимитов: `ui/kit/foundation/ctx.dart`.
+- Цвета: `hueTone`, `hueAccent`, `settingHue` в `kit/foundation/journal_theme.dart`: тональные цвета Material 3 для оценок, статусов и значков. Текст не обрезается: длинное переносится или уменьшается.
+- Цвета оценок, пропусков и лимитов: `ui/kit/foundation/journal_theme.dart`.
 
 ## Платформенная часть
 

@@ -1,7 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/haptics.dart';
-import '../foundation/ctx.dart';
+import '../foundation/journal_theme.dart';
 import '../components/widgets.dart';
 
 /// Строка настроек в стиле Material: значок слева, заголовок, пояснение и действие справа.

@@ -6,7 +6,7 @@ import '../../data/store.dart';
 import '../../logic/bells.dart';
 import '../absences/absence_actions.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import 'calendar_grid.dart';
 import 'lesson_sheet.dart';
 import 'marks.dart';

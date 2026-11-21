@@ -5,7 +5,7 @@ import '../app/scope.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/overview.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import 'goal_card.dart';
 import 'grade_sheet.dart';
 import 'grades_page.dart';

@@ -5,7 +5,7 @@ import '../../data/store.dart';
 import '../../logic/limits.dart';
 import '../../logic/stats.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import '../tasks/tasks_page.dart';
 
 class DayMetrics extends StatelessWidget {

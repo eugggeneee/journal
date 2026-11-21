@@ -7,7 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/dates.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 
 const double calendarGutter = 48;
 
@@ -192,6 +192,7 @@ class CalendarDate extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
+      onTap: onTap,
       label: isToday ? 'Сегодня, ${longDate(date)}' : longDate(date),
       excludeSemantics: true,
       child: Material(

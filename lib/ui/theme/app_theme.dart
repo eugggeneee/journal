@@ -1,7 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/palette.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import 'page_transitions.dart';
 
 /// Тема Material 3 (официальный пакет material_ui).

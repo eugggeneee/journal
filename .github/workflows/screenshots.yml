@@ -48,7 +48,7 @@ jobs:
           fi
           echo "ready=$ready" >> "$GITHUB_OUTPUT"
           if [[ "$ready" == true ]]; then
-            echo "Для $tag всё готово. Повторите после следующего стабильного релиза." >> "$GITHUB_STEP_SUMMARY"
+            echo "Для $tag всё готово. Галерея канала $CHANNEL уже проверена." >> "$GITHUB_STEP_SUMMARY"
           fi
   capture:
     needs: plan
@@ -62,25 +62,25 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: ${{ needs.plan.outputs.sha }}
-          path: stable-app
+          path: capture-app
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-      - name: Подготовить исходники стабильного релиза
+      - name: Подготовить исходники выбранного выпуска
         run: |
           set -euo pipefail
-          cd stable-app
+          cd capture-app
           flutter create --platforms=ios --org eugggeneee --project-name journal .
           python3 scripts/icons/setup_ios.py
           cd ..
-          python3 scripts/screenshots/prepare.py stable-app
-          cd stable-app
+          python3 scripts/screenshots/prepare.py capture-app
+          cd capture-app
           flutter pub get
       - name: Снять экраны iPhone
         run: |
           bash scripts/icons/select_xcode.sh
-          python3 scripts/screenshots/record.py stable-app "$RUNNER_TEMP/frames"
+          python3 scripts/screenshots/record.py capture-app "$RUNNER_TEMP/frames"
       - uses: actions/upload-artifact@v5
         with:
           name: capture-ios
@@ -101,7 +101,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: ${{ needs.plan.outputs.sha }}
-          path: stable-app
+          path: capture-app
       - uses: actions/download-artifact@v5
         with:
           name: capture-ios
@@ -109,7 +109,7 @@ jobs:
       - name: Собрать и проверить кадры iPhone, рамки и макеты
         run: |
           python3 -m pip install --quiet Pillow
-          python3 scripts/screenshots/pack.py build frames "$RUNNER_TEMP/new-pack" stable-app "$TAG" "$SOURCE_SHA"
+          python3 scripts/screenshots/pack.py build frames "$RUNNER_TEMP/new-pack" capture-app "$TAG" "$SOURCE_SHA"
       - name: Заменить предыдущий полный пак
         run: |
           set -euo pipefail
@@ -138,6 +138,10 @@ jobs:
             fi
           done
           git add pack
+          if git diff --cached --quiet; then
+            echo "Опубликованный комплект совпадает с переснятым." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "docs(screenshots): обновить галерею $TAG"
           git push origin HEAD:refs/heads/screenshots
           echo "[Готовый пак $TAG](https://github.com/$GITHUB_REPOSITORY/tree/screenshots/pack)" >> "$GITHUB_STEP_SUMMARY"

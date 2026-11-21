@@ -10,7 +10,7 @@ import 'logic/schedule/schedule_service.dart';
 import 'ui/app/scope.dart';
 import 'ui/app/shell.dart';
 import 'ui/kit/animation/motion.dart';
-import 'ui/kit/foundation/ctx.dart';
+import 'ui/kit/foundation/journal_theme.dart';
 import 'ui/onboarding/onboarding.dart';
 import 'ui/theme/app_theme.dart';
 

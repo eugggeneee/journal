@@ -6,7 +6,7 @@ import '../../data/models.dart';
 import '../app/scope.dart';
 import '../kit/animation/reveal.dart';
 import '../kit/components/widgets.dart';
-import '../kit/foundation/ctx.dart';
+import '../kit/foundation/journal_theme.dart';
 import 'task_sheet.dart';
 import 'task_tile.dart';
 

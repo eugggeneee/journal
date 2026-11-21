@@ -94,7 +94,12 @@ Tone _pastel(BuildContext context, MaterialColor family) {
 Color _ink(BuildContext context, MaterialColor family) => context.isDark ? family.shade200 : family.shade900;
 
 Tone gradeTone(BuildContext context, num v) => _pastel(context, _gradeFamily(v));
-Color gradeAccent(BuildContext context, num v) => _ink(context, _gradeFamily(v));
+Color gradeAccent(BuildContext context, num v) {
+  final family = _gradeFamily(v);
+  final ink = _ink(context, family);
+  if (context.isDark || (v != 5 && v != 6)) return ink;
+  return Color.lerp(ink, Colors.black, .16)!;
+}
 Color gradeChartFill(num v) => _gradeFamily(v).shade200;
 Tone absenceTone(BuildContext context, {required bool excused}) => _pastel(context, excused ? Colors.teal : Colors.red);
 Color absenceAccent(BuildContext context, {required bool excused}) => _ink(context, excused ? Colors.teal : Colors.red);
