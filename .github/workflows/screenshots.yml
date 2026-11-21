@@ -1,6 +1,19 @@
 name: Пак скриншотов Journal
 on:
   workflow_dispatch:
+    inputs:
+      channel:
+        description: Канал опубликованной версии
+        type: choice
+        options: [stable, beta]
+        default: stable
+      force_rebuild:
+        description: Переснять готовый комплект
+        type: boolean
+        default: false
+
+env:
+  CHANNEL: ${{ inputs.channel }}
 
 permissions:
   contents: read
@@ -22,17 +35,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          tag=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq 'select(.draft == false and .prerelease == false) | .tag_name')
-          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          tag=$(python3 scripts/screenshots/latest.py "$CHANNEL")
           git fetch --depth=1 origin "refs/tags/$tag:refs/tags/$tag"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse "$tag^{commit}")" >> "$GITHUB_OUTPUT"
           ready=false
-          if git ls-remote --exit-code origin refs/heads/screenshots >/dev/null; then
+          if [[ "${{ inputs.force_rebuild }}" != true ]] && git ls-remote --exit-code origin refs/heads/screenshots >/dev/null; then
             git clone --quiet --depth 1 --branch screenshots "https://github.com/$GITHUB_REPOSITORY.git" "$RUNNER_TEMP/previous"
             python3 -m pip install --quiet Pillow
             git show "$tag:assets/icons/icons.json" > "$RUNNER_TEMP/palette.json"
-            ready=$(python3 scripts/screenshots/pack.py check "$RUNNER_TEMP/previous/pack" "$tag" "$RUNNER_TEMP/palette.json")
+            ready=$(python3 scripts/screenshots/pack.py check "$RUNNER_TEMP/previous/pack/$CHANNEL" "$tag" "$RUNNER_TEMP/palette.json" "$(git rev-parse "$tag^{commit}")")
           fi
           echo "ready=$ready" >> "$GITHUB_OUTPUT"
           if [[ "$ready" == true ]]; then
@@ -101,7 +113,7 @@ jobs:
       - name: Заменить предыдущий полный пак
         run: |
           set -euo pipefail
-          [[ "$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)" == "$TAG" ]]
+          [[ "$(python3 scripts/screenshots/latest.py "$CHANNEL")" == "$TAG" ]]
           repo="$RUNNER_TEMP/gallery"
           git init --quiet -b screenshots "$repo"
           cd "$repo"
@@ -110,9 +122,21 @@ jobs:
           if git ls-remote --exit-code origin refs/heads/screenshots >/dev/null; then
             git fetch --depth=1 origin screenshots
             git reset --hard FETCH_HEAD
-            git rm -rq --ignore-unmatch -- pack
+            if [[ -f pack/manifest.json ]]; then
+              mkdir -p pack/stable
+              git mv pack/{ios,frames,mockups,README.md,manifest.json} pack/stable/
+            fi
+            git rm -rq --ignore-unmatch -- "pack/$CHANNEL"
           fi
-          cp -R "$RUNNER_TEMP/new-pack" pack
+          mkdir -p pack
+          cp -R "$RUNNER_TEMP/new-pack" "pack/$CHANNEL"
+          echo '# Галереи Journal для iPhone' > pack/README.md
+          for channel in stable beta; do
+            if [[ -f pack/$channel/manifest.json ]]; then
+              echo >> pack/README.md
+              echo "[$channel · $(jq -r .tag pack/$channel/manifest.json)]($channel/)" >> pack/README.md
+            fi
+          done
           git add pack
           git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "docs(screenshots): обновить галерею $TAG"
           git push origin HEAD:refs/heads/screenshots

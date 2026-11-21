@@ -29,8 +29,8 @@ import 'package:journal/ui/tasks/tasks_page.dart';
 import 'package:journal/ui/tasks/task_sheet.dart';
 
 final day = DateTime(2026, 11, 18);
-const subjects = ['Математика', 'Основы дизайна', 'Информатика', 'История искусства', 'Физика', 'Композиция'];
-const teachers = ['Л. А. Примерова', 'А. С. Макетов', 'М. В. Эскизова'];
+const subjects = ['Математика', 'Товароведение продовольственных товаров', 'Экономика организации', 'Товароведение непродовольственных товаров'];
+const teachers = ['И. И. Иванова', 'А. С. Миронова', 'Н. В. Ларина', 'М. П. Соколов'];
 
 class DemoService extends ScheduleService {
   @override
@@ -75,16 +75,17 @@ Future<AppStore> fixture() async {
       store.saveGrade(Grade(id: 'grade-$delta', date: date, subject: s.subject, value: [9,8,10,7,9][delta.abs()%5],
         kind: delta.isEven ? 'Практика' : 'Ответ', note: 'Разбор учебного примера'));
       if (delta % 5 == 0) {
-        store.saveAbsence(Absence(id: 'absence-$delta', date: date, lesson: s.number, subject: s.subject,
+        final missed = slots[s.number % slots.length];
+        store.saveAbsence(Absence(id: 'absence-$delta', date: date, lesson: missed.number, subject: missed.subject,
           hours: delta.isEven ? 1 : 2, excused: delta.isOdd, note: 'Учебная запись'));
       }
     }
   }
   store.setGoal(subjects.first, 9);
-  store.saveMark(DayMark(id: 'mark', date: day, lesson: 2, label: 'Защита эскиза'));
-  final titles = ['Подготовить три эскиза', 'Решить задачи по теме', 'Собрать примеры композиции', 'Проверить расчёты'];
+  store.saveMark(DayMark(id: 'mark', date: day, lesson: 2, label: 'Проверочная работа'));
+  final titles = ['Решить задачи по процентам', 'Сравнить маркировку товаров', 'Рассчитать торговую надбавку', 'Проверить условия хранения'];
   for (var i = 0; i < titles.length; i++) {
-    store.saveTask(Task(id: 'task-$i', text: titles[i], subject: subjects[(i + 1) % subjects.length],
+    store.saveTask(Task(id: 'task-$i', text: titles[i], subject: subjects[i],
       lesson: i + 1, date: day, due: day.add(Duration(days: i + 1)), done: i == 3));
   }
   return store;
