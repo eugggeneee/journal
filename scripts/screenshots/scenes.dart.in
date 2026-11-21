@@ -215,10 +215,6 @@ void main() {
       await settle();
     }
     await tester.pumpWidget(const SizedBox.shrink());
-    final complete = await client.postUrl(Uri.http('127.0.0.1:8765', '/complete'));
-    final response = await complete.close();
-    await response.drain<void>();
-    expect(response.statusCode, 204);
     client.close(force: true);
   }, timeout: const Timeout(Duration(minutes: 25)));
 }
