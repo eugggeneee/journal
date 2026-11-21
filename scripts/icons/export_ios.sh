@@ -22,6 +22,9 @@ render_all() {
 }
 if render_all; then
   render "$src/AppIcon.icon" --export-preview iOS Dark 128 128 1 "$out/dark.png"
+  for mode in ClearLight ClearDark; do
+    render "$src/AppIcon.icon" --export-preview iOS "$mode" 128 128 1 "$out/$mode.png"
+  done
   render "$src/AppIcon.icon" --export-preview iOS TintedLight 128 128 1 "$out/tinted.png" ||
     render "$src/AppIcon.icon" --export-preview iOS Tinted 128 128 1 "$out/tinted.png"
 else

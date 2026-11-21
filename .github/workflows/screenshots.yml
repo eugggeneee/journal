@@ -1,5 +1,7 @@
 name: Пак скриншотов Journal
 on:
+  release:
+    types: [released]
   workflow_dispatch:
     inputs:
       channel:
@@ -13,16 +15,17 @@ on:
         default: false
 
 env:
-  CHANNEL: ${{ inputs.channel }}
+  CHANNEL: ${{ inputs.channel || 'stable' }}
 
 permissions:
   contents: read
 concurrency:
-  group: screenshot-pack-${{ inputs.channel }}
+  group: screenshot-pack-${{ inputs.channel || 'stable' }}
   cancel-in-progress: false
 
 jobs:
   plan:
+    if: github.event_name == 'workflow_dispatch' || (!github.event.release.draft && !github.event.release.prerelease && !contains(github.event.release.tag_name, '-'))
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.release.outputs.tag }}
