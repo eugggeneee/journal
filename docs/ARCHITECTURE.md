@@ -7,7 +7,7 @@
 ```
 journal/
   .github/
-    workflows/          ci.yml, release.yml, setup-signing.yml
+    workflows/          CI, release, native-icons, upgrade, site, screenshots
     releases/           vX.Y.Z.md: текст релиза стабильной версии
     ISSUE_TEMPLATE/     шаблоны issue
     release-notes.md    шаблон оформления релиза
@@ -35,6 +35,7 @@ journal/
       home/ schedule/ grades/ absences/ tasks/ settings/ onboarding/   экраны
   scripts/
     icons/              генерация и подключение значков тем; мастер bell.svg, подготовка растров и экспорт нативных превью
+    screenshots/        сценарий iOS, сборка галерей и фирменных макетов
     project/            check.py, layers.py, version.py
     release/            ключ подписи Android и генератор каталога AltStore из опубликованного IPA
   site/ios/             страница добавления источника в AltStore Classic и SideStore

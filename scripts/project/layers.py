@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 IMPORT_RE = re.compile(r"""^\s*(?:import|export)\s+'([^']+)'""", re.M)
 
-FEATURES = ('absences', 'grades', 'home', 'schedule', 'settings', 'onboarding')
+FEATURES = ('absences', 'grades', 'home', 'schedule', 'settings', 'onboarding', 'tasks')
 
 # (имя правила, откуда, чему запрещено)
 RULES = [

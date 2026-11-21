@@ -59,20 +59,8 @@ class DayBar extends StatelessWidget {
                 height: height,
                 child: ClipRRect(
                   borderRadius: BorderRadius.horizontal(
-                    left: Radius.circular(
-                      compact
-                          ? 4
-                          : i == 0
-                          ? 16
-                          : 7,
-                    ),
-                    right: Radius.circular(
-                      compact
-                          ? 4
-                          : i == numbers.length - 1
-                          ? 16
-                          : 7,
-                    ),
+                    left: Radius.circular(i == 0 ? 16 : 7),
+                    right: Radius.circular(i == numbers.length - 1 ? 16 : 7),
                   ),
                   child: Stack(
                     fit: StackFit.expand,

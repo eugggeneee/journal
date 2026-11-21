@@ -85,7 +85,9 @@ MaterialColor _hueFamily(double hue) => switch (hue % 360) {
 };
 
 Tone _pastel(BuildContext context, MaterialColor family) {
-  final fill = context.isDark ? family.shade200 : family.shade100;
+  final fill = context.isDark
+      ? Color.lerp(context.cs.surfaceContainerHigh, family.shade800, .48)!
+      : family.shade100;
   return Tone(fill, onColorFor(fill));
 }
 
