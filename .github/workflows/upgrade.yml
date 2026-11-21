@@ -1,4 +1,4 @@
-name: Проверка обновления Android
+name: Проверка обновления Journal
 on:
   workflow_dispatch:
     inputs:
@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  upgrade:
+  android:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -40,3 +40,19 @@ jobs:
           target: google_apis
           disable-animations: true
           script: bash scripts/project/check_upgrade.sh
+
+  iphone:
+    runs-on: macos-15
+    timeout-minutes: 50
+    env:
+      PREVIOUS: ${{ inputs.previous }}
+      TARGET: ${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: bash scripts/icons/select_xcode.sh
+      - name: Установить предыдущую и новую версии в один симулятор
+        run: bash scripts/project/check_ios_upgrade.sh

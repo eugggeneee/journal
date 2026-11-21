@@ -32,14 +32,7 @@ render_all() {
     render "$icon" --export-preview iOS Light 128 128 1 "$out/preview/$id.png" || return 1
   done
 }
-if render_all; then
-  render "$src/AppIcon.icon" --export-preview iOS Dark 128 128 1 "$out/dark.png"
-  for mode in ClearLight ClearDark; do
-    render "$src/AppIcon.icon" --export-preview iOS "$mode" 128 128 1 "$out/$mode.png"
-  done
-  render "$src/AppIcon.icon" --export-preview iOS TintedLight 128 128 1 "$out/tinted.png" ||
-    render "$src/AppIcon.icon" --export-preview iOS Tinted 128 128 1 "$out/tinted.png"
-else
+if ! render_all; then
   # На виртуальных Mac без подходящего Metal-драйвера используем растры iPhone из actool.
   compiled=$(mktemp -d)
   inputs=("$src"/*.icon)
@@ -63,3 +56,17 @@ for name, info in variants.items():
     subprocess.run(['sips', '-s', 'format', 'png', '-z', '128', '128', str(image), '--out', str(out / 'preview' / (name + '.png'))], check=True)
 PY
 fi
+
+# Дополнительные варианты использует сама система. Сохраняем каждый нативный
+# экспорт отдельно, чтобы сбой Metal в одном режиме не терял другие результаты.
+for mode in Dark TintedLight ClearLight ClearDark; do
+  case "$mode" in
+    Dark) name=dark ;;
+    TintedLight) name=tinted ;;
+    *) name=$mode ;;
+  esac
+  if ! render "$src/AppIcon.icon" --export-preview iOS "$mode" 128 128 1 "$out/$name.png"; then
+    echo "::warning::Icon Composer could not flatten $mode on this runner; the native layered asset is verified during the simulator build."
+    echo "$mode: нативный растровый экспорт недоступен на этом сборщике." >> "$GITHUB_STEP_SUMMARY"
+  fi
+done
