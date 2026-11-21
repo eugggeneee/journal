@@ -52,25 +52,28 @@ def render_media(site, stable, temp):
                             prefix+name,'--output',str(dest)],check=True)
         get('manifest.json', temp/'pack.json')
         pack=json.loads((temp/'pack.json').read_text(encoding='utf-8'))
+        def verified(file, dest):
+            get(file, dest)
+            if hashlib.sha256(dest.read_bytes()).hexdigest() != pack['files'][file]:
+                raise ValueError(file)
         if pack['tag']==stable:
             for mode, view, label in VIEWS:
                 file=f'ios/{mode}/{view}-raw.webp'
                 local=temp/(view+'.webp')
-                get(file,local)
-                if hashlib.sha256(local.read_bytes()).hexdigest()!=pack['files'][file]:
-                    raise ValueError(file)
+                verified(file,local)
                 with Image.open(local) as source:
                     im=source.convert('RGB')
                 im.thumbnail((810,1800),Image.Resampling.LANCZOS)
                 im.save(media/(view+'.jpg'),quality=91,subsampling=0,optimize=True)
                 cards.append({'imageURL':BASE_URL+'media/'+view+'.jpg','width':im.width,'height':im.height})
+            cover = 'mockups/day.webp'
+            if cover in pack['files']:
+                verified(cover, temp/'cover.webp')
+                with Image.open(temp/'cover.webp') as image:
+                    ImageOps.fit(image.convert('RGB'), (1200,800), Image.Resampling.LANCZOS).save(
+                        media/'header.jpg', quality=94, optimize=True)
+                return cards
     bg=ImageOps.colorize(Image.linear_gradient('L').resize((1200,800)), '#e9eaff','#bdc9f1').convert('RGBA')
-    if cards:
-        screen=Image.open(media/'home-default.jpg').convert('RGB')
-        screen.thumbnail((440,800),Image.Resampling.LANCZOS)
-        mask=Image.new('L',screen.size)
-        ImageDraw.Draw(mask).rounded_rectangle((0,0,screen.width-1,screen.height-1),48,fill=255)
-        bg.paste(screen,(710,110),mask)
     draw=ImageDraw.Draw(bg)
     brand=Image.open(site/'icon.png').convert('RGBA')
     brand.thumbnail((152,152),Image.Resampling.LANCZOS)

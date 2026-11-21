@@ -36,23 +36,8 @@ def iphone():
     return udid, {'model': name, 'environment': 'iOS Simulator', 'os': version}
 
 
-def android():
-    serial = run('adb', 'get-serialno')
-    physical = run('adb', 'shell', 'wm', 'size')
-    if 'Physical size: 1080x2340' not in physical.splitlines():
-        raise RuntimeError(f'Unexpected native display size: {physical}')
-    # 1080 × 2340 при 450 dpi дают ровно 384 × 832 логических пикселя.
-    run('adb', 'shell', 'wm', 'density', '450')
-    run('adb', 'shell', 'settings', 'put', 'global', 'sysui_demo_allowed', '1')
-    for fields in [['enter'], ['clock','--es','hhmm','1110'], ['battery','--es','level','100','--es','plugged','false']]:
-        run('adb', 'shell', 'am', 'broadcast', '-a', 'com.android.systemui.demo', '-e', 'command', *fields)
-    run('adb', 'reverse', 'tcp:8765', 'tcp:8765')
-    return serial, {'model': 'Samsung Galaxy S26', 'environment': 'Android Emulator (AOSP), профиль Galaxy S26',
-                    'densityDpi': 450, 'os': run('adb', 'shell', 'getprop', 'ro.build.version.release')}
-
-
-def capture(platform, app, output):
-    device, info = iphone() if platform == 'ios' else android()
+def capture(app, output):
+    device, info = iphone()
     output.mkdir(parents=True, exist_ok=True)
     (output/'device.json').write_text(json.dumps(info, ensure_ascii=False), encoding='utf-8')
 
@@ -64,13 +49,9 @@ def capture(platform, app, output):
             dest = output / (self.path[1:] + '.png')
             try:
                 dest.parent.mkdir(exist_ok=True)
-                # Дождаться композиции SurfaceFlinger / SpringBoard после последнего Flutter-кадра.
+                # Дождаться композиции SpringBoard после последнего Flutter-кадра.
                 time.sleep(.25)
-                if platform == 'ios':
-                    run('xcrun', 'simctl', 'io', device, 'screenshot', str(dest))
-                else:
-                    with dest.open('wb') as image:
-                        subprocess.run(['adb','-s',device,'exec-out','screencap','-p'], stdout=image, check=True, timeout=25)
+                run('xcrun', 'simctl', 'io', device, 'screenshot', str(dest))
                 self.send_response(204)
                 self.end_headers()
             except (OSError, subprocess.SubprocessError) as exc:
@@ -87,15 +68,13 @@ def capture(platform, app, output):
     finally:
         server.shutdown()
         server.server_close()
-        if platform == 'ios':
-            subprocess.run(['xcrun','simctl','shutdown',device])
-            subprocess.run(['xcrun','simctl','delete',device])
+        subprocess.run(['xcrun','simctl','shutdown',device])
+        subprocess.run(['xcrun','simctl','delete',device])
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('platform', choices=['ios','android'])
     parser.add_argument('app', type=Path)
     parser.add_argument('output', type=Path)
     args = parser.parse_args()
-    capture(args.platform, args.app.resolve(), args.output.resolve())
+    capture(args.app.resolve(), args.output.resolve())

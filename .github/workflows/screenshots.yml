@@ -41,15 +41,7 @@ jobs:
   capture:
     needs: plan
     if: needs.plan.outputs.ready == 'false'
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: ios
-            runner: macos-15
-          - platform: android
-            runner: ubuntu-latest
-    runs-on: ${{ matrix.runner }}
+    runs-on: macos-15
     timeout-minutes: 55
     env:
       TAG: ${{ needs.plan.outputs.tag }}
@@ -59,11 +51,6 @@ jobs:
         with:
           ref: ${{ needs.plan.outputs.sha }}
           path: stable-app
-      - uses: actions/setup-java@v5
-        if: matrix.platform == 'android'
-        with:
-          distribution: temurin
-          java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -72,36 +59,19 @@ jobs:
         run: |
           set -euo pipefail
           cd stable-app
-          flutter create --platforms=${{ matrix.platform }} --org eugggeneee --project-name journal .
-          if [[ "${{ matrix.platform }}" == ios ]]; then python3 scripts/icons/setup_ios.py; else python3 scripts/icons/setup_android.py; fi
+          flutter create --platforms=ios --org eugggeneee --project-name journal .
+          python3 scripts/icons/setup_ios.py
           cd ..
           python3 scripts/screenshots/prepare.py stable-app
           cd stable-app
           flutter pub get
       - name: Снять экраны iPhone
-        if: matrix.platform == 'ios'
         run: |
           bash scripts/icons/select_xcode.sh
-          python3 scripts/screenshots/record.py ios stable-app "$RUNNER_TEMP/frames"
-      - name: Включить ускорение эмулятора
-        if: matrix.platform == 'android'
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-      - uses: reactivecircus/android-emulator-runner@v2
-        if: matrix.platform == 'android'
-        with:
-          api-level: 35
-          arch: x86_64
-          target: google_apis
-          profile: pixel_5
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -skin 1080x2340
-          disable-animations: true
-          script: python3 scripts/screenshots/record.py android stable-app "$RUNNER_TEMP/frames"
+          python3 scripts/screenshots/record.py stable-app "$RUNNER_TEMP/frames"
       - uses: actions/upload-artifact@v5
         with:
-          name: capture-${{ matrix.platform }}
+          name: capture-ios
           path: ${{ runner.temp }}/frames
           retention-days: 3
           if-no-files-found: error
@@ -123,12 +93,8 @@ jobs:
       - uses: actions/download-artifact@v5
         with:
           name: capture-ios
-          path: frames/ios
-      - uses: actions/download-artifact@v5
-        with:
-          name: capture-android
-          path: frames/android
-      - name: Собрать и проверить обе версии каждого кадра
+          path: frames
+      - name: Собрать и проверить кадры iPhone, рамки и макеты
         run: |
           python3 -m pip install --quiet Pillow
           python3 scripts/screenshots/pack.py build frames "$RUNNER_TEMP/new-pack" stable-app "$TAG" "$SOURCE_SHA"
