@@ -34,26 +34,34 @@ render_all() {
 }
 if ! render_all; then
   # На виртуальных Mac без подходящего Metal-драйвера используем растры iPhone из actool.
-  compiled=$(mktemp -d)
-  inputs=("$src"/*.icon)
-  flags=()
-  for icon in "$src"/Icon_*.icon; do flags+=(--alternate-app-icon "$(basename "$icon" .icon)"); done
-  xcrun actool "${inputs[@]}" --compile "$compiled" --platform iphoneos --minimum-deployment-target 13.0 \
-    --target-device iphone --app-icon AppIcon "${flags[@]}" --standalone-icon-behavior all \
-    --output-partial-info-plist "$compiled/Info.plist"
-  python3 - "$compiled" "$out" <<'PY'
-import pathlib, plistlib, subprocess, sys
-src, out = map(pathlib.Path, sys.argv[1:])
-icons = plistlib.loads((src / 'Info.plist').read_bytes())['CFBundleIcons']
-variants = {'default': icons['CFBundlePrimaryIcon'], **{k.removeprefix('Icon_'): v for k, v in icons['CFBundleAlternateIcons'].items()}}
-for name, info in variants.items():
-    candidates = [p for base in info['CFBundleIconFiles'] for p in src.glob(base + '*.png')]
-    if not candidates:
-        raise RuntimeError(f'{name}: {info}, {list(src.iterdir())}')
-    image = max(candidates, key=lambda p: int(subprocess.check_output(['sips', '-g', 'pixelWidth', str(p)], text=True).split()[-1]))
-    if name == 'default':
-        subprocess.run(['sips', '-s', 'format', 'png', str(image), '--out', str(out / 'logo.png')], check=True)
-    subprocess.run(['sips', '-s', 'format', 'png', '-z', '128', '128', str(image), '--out', str(out / 'preview' / (name + '.png'))], check=True)
+  python3 - "$src" "$out" <<'PY'
+from pathlib import Path
+import subprocess, sys, tempfile
+
+src, out = map(Path, sys.argv[1:])
+for icon in sorted(src.glob('*.icon')):
+    name = icon.stem
+    key = 'default' if name == 'AppIcon' else name.removeprefix('Icon_')
+    preview = out / 'preview' / (key + '.png')
+    logo = out / 'logo.png'
+    if preview.is_file() and (key != 'default' or logo.is_file()):
+        continue
+    # actool экспортирует отдельные PNG только для основного значка каталога.
+    with tempfile.TemporaryDirectory() as directory:
+        dest = Path(directory)
+        subprocess.run(['xcrun', 'actool', str(icon), '--compile', directory, '--platform', 'iphoneos',
+                        '--minimum-deployment-target', '13.0', '--target-device', 'iphone',
+                        '--app-icon', name, '--standalone-icon-behavior', 'all',
+                        '--output-partial-info-plist', str(dest / 'Info.plist')], check=True, timeout=90)
+        images = list(dest.glob('*.png'))
+        if not images:
+            raise RuntimeError(f'actool не экспортировал {name}')
+        image = max(images, key=lambda p: int(subprocess.check_output(
+            ['sips', '-g', 'pixelWidth', str(p)], text=True).split()[-1]))
+        if key == 'default' and not logo.exists():
+            subprocess.run(['sips', '-s', 'format', 'png', str(image), '--out', str(logo)], check=True)
+        subprocess.run(['sips', '-s', 'format', 'png', '-z', '128', '128', str(image),
+                        '--out', str(preview)], check=True)
 PY
 fi
 
