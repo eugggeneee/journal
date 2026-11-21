@@ -1,17 +1,10 @@
-# Journal v1.0.1
+# Journal v1.0.1 · iOS
 
-Группа 0000. Все записи, аудитории и преподаватели вымышлены.
+iPhone 17 · iOS Simulator · iOS 26.2 · 1206 × 2622 px.
+Группа 0000. Все записи и имена вымышлены.
 
-## iPhone 17
+[Светлая тема](ios/light/) · [Тёмная тема](ios/dark/) · [Рамки PNG](frames/) · [Фирменные макеты](mockups/)
 
-iOS Simulator · 26.2 · 1206 × 2622 px.
+raw — исходный кадр. framed-light и framed-dark — светлый и тёмный корпус на прозрачном фоне.
 
-[Светлая тема](ios/light/) · [Тёмная тема](ios/dark/)
-
-## Samsung Galaxy S26
-
-Android Emulator (AOSP), профиль Galaxy S26 · 15 · 1080 × 1920 px.
-
-[Светлая тема](android/light/) · [Тёмная тема](android/dark/)
-
-Файлы raw содержат экран устройства. В framed добавлена самостоятельно нарисованная рамка модели.
+![Journal — ход дня](mockups/day.webp)
