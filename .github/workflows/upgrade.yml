@@ -20,7 +20,7 @@ jobs:
       PREVIOUS: ${{ inputs.previous }}
       TARGET: ${{ inputs.target }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Скачать опубликованные APK и проверить суммы
         env:
           GH_TOKEN: ${{ github.token }}
