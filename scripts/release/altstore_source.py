@@ -1,4 +1,4 @@
-"""Собирает каталог AltStore Classic и SideStore из опубликованного стабильного IPA."""
+"""Собирает каталог AltStore Classic и SideStore из опубликованного IPA."""
 
 import hashlib
 import json
@@ -12,22 +12,25 @@ BUNDLE_ID = 'eugggeneee.journal'
 BASE_URL = 'https://eugggeneee.github.io/journal/ios/'
 
 
-def make_source(release: dict, ipa: Path) -> dict:
+def make_source(release: dict, ipa: Path, *, beta: bool = False) -> dict:
     tag = release['tag_name']
-    if release['draft'] or release['prerelease'] or not re.fullmatch(r'v\d+\.\d+\.\d+', tag):
-        raise ValueError('Каталог принимает только опубликованные стабильные версии')
+    match = re.fullmatch(r'v(\d+\.\d+\.\d+)(?:-(beta|rc)\.[1-9]\d*)?', tag)
+    if (not match or release['draft'] or bool(match[2]) != release['prerelease']
+            or (release['prerelease'] and not beta)):
+        raise ValueError('Тег и канал выпуска не совпадают')
     name = f'Journal-{tag}-ios.ipa'
     asset = next(a for a in release['assets'] if a['name'] == name)
     if ipa.stat().st_size != asset['size'] or 'sha256:' + hashlib.sha256(ipa.read_bytes()).hexdigest() != asset['digest']:
         raise ValueError('IPA отличается от файла релиза')
     with zipfile.ZipFile(ipa) as archive:
         info = plistlib.loads(archive.read('Payload/Runner.app/Info.plist'))
-    if info['CFBundleIdentifier'] != BUNDLE_ID or info['CFBundleShortVersionString'] != tag[1:]:
+    if info['CFBundleIdentifier'] != BUNDLE_ID or info['CFBundleShortVersionString'] != match[1]:
         raise ValueError('Идентификатор приложения или версия IPA не совпадают с релизом')
 
     version = {
         'version': info['CFBundleShortVersionString'],
         'buildVersion': info['CFBundleVersion'],
+        'marketingVersion': tag[1:],
         'date': release['published_at'],
         'downloadURL': asset['browser_download_url'],
         'size': asset['size'],
@@ -40,7 +43,11 @@ def make_source(release: dict, ipa: Path) -> dict:
         'name': 'Journal',
         'bundleIdentifier': BUNDLE_ID,
         'developerName': 'eugggeneee',
-        'localizedDescription': 'Дневник студента МГТЭК. Расписание, оценки, пропуски и задания с доступом офлайн.',
+        'subtitle': 'Расписание, оценки и пропуски МГТЭК',
+        'category': 'utilities',
+        'tintColor': '#5364A4',
+        'localizedDescription': 'Когда начнётся следующая пара? Откройте главную, чтобы увидеть обратный отсчёт, кабинет и задания. '
+                                'Оценки, пропуски и пометки привязаны к конкретной паре. Загруженное расписание доступно офлайн.',
         'iconURL': BASE_URL + 'icon.png',
         'versions': [version],
         # В release.yml Journal собирается без подписи и использует только основной пакет.
@@ -49,6 +56,12 @@ def make_source(release: dict, ipa: Path) -> dict:
     return {
         'name': 'Journal',
         'identifier': BUNDLE_ID + '.source',
+        'subtitle': 'Студенческий дневник МГТЭК',
+        'description': 'Официальный источник Journal для iPhone и iPad.',
+        'tintColor': '#5364A4',
+        'iconURL': BASE_URL + 'icon.png',
+        'headerURL': BASE_URL + 'media/header.jpg',
+        'featuredApps': [BUNDLE_ID],
         'sourceURL': BASE_URL + 'source.json',
         'website': BASE_URL,
         'apps': [app],

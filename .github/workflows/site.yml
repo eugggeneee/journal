@@ -6,9 +6,10 @@ on:
       - 'site/**'
       - 'docs/logo.png'
       - 'scripts/release/altstore_source.py'
+      - 'scripts/release/build_catalog.py'
       - '.github/workflows/site.yml'
   workflow_run:
-    workflows: [Release]
+    workflows: [Release, 'Пак скриншотов Journal']
     types: [completed]
   workflow_dispatch:
 
@@ -21,22 +22,22 @@ concurrency:
 
 jobs:
   build:
-    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && !contains(github.event.workflow_run.head_branch, '-'))
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Собрать источник из опубликованного IPA
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/journal-ipa-metadata
+          key: catalog-metadata-${{ github.run_id }}
+          restore-keys: catalog-metadata-
+      - name: Собрать стабильный и тестовый каталоги
         env:
           GH_TOKEN: ${{ github.token }}
+          CATALOG_CACHE: ${{ runner.temp }}/journal-ipa-metadata
         run: |
-          gh api "repos/$GITHUB_REPOSITORY/releases/latest" > "$RUNNER_TEMP/release.json"
-          tag=$(jq -er '.tag_name' "$RUNNER_TEMP/release.json")
-          ipa="Journal-$tag-ios.ipa"
-          gh release download "$tag" --pattern "$ipa" --dir "$RUNNER_TEMP"
-          git fetch --depth=1 origin "refs/tags/$tag:refs/tags/$tag"
-          git show "$tag:docs/logo.png" > site/ios/icon.png
-          python3 scripts/release/altstore_source.py "$RUNNER_TEMP/release.json" "$RUNNER_TEMP/$ipa" site/ios/source.json
-          sed -i "s|releases/latest#assets|releases/download/$tag/$ipa|" site/ios/index.html
+          python3 -m pip install --quiet Pillow
+          python3 scripts/release/build_catalog.py
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site

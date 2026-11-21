@@ -38,7 +38,16 @@ Android и iOS. Без рекламы и аккаунтов, работает о
 | iPhone, iPad | Источник Journal | [Добавить в AltStore Classic или SideStore](https://eugggeneee.github.io/journal/ios/), затем установить Journal из каталога |
 | iPhone, iPad | Файл IPA | [Скачать IPA](https://eugggeneee.github.io/journal/ios/#ipa) и выбрать файл в **My Apps → +** в AltStore Classic или SideStore. На компьютере можно использовать [Sideloadly](https://sideloadly.io) |
 
-Источник добавляется один раз. Когда выйдет следующая стабильная версия, откройте **My Apps** в магазине и нажмите **Update** у Journal. Для ручного добавления вставьте в **Sources → +** адрес `https://eugggeneee.github.io/journal/ios/source.json`.
+**На iPhone начните с AltStore Classic.** Установите магазин с помощью AltServer на компьютере, затем добавьте источник один раз. Новая стабильная версия появится в **My Apps → Update**. С бесплатной учётной записью Apple подпись действует семь дней, для продления устройству нужен доступ к AltServer. [Скачать AltServer](https://altstore.io/download)
+
+| Как установить | Что сделать |
+|---|---|
+| Тестовые версии на iOS | [Подписаться на беты и RC](https://eugggeneee.github.io/journal/ios/#beta). Оба канала устанавливают один Journal с тем же идентификатором приложения. |
+| SideStore на iOS | Пройдите первоначальную настройку, затем добавьте источник по ссылке выше. SideStore умеет продлевать подпись на устройстве через локальное VPN-подключение. [Инструкция SideStore](https://docs.sidestore.io/docs/installation/install.html) |
+| IPA через компьютер | Скачайте IPA нужной версии из [GitHub Releases](https://github.com/eugggeneee/journal/releases), подключите iPhone и перетащите файл в Sideloadly. Поддерживаются Windows, macOS и бесплатная учётная запись Apple. [Sideloadly](https://sideloadly.io/) |
+| Обновления Android через Obtainium | [Откройте Journal в Obtainium](https://apps.obtainium.imranr.dev/redirect?r=obtainium%3A%2F%2Fadd%2Fhttps%3A%2F%2Fgithub.com%2Feugggeneee%2Fjournal) или вставьте адрес репозитория в **Add App**, выберите APK и оставьте приём предварительных версий выключенным для стабильного канала. [Официальный Obtainium](https://github.com/ImranR98/Obtainium) |
+
+Для ручного добавления в **Sources → +** используйте [стабильный источник](https://eugggeneee.github.io/journal/ios/source.json) или [тестовый источник](https://eugggeneee.github.io/journal/ios/beta.json). Файлы обоих каналов загружаются из релизов этого репозитория.
 
 <details>
 <summary>Проверка файла</summary>
@@ -49,6 +58,10 @@ gh attestation verify Journal-vX.Y.Z-android.apk --repo eugggeneee/journal
 ```
 
 </details>
+
+## Скриншоты интерфейса
+
+[Галерея последнего стабильного релиза](https://github.com/eugggeneee/journal/tree/screenshots/pack) содержит обе платформы, светлые и тёмные экраны и главную во всех цветах. На каждом снимке вымышленные данные группы 0000. Доступны исходники и варианты с рамкой устройства. [Как собрать новый пак](docs/screenshots/README.md)
 
 ## Конфиденциальность
 

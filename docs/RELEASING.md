@@ -85,7 +85,9 @@ gh attestation verify Journal-vX.Y.Z-android.apk --repo eugggeneee/journal
 
 Сборка без подписи Apple, платный аккаунт разработчика не нужен. Подпись ставят AltStore или Sideloadly при установке. App Store и TestFlight таким способом недоступны.
 
-После успешного стабильного выпуска workflow «Каталог Journal для iOS» публикует [источник AltStore Classic и SideStore](https://eugggeneee.github.io/journal/ios/source.json) на GitHub Pages. Он скачивает IPA последнего стабильного релиза, сверяет SHA-256 и читает идентификатор, версию, сборку, минимальную iOS и разрешения из пакета. Проверить результат можно на [странице установки](https://eugggeneee.github.io/journal/ios/). Для повторной публикации каталога запустите этот workflow вручную на `main`.
+После успешного выпуска workflow «Каталог Journal для iOS» обновляет [стабильный источник](https://eugggeneee.github.io/journal/ios/source.json) и [канал предварительных версий](https://eugggeneee.github.io/journal/ios/beta.json). Основной источник берёт последний стабильный IPA. Отдельная подписка включает беты, RC и последнюю стабильную сборку в порядке версий. Номер сборки и числовая версия берутся из Info.plist, полное обозначение из тега показывается через marketingVersion. Для каждого IPA проверяются размер, SHA-256 и идентификатор приложения.
+
+После публикации [пакета скриншотов](screenshots/README.md) каталог забирает кадры с совпадающим стабильным тегом и проверяет их SHA-256. Для повторной публикации страницы установки запустите workflow каталога на ветке main.
 
 ## Если релиз содержит ошибку
 
