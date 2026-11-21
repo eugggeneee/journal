@@ -69,7 +69,7 @@ jobs:
         run: |
           bash scripts/icons/select_xcode.sh
           python3 scripts/screenshots/record.py stable-app "$RUNNER_TEMP/frames"
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: capture-ios
           path: ${{ runner.temp }}/frames
