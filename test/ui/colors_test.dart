@@ -77,6 +77,9 @@ void main() {
     for (final theme in AppPalette.choices) {
       for (final brightness in Brightness.values) {
         final cs = AppTheme.themeFor(theme.id, brightness).colorScheme;
+        if (brightness == Brightness.dark) {
+          expect(cs.primaryContainer.computeLuminance(), lessThan(.25), reason: theme.id);
+        }
         for (final tone in [
           Tone(cs.primaryContainer, cs.onPrimaryContainer),
           Tone(cs.secondaryContainer, cs.onSecondaryContainer),

@@ -18,7 +18,7 @@ env:
 permissions:
   contents: read
 concurrency:
-  group: stable-screenshot-pack
+  group: screenshot-pack-${{ inputs.channel }}
   cancel-in-progress: false
 
 jobs:
@@ -89,6 +89,9 @@ jobs:
           if-no-files-found: error
   publish:
     needs: [plan, capture]
+    concurrency:
+      group: publish-screenshot-pack
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -143,5 +146,6 @@ jobs:
             exit 0
           fi
           git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "docs(screenshots): обновить галерею $TAG"
+          [[ "$(python3 "$GITHUB_WORKSPACE/scripts/screenshots/latest.py" "$CHANNEL")" == "$TAG" ]]
           git push origin HEAD:refs/heads/screenshots
           echo "[Готовый пак $TAG](https://github.com/$GITHUB_REPOSITORY/tree/screenshots/pack)" >> "$GITHUB_STEP_SUMMARY"

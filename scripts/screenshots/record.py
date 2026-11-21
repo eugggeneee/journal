@@ -36,6 +36,8 @@ def iphone():
     subprocess.run(['xcrun', 'simctl', 'bootstatus', udid, '-b'], timeout=360, check=True)
     run('xcrun', 'simctl', 'spawn', udid, 'defaults', 'write', 'NSGlobalDomain', 'AppleLanguages', '-array', 'ru', 'en')
     run('xcrun', 'simctl', 'spawn', udid, 'defaults', 'write', 'NSGlobalDomain', 'AppleLocale', 'ru_BY')
+    os.environ['TZ'] = 'Europe/Minsk'
+    os.environ['SIMCTL_CHILD_TZ'] = 'Europe/Minsk'
     run('xcrun', 'simctl', 'status_bar', udid, 'override', '--time', '11:10', '--batteryState',
         'discharging', '--batteryLevel', '100', '--cellularBars', '4', '--wifiBars', '3')
     return udid, {'model': name, 'environment': 'iOS Simulator', 'os': version}

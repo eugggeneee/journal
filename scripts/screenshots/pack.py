@@ -19,6 +19,20 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def recipe_hashes(scenes):
+    tool = Path(__file__).resolve().parent
+    spec = hashlib.sha256()
+    for file in [tool / 'pack.py', tool / 'mockups.py', tool / 'record.py', tool / 'prepare.py',
+                 *(FRAMES / f'iphone-{finish}.png' for finish in FINISHES)]:
+        data = file.read_bytes()
+        if file.suffix == '.py':
+            data = data.replace(b'\r\n', b'\n')
+        spec.update(hashlib.sha256(data).digest())
+    spec.update(json.dumps(scenes).encode())
+    fixture = (tool / 'scenes.dart.in').read_text(encoding='utf-8')
+    return {'specSHA256': spec.hexdigest(), 'fixtureSHA256': hashlib.sha256(fixture.encode()).hexdigest()}
+
+
 def names(ids):
     return sorted(SCENES + [f'home-{key}' for key in ids] + [f'welcome-{i}' for i in range(1, 6)])
 
@@ -38,6 +52,7 @@ def complete(root, tag, scenes, commit):
         expected = media_names(scenes)
         return (manifest['tag'] == tag and manifest.get('commit') == commit
                 and manifest.get('channel') == os.environ['CHANNEL']
+                and all(manifest.get(k) == v for k, v in recipe_hashes(scenes).items())
                 and manifest.get('spec') == 'gallery-v1' and manifest.get('fixture') == 'trade-0000-v1' and set(manifest['devices']) == {'ios'}
                 and manifest['devices']['ios'] == {'model': 'iPhone 17', 'environment': 'iOS Simulator',
                     'os': '26.2', 'width': 1206, 'height': 2622}
@@ -53,6 +68,8 @@ def make(source, output, app, tag, commit):
     ids = json.loads((app / 'assets/icons/icons.json').read_text(encoding='utf-8'))
     scenes = names(ids)
     device = json.loads((source / 'device.json').read_text(encoding='utf-8'))
+    if len(scenes) != 57 or len(set(scenes)) != 57:
+        raise ValueError('gallery-v1 требует 57 различных сцен')
     size = None
     for mode in ('light', 'dark'):
         folder = source / mode
@@ -72,9 +89,13 @@ def make(source, output, app, tag, commit):
 
     device['width'], device['height'] = size
     shutil.copytree(FRAMES, output / 'frames')
+    for finish in FINISHES:
+        with Image.open(output / 'frames' / f'iphone-{finish}.png') as frame:
+            if frame.mode != 'RGBA' or frame.getpixel((0, 0))[3] or frame.getchannel('A').getextrema() != (0, 255):
+                raise ValueError(f'Рамка {finish} должна иметь прозрачные поля')
     posters(output, app / 'docs/logo.png')
     files = {key: digest(output / key) for key in sorted(media_names(scenes))}
-    manifest = {'spec': 'gallery-v1', 'fixture': 'trade-0000-v1', 'channel': os.environ['CHANNEL'], 'tag': tag, 'commit': commit, 'group': '0000', 'scenes': scenes,
+    manifest = {**recipe_hashes(scenes), 'spec': 'gallery-v1', 'fixture': 'trade-0000-v1', 'channel': os.environ['CHANNEL'], 'tag': tag, 'commit': commit, 'group': '0000', 'scenes': scenes,
                 'devices': {'ios': device}, 'files': files}
     (output / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     lines = [f'# Journal {tag} · iOS', '',

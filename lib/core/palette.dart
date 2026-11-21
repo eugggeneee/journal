@@ -56,8 +56,12 @@ class AppPalette {
           seedColor: c.seed,
           brightness: b,
           // Светлая заливка сохраняет оттенок выбранного образца даже у жёлтой и лаймовой тем.
-          primaryContainer: b == Brightness.light ? Color.lerp(c.seed, Colors.white, .74) : null,
-          onPrimaryContainer: b == Brightness.light && c.mono ? Colors.black : null,
+          primaryContainer: b == Brightness.light
+              ? Color.lerp(c.seed, Colors.white, .74)
+              : c.mono ? Colors.grey.shade800 : null,
+          onPrimaryContainer: c.mono
+              ? (b == Brightness.light ? Colors.black : Colors.grey.shade100)
+              : null,
           dynamicSchemeVariant: c.mono ? DynamicSchemeVariant.monochrome : DynamicSchemeVariant.tonalSpot,
         ),
       );

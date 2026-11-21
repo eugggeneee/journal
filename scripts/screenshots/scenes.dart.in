@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -48,7 +47,8 @@ class DemoRepo extends ScheduleRepo {
 }
 
 Future<AppStore> fixture() async {
-  SharedPreferences.setMockInitialValues({'release.checked': DateTime.now().millisecondsSinceEpoch});
+  SharedPreferences.setMockInitialValues({'data_v1': '{"version":3,"settings":{"followThemeIcon":false}}',
+    'release.checked': DateTime.now().millisecondsSinceEpoch});
   final store = await AppStore.load();
   store.settings
     ..group = '0000'
@@ -94,7 +94,6 @@ Future<AppStore> fixture() async {
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets('Каталог экранов Journal', (tester) async {
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     final store = await fixture();
     final repo = DemoRepo(store);
     final client = HttpClient();
