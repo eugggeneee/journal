@@ -7,7 +7,7 @@ import subprocess
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from threading import Thread
+from threading import Event, Thread
 
 
 def run(*args):
@@ -53,8 +53,15 @@ def capture(platform, app, output):
     output.mkdir(parents=True, exist_ok=True)
     (output/'device.json').write_text(json.dumps(info, ensure_ascii=False), encoding='utf-8')
 
+    completed = Event()
+
     class Capture(BaseHTTPRequestHandler):
         def do_POST(self):
+            if self.path == '/complete':
+                self.send_response(204)
+                self.end_headers()
+                completed.set()
+                return
             if not re.fullmatch(r'/(light|dark)/[A-Za-z0-9-]+', self.path):
                 self.send_error(400)
                 return
@@ -77,9 +84,27 @@ def capture(platform, app, output):
     thread = Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        subprocess.run(['flutter','test','--no-pub','-d',device,'--reporter','expanded',
-                        '--dart-define=JOURNAL_VERSION='+os.environ['TAG'][1:],
-                        'integration_test/journal_screens_test.dart'], cwd=app, check=True, timeout=1800)
+        target = 'integration_test/journal_screens_test.dart'
+        version = '--dart-define=JOURNAL_VERSION=' + os.environ['TAG'][1:]
+        if platform == 'android':
+            # Launch the published app's real alias directly. Capturing the display
+            # needs neither a Dart debugger connection nor a forwarded VM-service port.
+            subprocess.run(['flutter','build','apk','--debug','--no-pub',version,'--target',target],
+                           cwd=app,check=True,timeout=1200)
+            run('adb','-s',device,'install','-r',str(app/'build/app/outputs/flutter-apk/app-debug.apk'))
+            run('adb','-s',device,'logcat','-c')
+            run('adb','-s',device,'shell','am','start','-W','-n','eugggeneee.journal/.Icon_default')
+            for _ in range(60):
+                if completed.wait(12):
+                    break
+                logs = run('adb','-s',device,'logcat','-d','-s','flutter:I','AndroidRuntime:E')
+                if 'Some tests failed' in logs or 'FATAL EXCEPTION' in logs:
+                    raise RuntimeError(logs[-7000:])
+            else:
+                raise TimeoutError('Android did not finish capturing: ' + logs[-7000:])
+        else:
+            subprocess.run(['flutter','test','--no-pub','-d',device,'--reporter','expanded',version,target],
+                           cwd=app,check=True,timeout=1800)
     finally:
         server.shutdown()
         server.server_close()
