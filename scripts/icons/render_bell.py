@@ -92,8 +92,13 @@ for theme in themes:
         layer = paint(mask, color)
         layer.save(ios / 'Assets' / (name + '.png'))
         picture.alpha_composite(layer)
+        dark = blend(seed, (255, 255, 255), .72 if name == 'lip' else .94)
+        mono = (223, 223, 223) if name == 'lip' else (255, 255, 255)
         layers.append({'image-name': name + '.png', 'name': name, 'glass': False,
-                       'fill-specializations': [{'appearance':'dark','value':{'solid':srgb(blend(seed, (255, 255, 255), .72 if name == 'lip' else .94))}}]})
+                       'fill-specializations': [
+                           {'appearance': 'dark', 'value': {'solid': srgb(dark)}},
+                           {'appearance': 'tinted', 'value': {'solid': srgb(mono)}},
+                       ]})
     doc['groups'] = [{'layers': layers, 'translucency': {'enabled': False, 'value': .10}}]
     (ios / 'icon.json').write_text(json.dumps(doc, indent=2) + '\n', encoding='utf-8', newline='\n')
     suffix = re.sub(r'[A-Z]', lambda m: '_' + m[0].lower(), key)
