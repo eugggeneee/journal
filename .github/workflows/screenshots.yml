@@ -32,7 +32,7 @@ jobs:
       ready: ${{ steps.release.outputs.ready }}
       sha: ${{ steps.release.outputs.sha }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - id: release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -61,8 +61,8 @@ jobs:
     env:
       TAG: ${{ needs.plan.outputs.tag }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.plan.outputs.sha }}
           path: capture-app
@@ -105,8 +105,8 @@ jobs:
       SOURCE_SHA: ${{ needs.plan.outputs.sha }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.plan.outputs.sha }}
           path: capture-app

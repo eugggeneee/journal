@@ -37,7 +37,7 @@ jobs:
       version: ${{ steps.v.outputs.version }}
       ios_version: ${{ steps.v.outputs.ios_version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ format('refs/tags/{0}', inputs.tag || github.ref_name) }}
       - id: v
@@ -60,7 +60,7 @@ jobs:
     needs: meta
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.meta.outputs.sha }}
       - uses: subosito/flutter-action@v2
@@ -78,7 +78,7 @@ jobs:
     needs: [meta, test]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.meta.outputs.sha }}
       - uses: actions/setup-java@v5
@@ -165,7 +165,7 @@ jobs:
     needs: [meta, test]
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.meta.outputs.sha }}
       - uses: subosito/flutter-action@v2
@@ -229,7 +229,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       TAG: ${{ needs.meta.outputs.tag }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.meta.outputs.sha }}
           fetch-depth: 0
