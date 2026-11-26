@@ -37,7 +37,6 @@ def framed(raw, finish):
     return Image.alpha_composite(display, shell)
 
 
-@lru_cache(maxsize=12)
 @lru_cache(maxsize=48)
 def font(size, weight='black'):
     root = Path(os.environ['JOURNAL_FONT_DIR'])
@@ -79,13 +78,15 @@ def poster_path(name, mode):
     return f'mockups/{name}{suffix}.webp'
 
 
-def ripple(draw, center, radius, amplitude, petals, fill):
+def sweep(draw, size, baseline, rise, fill):
+    """A broad ascending curve, shared by the three phones on the cover."""
+    width, height = size
     points = []
-    for step in range(720):
-        theta = math.tau * step / 720
-        r = radius + amplitude * math.cos(theta * petals)
-        points.append((center[0] + r * math.cos(theta), center[1] + r * math.sin(theta)))
-    draw.polygon(points, fill=fill)
+    for x in range(0, width + 1, 4):
+        phase = math.pi * x / width
+        y = baseline - rise * (.5 - .5 * math.cos(phase))
+        points.append((x, round(y)))
+    draw.polygon([*points, (width, height), (0, height)], fill=fill)
 
 
 def posters(pack, logo, channel):
@@ -108,36 +109,46 @@ def posters(pack, logo, channel):
                 phone(canvas, pack, mode + '/' + scene, mode, center, h, angle)
             def line(x, y, text, size, color=ink, weight='black'):
                 draw.text((x, y), text, font=font(size, weight), fill=color, anchor='lt')
+            strong = scheme['onPrimaryContainer'] if mode == 'light' else field
+            mid = scheme['primaryContainer'] if mode == 'light' else scheme['secondaryContainer']
             if name == 'overview':
-                # Two broad, concentric turns hold the staggered devices together.
-                draw.rounded_rectangle((728, 114, 1970, 1100), radius=420, fill=quiet)
-                draw.rounded_rectangle((798, 179, 1935, 1035), radius=355, fill=field)
-                line(76, 337, 'Дневник', 153)
-                line(82, 506, 'студента', 130, secondary, 'regular')
-                line(76, 678, 'МГТЭК', 145, accent)
-                device('schedule', (939, 688), 644, 4)
-                device('grades', (1560, 612), 648, -4)
-                device('home-default', (1246, 610), 878)
+                # A continuous, rising horizon links the schedule, live day and journal.
+                sweep(draw, size, 873, 400, mid)
+                sweep(draw, size, 1033, 431, strong)
+                line(73, 183, 'Дневник студента', 123)
+                line(1260, 202, 'МГТЭК', 113, accent)
+                device('schedule', (449, 803), 665, 7)
+                device('grades', (1364, 729), 716, -7)
+                device('home-default', (899, 760), 826)
             elif name == 'day':
-                ripple(draw, (1196, 500), 548, 22, 8, quiet)
-                ripple(draw, (1196, 500), 484, 22, 8, field)
-                line(65, 275, 'Ход', 257)
-                line(176, 517, 'дня', 240, accent, 'bolditalic')
-                device('home-default', (1182, 500), 842, -3)
+                # Minute ticks belong to the countdown and stay behind the phone.
+                cx, cy, radius = 1262, 590, 585
+                draw.ellipse((cx-radius, cy-radius, cx+radius, cy+radius), fill=mid)
+                draw.pieslice((cx-radius+68, cy-radius+68, cx+radius-68, cy+radius-68),
+                              106, 278, fill=strong)
+                for angle in range(117, 270, 12):
+                    rad = math.radians(angle)
+                    inside = radius - (58 if (angle - 117) % 36 == 0 else 35)
+                    pts = [(cx + r * math.cos(rad), cy + r * math.sin(rad)) for r in (inside, radius-18)]
+                    draw.line(pts, fill=scheme['onPrimaryContainer'], width=6)
+                line(64, 241, 'Ход', 273)
+                line(173, 534, 'дня', 239, accent, 'bolditalic')
+                device('home-default', (1159, 506), 872, -4)
             elif name == 'schedule':
-                # Three quiet blocks follow the same cadence as lessons in the timetable.
-                for i, (left, right, color) in enumerate([
-                        (64, 928, quiet), (224, 1136, field), (64, 928, quiet)]):
-                    top = 474 + 280 * i
-                    draw.rounded_rectangle((left, top, right, top + 208), radius=104, fill=color)
-                line(63, 184, 'Расписание', 160)
-                device('schedule', (600, 903), 1018)
+                # Broad folded bands cross the page behind the vertical timetable.
+                for top, color in ((646, quiet), (811, mid), (975, strong)):
+                    draw.polygon([(0, top), (1200, top-330), (1200, 1500), (0, 1500)], fill=color)
+                line(63, 196, 'Расписание', 165)
+                device('schedule', (629, 908), 1024, -4)
             else:
-                draw.rounded_rectangle((680, 114, 1209, 1128), radius=264, fill=quiet)
-                draw.rounded_rectangle((1050, 234, 1576, 1280), radius=263, fill=field)
-                line(58, 451, 'Отметки', 133)
-                line(72, 627, 'и пропуски', 102, secondary, 'regular')
-                device('grades', (938, 595), 782, 2)
-                device('absences', (1315, 813), 782, -2)
+                # Two adjoining leaves of a diary, with a continuous centre seam.
+                draw.rounded_rectangle((62, 343, 1538, 1304), radius=132, fill=mid)
+                draw.rounded_rectangle((800, 343, 1538, 1304), radius=132, fill=strong)
+                draw.rectangle((800, 475, 920, 1304), fill=strong)
+                draw.ellipse((698, 1177, 898, 1377), fill=paper)
+                line(63, 175, 'Отметки', 142)
+                line(732, 198, 'и пропуски', 115, accent, 'regular')
+                device('grades', (465, 820), 827, 3)
+                device('absences', (1134, 819), 827, -3)
             brand(canvas, icon, (72, 67), ink, field, scheme['onPrimaryContainer'], channel == 'beta')
             canvas.save(pack / poster_path(name, mode), quality=94, method=4)
