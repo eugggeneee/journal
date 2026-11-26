@@ -22,7 +22,7 @@ def digest(path):
 def recipe_hashes(scenes):
     tool = Path(__file__).resolve().parent
     spec = hashlib.sha256()
-    for file in [tool / 'pack.py', tool / 'mockups.py', tool / 'record.py', tool / 'prepare.py',
+    for file in [tool / 'pack.py', tool / 'mockups.py', tool / 'record.py', tool / 'prepare.py', tool.parent / 'icons/artwork_palettes.json',
                  *(FRAMES / f'iphone-{finish}.png' for finish in FINISHES)]:
         data = file.read_bytes()
         if file.suffix == '.py':

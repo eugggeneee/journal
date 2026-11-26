@@ -1,13 +1,14 @@
 """Собрать значки и палитры из bell.svg и palette.json. Требуются Pillow и resvg-py."""
 
 import json
+import math
 import re
 from io import BytesIO
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
 import resvg_py
-from PIL import Image, ImageDraw, ImageOps
+from PIL import Image, ImageColor, ImageDraw, ImageOps
 
 root = Path('assets/icons')
 svg = ET.parse(root / 'bell.svg').getroot()
@@ -22,10 +23,6 @@ def paint(mask, color):
     image = Image.new('RGBA', mask.size, color)
     image.putalpha(mask)
     return image
-
-
-def blend(a, b, fraction):
-    return tuple(round(x + (y - x) * fraction) for x, y in zip(a, b))
 
 
 def srgb(rgb):
@@ -69,37 +66,60 @@ for part in ('dome', 'lip'):
 body.crop(bounds).save(root / 'bell.png')
 paint(masks['clapper'], 'white').crop(bounds).save(root / 'clapper.png')
 silhouette.resize((432,432), resize).save(drawable / 'ic_mono_shared.png')
+palettes = json.loads(Path('scripts/icons/artwork_palettes.json').read_text(encoding='utf-8'))
+
+
+def relief(mask, shadow, body, highlight, part):
+    # Light comes from the upper left. Use the same highlight and rim on every platform.
+    left, top, right, bottom = mask.getbbox()
+    size = 256
+    field = Image.new('L', (size, size))
+    levels = []
+    for y in range(size):
+        for x in range(size):
+            u = (x * 1024 / size - left) / (right - left)
+            v = (y * 1024 / size - top) / (bottom - top)
+            if part == 'lip':
+                light = .16 + .70 * math.exp(-((v - .31) / .25) ** 2) + .12 * (1 - u)
+            else:
+                light = (.15 + .65 * math.exp(-((u - .32) / .32) ** 2)
+                         + .20 * (1 - v))
+            levels.append(max(0, min(255, round(light * 255))))
+    field.putdata(levels)
+    image = ImageOps.colorize(field.resize(mask.size, Image.Resampling.BICUBIC),
+                              shadow, highlight, mid=body, midpoint=146).convert('RGBA')
+    image.putalpha(mask)
+    return image
+
+
 for theme in themes:
     key = theme['id']
-    seed = tuple(bytes.fromhex(theme['seed']))
-    pale = blend(seed, (255, 255, 255), .96)
-    mid = blend(seed, (252, 252, 255), .89)
-    background = ImageOps.colorize(ramp, pale, mid)
+    light = palettes[key]['light']
+    dark = palettes[key]['dark']
+    background = ImageOps.colorize(ramp, light['surface'], light['primaryContainer'])
     ios = root / 'ios' / ('AppIcon.icon' if key == 'default' else f'Icon_{key}.icon')
-    (ios / 'Assets/bell.png').unlink(missing_ok=True)
     doc = json.loads((ios / 'icon.json').read_text())
-    base = (22, 23, 32)
+    def surface(a, b):
+        return gradient(ImageColor.getrgb(a), ImageColor.getrgb(b))
     doc['fill-specializations'] = [
-        {'value': gradient(pale, mid)},
-        {'appearance': 'dark', 'value': gradient(blend(base, seed, .16), blend(base, seed, .06))},
+        {'value': surface(light['surface'], light['primaryContainer'])},
+        {'appearance': 'dark', 'value': surface(dark['surfaceContainer'], dark['surface'])},
     ]
     picture = Image.new('RGBA', (1024, 1024))
     layers = []
     for name, mask in masks.items():
-        color = blend(seed, (20, 24, 42), .22 if name == 'clapper' else .15)
-        if name == 'lip':
-            color = blend(seed, (23,25,42), .42)
-        layer = paint(mask, color)
+        highlight = light['outline'] if name == 'dome' else light['primaryContainer']
+        layer = relief(mask, light['onSurface'], light['onPrimaryContainer'], highlight, name)
         layer.save(ios / 'Assets' / (name + '.png'))
         picture.alpha_composite(layer)
-        dark = blend(seed, (255, 255, 255), .72 if name == 'lip' else .94)
-        mono = (223, 223, 223) if name == 'lip' else (255, 255, 255)
-        layers.append({'image-name': name + '.png', 'name': name, 'glass': False,
+        dark_fill = surface(dark['onPrimaryContainer'], dark['primary'] if name == 'dome' else dark['onSurfaceVariant'])
+        mono = (226, 226, 226) if name == 'lip' else (255, 255, 255)
+        layers.append({'image-name': name + '.png', 'name': name, 'glass': name == 'lip',
                        'fill-specializations': [
-                           {'appearance': 'dark', 'value': {'solid': srgb(dark)}},
+                           {'appearance': 'dark', 'value': dark_fill},
                            {'appearance': 'tinted', 'value': {'solid': srgb(mono)}},
                        ]})
-    doc['groups'] = [{'layers': layers, 'translucency': {'enabled': False, 'value': .10}}]
+    doc['groups'] = [{'layers': layers, 'translucency': {'enabled': False, 'value': .1}}]
     (ios / 'icon.json').write_text(json.dumps(doc, indent=2) + '\n', encoding='utf-8', newline='\n')
     suffix = re.sub(r'[A-Z]', lambda m: '_' + m[0].lower(), key)
     background.resize((432, 432), resize).save(drawable / f'ic_bg_{suffix}.png')
