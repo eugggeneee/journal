@@ -8,7 +8,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from mockups import FINISHES, FRAMES, POSTERS, framed, posters
+from mockups import FINISHES, FRAMES, POSTERS, framed, poster_path, posters
 
 SCENES = ('home-details date-picker schedule-menu grade-journal absence-calendar absence-journal home-compact schedule lesson mark absence-quick whole-day grades subject grade-form '
           'absences absence-form tasks task-form settings appearance theme-picker layout schedule-settings '
@@ -42,7 +42,7 @@ def media_names(scenes):
     return ({f'ios/{mode}/{scene}-{kind}.webp' for mode in ('light', 'dark')
              for scene in scenes for kind in kinds}
             | {f'frames/iphone-{finish}.png' for finish in FINISHES}
-            | {f'mockups/{name}.webp' for name in POSTERS})
+            | {poster_path(name, mode) for name in POSTERS for mode in FINISHES})
 
 
 def complete(root, tag, scenes, commit):
@@ -53,7 +53,7 @@ def complete(root, tag, scenes, commit):
         return (manifest['tag'] == tag and manifest.get('commit') == commit
                 and manifest.get('channel') == os.environ['CHANNEL']
                 and all(manifest.get(k) == v for k, v in recipe_hashes(scenes).items())
-                and manifest.get('spec') == 'gallery-v1' and manifest.get('fixture') == 'trade-0000-v1' and set(manifest['devices']) == {'ios'}
+                and manifest.get('spec') == 'gallery-v2' and manifest.get('fixture') == 'trade-0000-v1' and set(manifest['devices']) == {'ios'}
                 and manifest['devices']['ios'] == {'model': 'iPhone 17', 'environment': 'iOS Simulator',
                     'os': '26.2', 'width': 1206, 'height': 2622}
                 and manifest.get('group') == '0000' and manifest['scenes'] == scenes and set(files) == expected
@@ -69,7 +69,7 @@ def make(source, output, app, tag, commit):
     scenes = names(ids)
     device = json.loads((source / 'device.json').read_text(encoding='utf-8'))
     if len(scenes) != 57 or len(set(scenes)) != 57:
-        raise ValueError('gallery-v1 требует 57 различных сцен')
+        raise ValueError('gallery-v2 требует 57 различных сцен')
     size = None
     for mode in ('light', 'dark'):
         folder = source / mode
@@ -93,9 +93,9 @@ def make(source, output, app, tag, commit):
         with Image.open(output / 'frames' / f'iphone-{finish}.png') as frame:
             if frame.mode != 'RGBA' or frame.getpixel((0, 0))[3] or frame.getchannel('A').getextrema() != (0, 255):
                 raise ValueError(f'Рамка {finish} должна иметь прозрачные поля')
-    posters(output, app / 'docs/logo.png')
+    posters(output, app / 'docs/logo.png', os.environ['CHANNEL'])
     files = {key: digest(output / key) for key in sorted(media_names(scenes))}
-    manifest = {**recipe_hashes(scenes), 'spec': 'gallery-v1', 'fixture': 'trade-0000-v1', 'channel': os.environ['CHANNEL'], 'tag': tag, 'commit': commit, 'group': '0000', 'scenes': scenes,
+    manifest = {**recipe_hashes(scenes), 'spec': 'gallery-v2', 'fixture': 'trade-0000-v1', 'channel': os.environ['CHANNEL'], 'tag': tag, 'commit': commit, 'group': '0000', 'scenes': scenes,
                 'devices': {'ios': device}, 'files': files}
     (output / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     lines = [f'# Journal {tag} · iOS', '',
@@ -103,7 +103,7 @@ def make(source, output, app, tag, commit):
              'Группа 0000. Все записи и имена вымышлены.', '',
              '[Светлая тема](ios/light/) · [Тёмная тема](ios/dark/) · [Рамки PNG](frames/) · [Фирменные макеты](mockups/)', '',
              'raw — исходный кадр. framed-light и framed-dark — светлый и тёмный корпус на прозрачном фоне.', '',
-             '![Journal — расписание, главная и оценки](mockups/overview.webp)', '']
+             '![Journal — расписание, главная и отметки](mockups/overview.webp)', '']
     (output / 'README.md').write_text('\n'.join(lines), encoding='utf-8')
     if not complete(output, tag, scenes, commit):
         raise ValueError('Не удалось подтвердить целостность галереи')

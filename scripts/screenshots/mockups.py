@@ -45,11 +45,18 @@ def font(size, bold=False):
     raise RuntimeError('Для фирменных макетов нужен шрифт с кириллицей')
 
 
-def brand(canvas, icon, position, ink):
+def brand(canvas, icon, position, ink, badge, badge_ink, beta):
     x, y = position
-    mark = ImageOps.contain(icon, (52, 52), Image.Resampling.LANCZOS)
+    mark = ImageOps.contain(icon, (66, 66), Image.Resampling.LANCZOS)
     canvas.paste(mark, (x, y), mark)
-    ImageDraw.Draw(canvas).text((x + 68, y + 5), 'Journal', font=font(36, True), fill=ink)
+    draw = ImageDraw.Draw(canvas)
+    end = x + 84
+    face = font(46, True)
+    draw.text((end, y + 32), 'Journal', font=face, fill=ink, anchor='lm')
+    if beta:
+        left = round(end + draw.textlength('Journal', font=face)) + 20
+        draw.rounded_rectangle((left, y + 8, left + 108, y + 58), radius=25, fill=badge)
+        draw.text((left + 54, y + 31), 'бета', font=font(30, True), fill=badge_ink, anchor='mm')
 
 
 def phone(canvas, pack, key, finish, center, height, angle=0):
@@ -66,44 +73,52 @@ def phone(canvas, pack, key, finish, center, height, angle=0):
     canvas.paste(layer, (x, y), layer)
 
 
-def posters(pack, logo):
-    folder = pack / 'mockups'
-    folder.mkdir()
+def poster_path(name, mode):
+    # Keep the established public filename for the original appearance of each poster.
+    original = 'dark' if name == 'schedule' else 'light'
+    suffix = '' if mode == original else '-' + mode
+    return f'mockups/{name}{suffix}.webp'
+
+
+def posters(pack, logo, channel):
+    (pack / 'mockups').mkdir(exist_ok=True)
     with Image.open(logo) as source:
         icon = source.convert('RGBA')
-
-    cover = Image.new('RGB', (1800, 1200), '#f2f3ff')
-    draw = ImageDraw.Draw(cover)
-    draw.ellipse((335, 420, 1465, 1550), fill='#d9dfff')
-    brand(cover, icon, (80, 72), '#232e55')
-    draw.text((72, 163), 'От первой пары до последней оценки', font=font(65, True), fill='#242f55')
-    phone(cover, pack, 'dark/schedule', 'dark', (450, 755), 684)
-    phone(cover, pack, 'light/grades', 'light', (1350, 755), 684)
-    phone(cover, pack, 'light/home-default', 'light', (900, 706), 804)
-    cover.save(folder / 'overview.webp', quality=94, method=4)
-
-    day = Image.new('RGB', (1600, 1000), '#edefff')
-    d = ImageDraw.Draw(day)
-    d.ellipse((794, -360, 2100, 1110), fill='#ccd3ff')
-    brand(day, icon, (86, 82), '#25305d')
-    d.multiline_text((80, 330), 'Ход\nдня', font=font(145, True), fill='#1e2750', spacing=-12)
-    d.text((88, 843), 'Расписание и дневник МГТЭК', font=font(30), fill='#4b547b')
-    phone(day, pack, 'light/home-default', 'light', (1155, 500), 902)
-    day.save(folder / 'day.webp', quality=94, method=4)
-
-    schedule = Image.new('RGB', (1200, 1500), '#161a2b')
-    d = ImageDraw.Draw(schedule)
-    d.ellipse((-670, 520, 1150, 2180), fill='#252d50')
-    brand(schedule, icon, (70, 65), '#e9ebff')
-    d.text((62, 178), 'Расписание', font=font(109, True), fill='#d8ddff')
-    phone(schedule, pack, 'dark/schedule', 'dark', (600, 872), 1148)
-    schedule.save(folder / 'schedule.webp', quality=94, method=4)
-
-    journal = Image.new('RGB', (1600, 1360), '#f9f7f3')
-    d = ImageDraw.Draw(journal)
-    d.rounded_rectangle((66, 331, 1534, 1290), radius=104, fill='#dce2f7')
-    brand(journal, icon, (80, 63), '#24283b')
-    d.text((74, 165), 'Оценки и пропуски', font=font(102, True), fill='#252b43')
-    phone(journal, pack, 'light/grades', 'light', (532, 815), 905, 4)
-    phone(journal, pack, 'dark/absences', 'dark', (1070, 815), 905, -4)
-    journal.save(folder / 'journal.webp', quality=94, method=4)
+    sizes = {'overview': (1800, 1200), 'day': (1600, 1000),
+             'schedule': (1200, 1500), 'journal': (1600, 1360)}
+    for mode in FINISHES:
+        if mode == 'light':
+            paper, ink, accent, field = '#f4f4ff', '#202446', '#3645a0', '#dce1ff'
+        else:
+            paper, ink, accent, field = '#141623', '#f0efff', '#c2caff', '#292f50'
+        for name, size in sizes.items():
+            canvas = Image.new('RGB', size, paper)
+            draw = ImageDraw.Draw(canvas)
+            width, height = size
+            margin = round(width * .048)
+            def device(scene, center, h):
+                phone(canvas, pack, mode + '/' + scene, mode, center, h)
+            if name == 'overview':
+                draw.rounded_rectangle((margin, 349, width-margin, 1151), radius=90, fill=field)
+                device('schedule', (470, 747), 663)
+                device('grades', (1330, 747), 663)
+                device('home-default', (900, 731), 834)
+                title, title_pos, scale = 'Дневник студента МГТЭК', (margin, 166), 94
+            elif name == 'day':
+                draw.ellipse((750, -215, 2020, 1215), fill=field)
+                device('home-default', (1150, 500), 880)
+                draw.multiline_text((margin, 326), 'Ход\nдня', font=font(143, True), fill=ink, spacing=-15)
+                title = None
+            elif name == 'schedule':
+                draw.rounded_rectangle((margin, 320, width-margin, 1445), radius=80, fill=field)
+                device('schedule', (600, 880), 1130)
+                title, title_pos, scale = 'Расписание', (margin, 164), 100
+            else:
+                draw.rounded_rectangle((margin, 314, width-margin, 1294), radius=84, fill=field)
+                device('grades', (547, 802), 916)
+                device('absences', (1053, 802), 916)
+                title, title_pos, scale = 'Отметки и пропуски', (margin, 158), 96
+            brand(canvas, icon, (margin, 62), ink, accent, paper, channel == 'beta')
+            if title:
+                draw.text(title_pos, title, font=font(scale, True), fill=ink)
+            canvas.save(pack / poster_path(name, mode), quality=94, method=4)
