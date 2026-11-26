@@ -63,18 +63,9 @@ gh attestation verify Journal-vX.Y.Z-android.apk --repo eugggeneee/journal
 ## Скриншоты интерфейса
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/eugggeneee/journal/screenshots/pack/stable/ios/dark/home-default-raw.webp">
-    <img alt="Главная в стабильной версии Journal" src="https://raw.githubusercontent.com/eugggeneee/journal/screenshots/pack/stable/ios/light/home-default-raw.webp" width="31%">
-  </picture>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/eugggeneee/journal/screenshots/pack/stable/ios/dark/schedule-raw.webp">
-    <img alt="Расписание в стабильной версии Journal" src="https://raw.githubusercontent.com/eugggeneee/journal/screenshots/pack/stable/ios/light/schedule-raw.webp" width="31%">
-  </picture>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/eugggeneee/journal/screenshots/pack/stable/ios/dark/grades-raw.webp">
-    <img alt="Журнал отметок в стабильной версии Journal" src="https://raw.githubusercontent.com/eugggeneee/journal/screenshots/pack/stable/ios/light/grades-raw.webp" width="31%">
-  </picture>
+  <img alt="Главная в стабильной версии Journal" src="https://raw.githubusercontent.com/eugggeneee/journal/screenshots/pack/stable/ios/light/home-default-framed-light.webp" width="31%">
+  <img alt="Расписание в стабильной версии Journal" src="https://raw.githubusercontent.com/eugggeneee/journal/screenshots/pack/stable/ios/light/schedule-framed-light.webp" width="31%">
+  <img alt="Журнал отметок в стабильной версии Journal" src="https://raw.githubusercontent.com/eugggeneee/journal/screenshots/pack/stable/ios/light/grades-framed-light.webp" width="31%">
 </p>
 
 [Версия и номер сборки на снимках](https://raw.githubusercontent.com/eugggeneee/journal/screenshots/pack/stable/build.json)
