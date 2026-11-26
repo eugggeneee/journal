@@ -14,7 +14,7 @@ svg = ET.parse(root / 'bell.svg').getroot()
 resize = Image.Resampling.LANCZOS
 masks = {}
 for path in svg:
-    markup = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024"><path d="{path.attrib["d"]}"/></svg>'
+    markup = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024"><path transform="{path.attrib.get("transform", "")}" d="{path.attrib["d"]}"/></svg>'
     masks[path.attrib['id']] = Image.open(BytesIO(resvg_py.svg_to_bytes(svg_string=markup))).convert('RGBA').getchannel('A')
 
 
@@ -62,7 +62,12 @@ drawable = root / 'android/drawable-nodpi'
 silhouette = Image.new('RGBA', (1024, 1024))
 for mask in masks.values():
     silhouette.alpha_composite(paint(mask, 'white'))
-silhouette.crop(silhouette.getbbox()).save(root / 'bell.png')
+bounds = silhouette.getbbox()
+body = Image.new('RGBA', silhouette.size)
+for part in ('dome', 'lip'):
+    body.alpha_composite(paint(masks[part], 'white'))
+body.crop(bounds).save(root / 'bell.png')
+paint(masks['clapper'], 'white').crop(bounds).save(root / 'clapper.png')
 silhouette.resize((432,432), resize).save(drawable / 'ic_mono_shared.png')
 for theme in themes:
     key = theme['id']
@@ -81,15 +86,15 @@ for theme in themes:
     picture = Image.new('RGBA', (1024, 1024))
     layers = []
     for name, mask in masks.items():
-        color = blend(seed, (255,255,255), .36 if name == 'clapper' else .25)
+        color = blend(seed, (20, 24, 42), .22 if name == 'clapper' else .15)
         if name == 'lip':
-            color = blend(seed, (23,25,42), .32)
+            color = blend(seed, (23,25,42), .42)
         layer = paint(mask, color)
         layer.save(ios / 'Assets' / (name + '.png'))
         picture.alpha_composite(layer)
-        layers.append({'image-name': name + '.png', 'name': name, 'glass': name != 'lip',
-                       'fill-specializations': [{'appearance':'dark','value':{'solid':srgb(blend(color,(255,255,255),.18))}}]})
-    doc['groups'] = [{'layers': layers, 'translucency': {'enabled': True, 'value': .45}}]
+        layers.append({'image-name': name + '.png', 'name': name, 'glass': False,
+                       'fill-specializations': [{'appearance':'dark','value':{'solid':srgb(blend(seed, (255, 255, 255), .72 if name == 'lip' else .94))}}]})
+    doc['groups'] = [{'layers': layers, 'translucency': {'enabled': False}}]
     (ios / 'icon.json').write_text(json.dumps(doc, indent=2) + '\n', encoding='utf-8', newline='\n')
     suffix = re.sub(r'[A-Z]', lambda m: '_' + m[0].lower(), key)
     background.resize((432, 432), resize).save(drawable / f'ic_bg_{suffix}.png')

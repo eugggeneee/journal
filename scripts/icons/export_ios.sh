@@ -67,13 +67,15 @@ fi
 
 # Дополнительные варианты использует сама система. Сохраняем каждый нативный
 # экспорт отдельно, чтобы сбой Metal в одном режиме не терял другие результаты.
-for mode in Dark TintedLight ClearLight ClearDark; do
+for mode in Dark TintedLight TintedDark ClearLight ClearDark; do
   case "$mode" in
     Dark) name=dark ;;
     TintedLight) name=tinted ;;
     *) name=$mode ;;
   esac
-  if ! render "$src/AppIcon.icon" --export-preview iOS "$mode" 128 128 1 "$out/$name.png"; then
+  size=128
+  if [[ $mode == Dark ]]; then size=1024; fi
+  if ! render "$src/AppIcon.icon" --export-preview iOS "$mode" "$size" "$size" 1 "$out/$name.png"; then
     echo "::warning::Icon Composer could not flatten $mode on this runner; the native layered asset is verified during the simulator build."
     echo "$mode: нативный растровый экспорт недоступен на этом сборщике." >> "$GITHUB_STEP_SUMMARY"
   fi

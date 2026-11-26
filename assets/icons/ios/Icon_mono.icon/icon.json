@@ -5,12 +5,12 @@
         {
           "image-name": "clapper.png",
           "name": "clapper",
-          "glass": true,
+          "glass": false,
           "fill-specializations": [
             {
               "appearance": "dark",
               "value": {
-                "solid": "srgb:0.71765,0.71765,0.71765,1.00000"
+                "solid": "srgb:0.96863,0.96863,0.96863,1.00000"
               }
             }
           ]
@@ -18,12 +18,12 @@
         {
           "image-name": "dome.png",
           "name": "dome",
-          "glass": true,
+          "glass": false,
           "fill-specializations": [
             {
               "appearance": "dark",
               "value": {
-                "solid": "srgb:0.67059,0.67059,0.67059,1.00000"
+                "solid": "srgb:0.96863,0.96863,0.96863,1.00000"
               }
             }
           ]
@@ -36,15 +36,14 @@
             {
               "appearance": "dark",
               "value": {
-                "solid": "srgb:0.45882,0.46275,0.47843,1.00000"
+                "solid": "srgb:0.84706,0.84706,0.84706,1.00000"
               }
             }
           ]
         }
       ],
       "translucency": {
-        "enabled": true,
-        "value": 0.45
+        "enabled": false
       }
     }
   ],
