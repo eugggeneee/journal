@@ -365,9 +365,9 @@
     h.appendChild(el('span', 'rel-date', dateText(r.published_at))); return h;
   }
   function renderReleases(list) {
-    var rels = list.filter(function (r) { return !r.draft; });
+    var rels = list.filter(function (r) { return !r.draft && !r.prerelease && /^v\d+\.\d+\.\d+$/.test(r.tag_name); });
     if (!rels.length) throw new Error('empty');
-    var newest = rels[0], stable = rels.filter(function (r) { return !r.prerelease; })[0] || newest;
+    var newest = rels[0], stable = newest;
     var box = $('#releaseFeed'); box.textContent = ''; box.setAttribute('aria-busy', 'false');
     var c = el('div', 'card news-card'); c.appendChild(relHead(newest)); c.appendChild(bodyNode(newest.body));
     var f = el('div', 'rel-foot'), a = el('a', 'btn btn-tonal', 'Все изменения на GitHub'); a.href = newest.html_url; a.rel = 'noopener'; f.appendChild(a); c.appendChild(f);
@@ -384,23 +384,32 @@
     }
     var chip = $('#verChip'); if (chip) chip.textContent = 'Версия ' + stable.tag_name.replace(/^v/, '');
     [['Android', '-android.apk', '#dlAndroid', '#metaAndroid'], ['iPhone', '-ios.ipa', '#dlIos', '#metaIos']].forEach(function (x) {
-      var as = asset(stable, x[1]) || asset(newest, x[1]), btn = $(x[2]), meta = $(x[3]);
-      if (as) { btn.href = as.browser_download_url; meta.textContent = (stable.tag_name) + ' · ' + size(as.size) + (newest !== stable && asset(newest, x[1]) ? ' · тестовая ' + newest.tag_name : ''); }
+      var as = asset(stable, x[1]), btn = $(x[2]), meta = $(x[3]);
+      if (as) { btn.href = as.browser_download_url; meta.textContent = (stable.tag_name) + ' · ' + size(as.size); }
       else { btn.href = stable.html_url; meta.textContent = 'Файл на странице релиза ' + stable.tag_name; }
     });
   }
   function fail() {
     var box = $('#releaseFeed'); box.textContent = ''; box.setAttribute('aria-busy', 'false');
     var c = el('div', 'card news-card'); c.appendChild(el('p', 'sub', 'Не удалось загрузить данные с GitHub. Свежие версии и список изменений всегда на странице релизов.'));
-    var a = el('a', 'btn btn-fill', 'Открыть релизы'); a.href = 'https://github.com/' + REPO + '/releases'; a.rel = 'noopener'; c.appendChild(a); box.appendChild(c);
+    var a = el('a', 'btn btn-fill', 'Открыть релизы'); a.href = 'https://github.com/' + REPO + '/releases/latest'; a.rel = 'noopener'; c.appendChild(a); box.appendChild(c);
   }
   (function load() {
     var cached = null;
-    try { cached = JSON.parse(sessionStorage.getItem('j-rel') || 'null'); } catch (e) {}
+    try { cached = JSON.parse(sessionStorage.getItem('journal-stable-releases') || 'null'); } catch (e) {}
     if (cached && Date.now() - cached.t < 600000) { try { renderReleases(cached.d); return; } catch (e) {} }
-    fetch(API, { headers: { Accept: 'application/vnd.github+json' } })
-      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function (d) { try { sessionStorage.setItem('j-rel', JSON.stringify({ t: Date.now(), d: d })); } catch (e) {} renderReleases(d); })
+    var options = { headers: { Accept: 'application/vnd.github+json' } };
+    function json(url) {
+      return fetch(url, options).then(function (res) {
+        if (!res.ok) throw new Error(res.status);
+        return res.json();
+      });
+    }
+    Promise.all([json(API.replace('?per_page=8', '/latest')), json(API).catch(function () { return []; })])
+      .then(function (data) {
+        return [data[0]].concat(data[1].filter(function (release) { return release.id !== data[0].id; }));
+      })
+      .then(function (d) { try { sessionStorage.setItem('journal-stable-releases', JSON.stringify({ t: Date.now(), d: d })); } catch (e) {} renderReleases(d); })
       .catch(fail);
   })();
 

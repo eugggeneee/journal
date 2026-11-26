@@ -48,3 +48,5 @@ python3 -m http.server -d build/site 8000
 ## Публикация
 
 Workflow `.github/workflows/site.yml` собирает и публикует сайт при изменении `site/` и связанных файлов в `main`. Один раз в репозитории: Settings, Pages, Source: GitHub Actions.
+
+Кнопки APK и IPA используют последний стабильный GitHub Release. Если файл отсутствует, ссылка ведёт на страницу стабильного выпуска.
