@@ -1,5 +1,5 @@
 {
-  "specSHA256": "f4582d091172418eba7676b01945a87c672241992830d67d01c8c579be202438",
+  "specSHA256": "7c6392ef988d7576f2b963c6ac8ee1a9adf27faed4fb4ca31099b96326bbfc75",
   "fixtureSHA256": "3d3facb3ca20971db75fd8a7ad1e4e67bce50803b5132d8d71ac647961a2a647",
   "spec": "gallery-v2",
   "fixture": "trade-0000-v1",
@@ -204,9 +204,9 @@
     "ios/dark/lesson-framed-dark.webp": "2a8bd88438ca0e22e03665169b893c2e5ba83b1e2619f6c8d55dfc09122013b6",
     "ios/dark/lesson-framed-light.webp": "586de1b1c3c9cd7a4d1cc1930787d08c4168cdf8426e2498d65455f685cf518e",
     "ios/dark/lesson-raw.webp": "0c08b9297d6e1da8d65f205001467647ee99910a49adedb32b26ca956080b13a",
-    "ios/dark/mark-framed-dark.webp": "e174b87749f0cb9ffe671a4fd101232866e13a9f28cd04fb79fc9c6eafa69cc5",
-    "ios/dark/mark-framed-light.webp": "089951c15378c089b4425cbe4ec18c82adab3d117a77b080ea406222decdbbf5",
-    "ios/dark/mark-raw.webp": "9566df1aec7d6d4f505cea64a333eed53fd9d67e8e7b072c6b5918fc48e5864d",
+    "ios/dark/mark-framed-dark.webp": "a47dafc16f2181828ddaf7a96fc8c80e58d7d96cfd23566232dc33ce2e8ccc3b",
+    "ios/dark/mark-framed-light.webp": "7fc1a98115dceb410262e509720177973bfed320ac4e9cda2f94ac0f252120a2",
+    "ios/dark/mark-raw.webp": "7e0175754adb48a7a4d6985c9d3def007c67241526c5e98d698d326c46095526",
     "ios/dark/schedule-framed-dark.webp": "ae1b9dba346fdc6621f818f9f55b8f161e7c571a8a5a9b3efdcb8bc82b65538b",
     "ios/dark/schedule-framed-light.webp": "420ce8e0fe5d2fa3666fd7f76cd8a561b74ecd7df066cd663f27bd617f6811b1",
     "ios/dark/schedule-menu-framed-dark.webp": "11417baed6619b11d7fc395bf2873e50a178f8b086caf71e558ce484cf234540",
@@ -420,13 +420,13 @@
     "ios/light/whole-day-framed-dark.webp": "0a278cc3a743ef5b9870f0a0e0d06b2471bd744fa9671f6add1af15553770cf5",
     "ios/light/whole-day-framed-light.webp": "4c956f98bdb98ee66f66b9470f22eb454053c84bbfd6605cc104456002c7830a",
     "ios/light/whole-day-raw.webp": "fe5967d9d0bf8259896e50f9f22a449d72587bf911eb0feff473bb27b2a2bbfd",
-    "mockups/day-dark.webp": "0bc2bfdf37ab47e4799cfc95576ad681a2fc55e03cca2d0c6ef6de97ca1a3362",
-    "mockups/day.webp": "d24cdc5af516d9a71c56d72bc6b4184ce1e6a8af9ba4fa1671b1c33bddf86918",
-    "mockups/journal-dark.webp": "b155054e99c891d7a60a4700356dbad5e1c69c63131b55096350754c51f9844b",
-    "mockups/journal.webp": "8faa7181a05690bf2ca3d620532d76d6eab9a05ca355461e9118af9b1205f714",
-    "mockups/overview-dark.webp": "25b6d9447229562f6bf9edebf1420ce21227c0ab7c1ff4029f13e712db837539",
-    "mockups/overview.webp": "6cbcc1894b121c0e5b2405cc92da4ab8d98fd51f16f7aa227660ee26d5f239fe",
-    "mockups/schedule-light.webp": "b715011adfde430f121e100cf3e785bb98eae54a4a922621120c03d435574820",
-    "mockups/schedule.webp": "451c58540dcc14e32195054ef8fdbf5a6c6e9f6565b0367ceb6ad05d297f985f"
+    "mockups/day-dark.webp": "920830f462b22c07968221252993f453ebf86328086af826f1be38aea7ba1b14",
+    "mockups/day.webp": "6fca545960d88154dd2e2b1f4a3598f7a1848cd6f860a88e8565d8798e5a6517",
+    "mockups/journal-dark.webp": "536573c98511123cb33e8d64a864434196c8af6291be42e6cd1dceacbf1b3a18",
+    "mockups/journal.webp": "8632ba76b54bd7858c028d2ecd3bf55fabc65089e3df9d4246ea35fab58676db",
+    "mockups/overview-dark.webp": "9bbff558e6b20c5bc1087dc69c387e577c7c132d3a575e5504d5206ae08731db",
+    "mockups/overview.webp": "1d30395cc18f09ce9bdc4be76b57e8b5f69158382ec95fb50a4f0786e4f890b2",
+    "mockups/schedule-light.webp": "4d67f6bdf955a4a52a9f0628ece3cd03f25815fd1da3be7f7758567100c8b79c",
+    "mockups/schedule.webp": "b0179c3ea12a3baa676ea7b18bf715d02d53fb8ecb43808806f57068c941f6ae"
   }
 }
