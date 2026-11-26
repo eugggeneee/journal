@@ -10,26 +10,23 @@
 *{box-sizing:border-box}body{margin:0}main{max-width:65rem;margin:auto;padding:clamp(1rem,5vw,3.5rem)}
 a{color:var(--accent);text-underline-offset:.2em}a:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
 .hero{color:var(--ink);background:var(--hero);padding:clamp(1.5rem,5vw,3.75rem);border-radius:2rem;display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:start}
-h1,h2,p,figure{margin:0}h1{font-size:clamp(3.3rem,10vw,6.4rem);line-height:1.03;letter-spacing:-.07em;font-weight:650}.icon{width:clamp(4rem,11vw,7rem);height:auto;border-radius:23%}.sub{margin-top:.65rem;color:var(--soft);font-size:1.1rem}
+h1,h2,p,figure{margin:0}h1{font-size:clamp(3.3rem,10vw,6.4rem);line-height:1.03;letter-spacing:-.04em;font-weight:650}.icon{width:clamp(4rem,11vw,7rem);height:auto;border-radius:23%}.sub{margin-top:.65rem;color:var(--soft);font-size:1.1rem}
 .actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:.75rem;align-items:center}.action{display:inline-block;padding:.7rem 1.05rem;border-radius:2rem;font-weight:620;text-decoration:none}.primary{background:var(--button);color:var(--on-button)}.secondary{border:1px solid var(--line);background:var(--paper);color:var(--ink)}
 small{font-size:.88rem;color:var(--soft)}h2{font-size:clamp(1.35rem,4vw,1.75rem);line-height:1.25;letter-spacing:-.025em}.gallery{display:flex;gap:1rem;overflow-x:auto;scroll-snap-type:x proximity;padding:.25rem 0 1rem;margin:1.6rem 0}.gallery:empty{display:none}.gallery figure{flex:0 0 clamp(9rem,21vw,13rem);scroll-snap-align:start}.gallery img{display:block;width:100%;height:auto}figcaption{margin-top:.4rem;font-size:.93rem;color:var(--soft)}
 section.subsection, details{padding:1.2rem 0;border-bottom:1px solid var(--line)}section.subsection p{margin:.55rem 0 .8rem;max-width:62ch;color:var(--soft)}
-summary{cursor:pointer;font-weight:600}details p{margin-top:.65rem}code{overflow-wrap:anywhere;user-select:all}footer{padding:1.2rem 0}#beta:target,#ipa:target{scroll-margin-top:1.5rem}
+summary{cursor:pointer;font-weight:600}details p{margin-top:.65rem}code{overflow-wrap:anywhere;user-select:all}footer{padding:1.2rem 0}#ipa:target{scroll-margin-top:1.5rem}
 @media(prefers-color-scheme:dark){:root{--page:#13151d;--paper:#242735;--ink:#eceefb;--soft:#b9bfd5;--line:#424858;--accent:#b5c5ff;--button:#bbc8ff;--on-button:#18244b;--hero:#252d49}}
 </style>
 </head>
 <body><main>
-<header class="hero"><div><h1>Journal</h1><p class="sub">Расписание, оценки и пропуски МГТЭК</p></div><img class="icon" src="icon.png" alt="" width="112" height="112">
-<div class="actions"><a class="action primary" href="altstore-classic://source?url=https%3A%2F%2Feugggeneee.github.io%2Fjournal%2Fios%2Fsource.json">Добавить в AltStore Classic</a>
-<a class="action secondary" href="sidestore://source?url=https%3A%2F%2Feugggeneee.github.io%2Fjournal%2Fios%2Fsource.json">В SideStore</a></div>
+<header class="hero"><div><h1>Journal</h1><p class="sub">Расписание, отметки и пропуски МГТЭК</p></div><img class="icon" src="{{media}}/icon.png" alt="" width="112" height="112">
+<div class="actions"><a class="action primary" href="altstore-classic://source?url=https%3A%2F%2Feugggeneee.github.io%2Fjournal%2Fios%2Fstable.json">Добавить в AltStore Classic</a>
+<a class="action secondary" href="sidestore://source?url=https%3A%2F%2Feugggeneee.github.io%2Fjournal%2Fios%2Fstable.json">В SideStore</a></div>
 <small>Стабильная версия {{stable}} · iPhone и iPad</small></header>
-<a href="https://github.com/eugggeneee/journal/tree/screenshots/pack/stable"><img src="media/header.jpg" alt="Journal на трёх iPhone: расписание, отсчёт до конца пары и журнал оценок" style="display:block;width:100%;height:auto;margin-top:1.5rem;border-radius:1.5rem" width="1200" height="800"></a>
+<a href="https://github.com/eugggeneee/journal/tree/screenshots/pack/stable"><picture><source media="(prefers-color-scheme: dark)" srcset="{{media}}/header-dark.jpg"><img src="{{media}}/header-light.jpg" alt="Journal на трёх iPhone: расписание, отсчёт до конца пары и журнал отметок" style="display:block;width:100%;height:auto;margin-top:1.5rem;border-radius:1.5rem" width="1200" height="800"></picture></a>
 <div class="gallery" aria-label="Скриншоты стабильной версии">{{gallery}}</div>
-<section class="subsection" id="beta"><h2>Подписаться на беты</h2><p>Здесь появляются тестовые версии и кандидаты в релиз. Последняя сборка канала — {{beta}}. Стабильная и тестовая сборки используют один дневник.</p>
-<div class="actions"><a class="action secondary" href="altstore-classic://source?url=https%3A%2F%2Feugggeneee.github.io%2Fjournal%2Fios%2Fbeta.json">Беты в AltStore Classic</a>
-<a class="action secondary" href="sidestore://source?url=https%3A%2F%2Feugggeneee.github.io%2Fjournal%2Fios%2Fbeta.json">Беты в SideStore</a></div></section>
 <section class="subsection" id="ipa"><h2>Установить из файла</h2><p>Скачайте IPA, откройте <strong>My Apps → +</strong> в AltStore Classic или SideStore и выберите файл. Для установки с компьютера подойдёт <a href="https://sideloadly.io/">Sideloadly</a>.</p><a href="{{ipa}}">Скачать IPA {{stable}}</a></section>
-<details><summary>Добавить адрес вручную</summary><p>В разделе <strong>Sources → +</strong> вставьте адрес нужного канала.</p><p>Стабильный<br><code>https://eugggeneee.github.io/journal/ios/source.json</code></p><p>Тестовый<br><code>https://eugggeneee.github.io/journal/ios/beta.json</code></p></details>
+<details><summary>Добавить адрес вручную</summary><p>В разделе <strong>Sources → +</strong> вставьте адрес стабильного источника.</p><p>Стабильный<br><code>https://eugggeneee.github.io/journal/ios/stable.json</code></p></details>
 <details><summary>Как установить магазин</summary><p>Настройте <a href="https://altstore.io/download">AltStore Classic</a> или <a href="https://docs.sidestore.io/docs/installation/install.html">SideStore</a> по инструкции разработчика. Затем откройте эту страницу на iPhone, добавьте источник и выберите Journal.</p></details>
-<footer><a href="https://github.com/eugggeneee/journal/releases">Все выпуски на GitHub</a></footer>
+<footer><a href="https://github.com/eugggeneee/journal/releases/latest">Стабильный выпуск на GitHub</a></footer>
 </main></body></html>

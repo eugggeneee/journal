@@ -1,175 +1,118 @@
-"""Собрать страницы и два источника из метаданных GitHub и проверенных IPA."""
+"""Собрать стабильный каталог из IPA и галереи одного опубликованного тега."""
 import hashlib
 import json
 import os
-from concurrent.futures import ThreadPoolExecutor
 import re
+import shutil
 import subprocess
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, mkdtemp
 
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image
 from altstore_source import BASE_URL, make_source
 
 REPO = 'eugggeneee/journal'
-TAG = re.compile(r'v(\d+)\.(\d+)\.(\d+)(?:-(beta|rc)\.(\d+))?')
-VIEWS = [('light','home-default','Ход дня'), ('dark','schedule','Расписание'),
-         ('light','grades','Оценки'), ('dark','absences','Пропуски'), ('light','tasks','Задания')]
+VIEWS = [('home-default', 'Ход дня'), ('schedule', 'Расписание'), ('grades', 'Отметки'),
+         ('absences', 'Пропуски'), ('tasks', 'Задания')]
 
 
-def command(*argv):
-    return subprocess.check_output(argv)
+def command(*args):
+    return subprocess.check_output(args)
 
 
-def key(release):
-    m = TAG.fullmatch(release['tag_name'])
-    return tuple(map(int, m.groups()[:3])) + ({'beta':0,'rc':1,None:2}[m[4]], int(m[5] or 0))
+def download(url, dest):
+    subprocess.run(['curl', '--fail', '--silent', '--show-error', '--location', '--retry', '3',
+                    url, '--output', str(dest)], check=True)
 
 
-def logo(tag, dest):
-    if subprocess.run(['git','cat-file','-e',f'{tag}:docs/logo.png'],stderr=subprocess.DEVNULL).returncode:
-        subprocess.run(['git','fetch','--quiet','--depth=1','origin',f'refs/tags/{tag}:refs/tags/{tag}'],check=True)
-    dest.write_bytes(command('git','show',f'{tag}:docs/logo.png'))
+def gallery(site, temp, tag, commit, ref):
+    prefix = f'https://raw.githubusercontent.com/{REPO}/{ref}/pack/stable/'
+    manifest = temp / 'manifest.json'
+    download(prefix + 'manifest.json', manifest)
+    pack = json.loads(manifest.read_text(encoding='utf-8'))
+    if (pack['channel'], pack['tag'], pack['commit']) != ('stable', tag, commit):
+        raise ValueError('Стабильная галерея для этого тега ещё не готова')
 
+    def verified(name):
+        local = temp / Path(name).name
+        download(prefix + name, local)
+        if hashlib.sha256(local.read_bytes()).hexdigest() != pack['files'][name]:
+            raise ValueError(f'Неверная контрольная сумма {name}')
+        return local
 
-def font(size):
-    for path in ['/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf','C:/Windows/Fonts/segoeui.ttf']:
-        if Path(path).exists():
-            return ImageFont.truetype(path,size)
-    raise RuntimeError('Нужен шрифт с кириллицей')
-
-
-def render_media(site, tag, temp, ref, paths, channel='stable'):
-    directory = 'media' if channel == 'stable' else 'media/beta'
-    media = site / directory
-    media.mkdir(parents=True, exist_ok=True)
-    cards = []
-    folder = f'pack/{channel}'
-    if channel == 'stable' and folder + '/manifest.json' not in paths:
-        folder = 'pack'
-    if folder + '/manifest.json' in paths:
-        prefix = f'https://raw.githubusercontent.com/{REPO}/{ref}/{folder}/'
-        def get(name, dest):
-            subprocess.run(['curl','--fail','--silent','--show-error','--location','--retry','3',
-                            prefix+name,'--output',str(dest)],check=True)
-        get('manifest.json', temp/'pack.json')
-        pack=json.loads((temp/'pack.json').read_text(encoding='utf-8'))
-        def verified(file, dest):
-            get(file, dest)
-            if hashlib.sha256(dest.read_bytes()).hexdigest() != pack['files'][file]:
-                raise ValueError(file)
-        if pack['tag']==tag:
-            for mode, view, label in VIEWS:
-                file=f'ios/{mode}/{view}-framed-{mode}.webp'
-                local=temp/(view+'.webp')
-                verified(file,local)
-                with Image.open(local) as source:
-                    im = source.convert('RGBA')
-                im.thumbnail((810, 1800), Image.Resampling.LANCZOS)
-                filename = f'{view}-framed-{mode}.png'
-                im.save(media / filename, optimize=True)
-                cards.append({'imageURL': BASE_URL + directory + '/' + filename, 'width': im.width, 'height': im.height})
-                # Предыдущие версии источника ссылаются на JPEG по постоянным адресам.
-                legacy = Image.new('RGB', im.size, '#f8f8fd' if mode == 'light' else '#13151d')
-                legacy.paste(im, mask=im.getchannel('A'))
-                legacy.save(media / (view + '.jpg'), quality=91, subsampling=0, optimize=True)
-            cover = 'mockups/overview.webp' if 'mockups/overview.webp' in pack['files'] else 'mockups/day.webp'
-            if cover in pack['files']:
-                verified(cover, temp/'cover.webp')
-                with Image.open(temp/'cover.webp') as image:
-                    ImageOps.fit(image.convert('RGB'), (1200,800), Image.Resampling.LANCZOS).save(
-                        media/'header.jpg', quality=94, optimize=True)
-                return cards
-    if channel == 'beta':
-        return cards
-    bg=ImageOps.colorize(Image.linear_gradient('L').resize((1200,800)), '#e9eaff','#bdc9f1').convert('RGBA')
-    draw=ImageDraw.Draw(bg)
-    brand=Image.open(site/'icon.png').convert('RGBA')
-    brand.thumbnail((152,152),Image.Resampling.LANCZOS)
-    bg.alpha_composite(brand,(76,133))
-    draw.text((65,321),'Journal',font=font(116),fill='#222b51')
-    draw.text((76,487),'Расписание и дневник',font=font(42),fill='#37456f')
-    draw.text((77,555),'МГТЭК',font=font(32),fill='#4b5980')
-    bg.convert('RGB').save(media/'header.jpg',quality=92,optimize=True)
-    return cards
+    # A changed gallery for the same release must also invalidate client image caches.
+    path = f"media/{tag}-{hashlib.sha256(manifest.read_bytes()).hexdigest()[:12]}"
+    media = site / path
+    media.mkdir(parents=True)
+    logo = command('git', 'show', f'{tag}:docs/logo.png')
+    (media / 'icon.png').write_bytes(logo)
+    shutil.copyfile(media / 'icon.png', site / 'icon.png')
+    for mode, cover in [('light', 'overview'), ('dark', 'overview-dark')]:
+        with Image.open(verified(f'mockups/{cover}.webp')) as image:
+            image.thumbnail((1200, 800), Image.Resampling.LANCZOS)
+            image.convert('RGB').save(media / f'header-{mode}.jpg', quality=94)
+    shutil.copyfile(media / 'header-light.jpg', site / 'media/header.jpg')
+    cards, figures = [], []
+    for view, label in VIEWS:
+        pair = {}
+        for mode in ('light', 'dark'):
+            filename = f'{view}-framed-{mode}'
+            with Image.open(verified(f'ios/{mode}/{filename}.webp')) as src:
+                image = src.convert('RGBA')
+            image.thumbnail((810, 1800), Image.Resampling.LANCZOS)
+            image.save(media / (filename + '.png'), optimize=True)
+            url = BASE_URL + path + '/' + filename + '.png'
+            cards.append({'imageURL': url, 'width': image.width, 'height': image.height})
+            pair[mode] = url
+        figures.append(f'<figure><picture><source media="(prefers-color-scheme: dark)" srcset="{pair["dark"]}">'
+                       f'<img src="{pair["light"]}" width="{image.width}" height="{image.height}" alt="{label}"></picture>'
+                       f'<figcaption>{label}</figcaption></figure>')
+    return path, cards, ''.join(figures)
 
 
 def build():
-    site=Path('site/ios')
-    latest=json.loads(command('gh','api',f'repos/{REPO}/releases/latest'))
-    pages=json.loads(command('gh','api','--paginate','--slurp',f'repos/{REPO}/releases?per_page=100'))
-    betas=sorted((r for page in pages for r in page if r['prerelease'] and not r['draft']
-                  and TAG.fullmatch(r['tag_name'])),key=key,reverse=True)
-    with TemporaryDirectory() as tmp:
-        temp=Path(tmp)
-        cache = Path(os.environ.get('CATALOG_CACHE', str(temp/'cache')))
-        cache.mkdir(parents=True, exist_ok=True)
-        def source(r, beta):
-            tag=r['tag_name']
-            name=f'Journal-{tag}-ios.ipa'
-            asset=next(a for a in r['assets'] if a['name']==name)
-            notes=Path('.github/releases')/(tag+'.md')
-            identity=hashlib.sha256(json.dumps([tag,asset['digest'],asset['size'],asset['browser_download_url'],
-                                                r['published_at'],r['draft'],r['prerelease'],beta]).encode())
-            identity.update(Path(__file__).with_name('altstore_source.py').read_bytes())
-            if notes.exists():
-                identity.update(notes.read_bytes())
-            record=cache/(identity.hexdigest()+'.json')
-            if record.exists():
-                return json.loads(record.read_text(encoding='utf-8'))
-            subprocess.run(['gh','release','download',tag,'--repo',REPO,'--pattern',name,'--dir',str(temp)],check=True)
-            result=make_source(r,temp/name,beta=beta)
-            record.write_text(json.dumps(result,ensure_ascii=False),encoding='utf-8')
-            return result
-        stable=source(latest,False)
-        logo(latest['tag_name'],site/'icon.png')
-        branch = command('git', 'ls-remote', 'origin', 'refs/heads/screenshots').decode().split()
-        ref = branch[0] if branch else None
-        paths = set()
-        if ref:
-            tree = json.loads(command('gh', 'api', f'repos/{REPO}/git/trees/{ref}?recursive=1'))
-            paths = {entry['path'] for entry in tree['tree']}
-        cards = render_media(site, latest['tag_name'], temp, ref, paths)
-        if cards:
-            stable['apps'][0]['screenshots']=cards
-            stable['apps'][0]['screenshotURLs']=[c['imageURL'] for c in cards]
-        beta=json.loads(json.dumps(stable))
-        beta.update(name='Journal · Бета',identifier='eugggeneee.journal.beta.source',
-                    sourceURL=BASE_URL+'beta.json',subtitle='Тестовые сборки Journal',iconURL=BASE_URL+'beta-icon.png',
-                    description='Бета-версии и кандидаты в релиз. Основной источник Journal распространяет стабильные обновления.')
-        app=beta['apps'][0]
-        app.update(name='Journal · Бета',iconURL=beta['iconURL'],subtitle='Бета-версии и кандидаты в релиз')
-        entries=[(latest,app['versions'][0])]
-        privacy=dict(app['appPermissions']['privacy'])
-        with ThreadPoolExecutor(max_workers=4) as pool:
-            for release, catalog in zip(betas, pool.map(lambda r:source(r,True),betas)):
-                item=catalog['apps'][0]
-                entries.append((release,item['versions'][0]))
-                for permission, reason in item['appPermissions']['privacy'].items():
-                    privacy.setdefault(permission, reason)
-        entries.sort(key=lambda pair:key(pair[0]),reverse=True)
-        app['versions']=[v for _,v in entries]
-        app['appPermissions']['privacy']=privacy
-        app['localizedDescription']+=' Доступны бета-версии и кандидаты в релиз.'
-        beta_cards = render_media(site, entries[0][0]['tag_name'], temp, ref, paths, 'beta')
-        if beta_cards:
-            beta['headerURL'] = BASE_URL + 'media/beta/header.jpg'
-            app['screenshots'] = beta_cards
-            app['screenshotURLs'] = [card['imageURL'] for card in beta_cards]
-            app['localizedDescription'] += ' На скриншотах Journal ' + entries[0][0]['tag_name'][1:] + '.'
-        elif cards:
-            app['localizedDescription']+=' На скриншотах показан стабильный Journal '+latest['tag_name'][1:]+'.'
-        logo(entries[0][0]['tag_name'],site/'beta-icon.png')
-        for filename, catalog in [('source.json',stable),('beta.json',beta)]:
-            (site/filename).write_text(json.dumps(catalog,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-        html=site/'index.html'
-        gallery=''.join(f'<figure><img src="{c["imageURL"]}" width="{c["width"]}" height="{c["height"]}" alt="{label}"><figcaption>{label}</figcaption></figure>'
-                        for (_,_,label),c in zip(VIEWS,cards))
-        html.write_text(html.read_text(encoding='utf-8').replace('{{stable}}',latest['tag_name'][1:])
-                        .replace('{{beta}}',entries[0][0]['tag_name'][1:])
-                        .replace('{{ipa}}',stable['apps'][0]['versions'][0]['downloadURL'])
-                        .replace('{{gallery}}',gallery),encoding='utf-8')
+    release = json.loads(command('gh', 'api', f'repos/{REPO}/releases/latest'))
+    tag = release['tag_name']
+    if release['draft'] or release['prerelease'] or not re.fullmatch(r'v\d+\.\d+\.\d+', tag):
+        raise ValueError('Нужен опубликованный стабильный тег')
+    subprocess.run(['git', 'fetch', '--quiet', '--depth=1', 'origin', f'refs/tags/{tag}:refs/tags/{tag}'], check=True)
+    commit = command('git', 'rev-parse', tag + '^{commit}').decode().strip()
+    ref = command('git', 'ls-remote', '--exit-code', 'origin', 'refs/heads/screenshots').decode().split()[0]
+    # Pages deploys this fresh directory only after every artifact has passed validation.
+    build_dir = Path('build')
+    build_dir.mkdir(exist_ok=True)
+    output = Path(mkdtemp(prefix='pages-', dir=build_dir)).resolve()
+    for name in command('git', 'ls-files', '-z', '--', 'site').decode().split('\0'):
+        if name:
+            source = Path(name)
+            dest = output / source.relative_to('site')
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, dest)
+    site = output / 'ios'
+    with TemporaryDirectory() as directory:
+        temp = Path(directory)
+        path, cards, figures = gallery(site, temp, tag, commit, ref)
+        filename = f'Journal-{tag}-ios.ipa'
+        subprocess.run(['gh', 'release', 'download', tag, '--repo', REPO,
+                        '--pattern', filename, '--dir', str(temp)], check=True)
+        catalog = make_source(release, temp / filename)
+    app = catalog['apps'][0]
+    app['iconURL'] = catalog['iconURL'] = BASE_URL + path + '/icon.png'
+    catalog['headerURL'] = BASE_URL + path + '/header-light.jpg'
+    app['screenshots'] = cards
+    app['screenshotURLs'] = [card['imageURL'] for card in cards]
+    content = json.dumps(catalog, ensure_ascii=False, indent=2) + '\n'
+    for filename in ('stable.json', 'source.json'):
+        (site / filename).write_text(content, encoding='utf-8')
+    page = site / 'index.html'
+    page.write_text(page.read_text(encoding='utf-8').replace('{{stable}}', tag[1:])
+                    .replace('{{media}}', path).replace('{{gallery}}', figures)
+                    .replace('{{ipa}}', app['versions'][0]['downloadURL']), encoding='utf-8')
+    if os.environ.get('GITHUB_OUTPUT'):
+        with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as stream:
+            print(f'path={output}', file=stream)
+    print(output)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     build()

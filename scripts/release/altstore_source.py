@@ -12,11 +12,10 @@ BUNDLE_ID = 'eugggeneee.journal'
 BASE_URL = 'https://eugggeneee.github.io/journal/ios/'
 
 
-def make_source(release: dict, ipa: Path, *, beta: bool = False) -> dict:
+def make_source(release: dict, ipa: Path) -> dict:
     tag = release['tag_name']
-    match = re.fullmatch(r'v(\d+\.\d+\.\d+)(?:-(beta|rc)\.[1-9]\d*)?', tag)
-    if (not match or release['draft'] or bool(match[2]) != release['prerelease']
-            or (release['prerelease'] and not beta)):
+    match = re.fullmatch(r'v(\d+\.\d+\.\d+)', tag)
+    if not match or release['draft'] or release['prerelease']:
         raise ValueError('Тег и канал выпуска не совпадают')
     name = f'Journal-{tag}-ios.ipa'
     asset = next(a for a in release['assets'] if a['name'] == name)
@@ -43,11 +42,11 @@ def make_source(release: dict, ipa: Path, *, beta: bool = False) -> dict:
         'name': 'Journal',
         'bundleIdentifier': BUNDLE_ID,
         'developerName': 'eugggeneee',
-        'subtitle': 'Расписание, оценки и пропуски МГТЭК',
+        'subtitle': 'Расписание, отметки и пропуски МГТЭК',
         'category': 'utilities',
         'tintColor': '#5364A4',
         'localizedDescription': 'Когда начнётся следующая пара? Откройте главную, чтобы увидеть обратный отсчёт, кабинет и задания. '
-                                'Оценки, пропуски и пометки привязаны к конкретной паре. Загруженное расписание доступно офлайн.',
+                                'Отметки, пропуски и пометки привязаны к конкретной паре. Загруженное расписание доступно офлайн.',
         'iconURL': BASE_URL + 'icon.png',
         'versions': [version],
         # В release.yml Journal собирается без подписи и использует только основной пакет.
@@ -62,7 +61,7 @@ def make_source(release: dict, ipa: Path, *, beta: bool = False) -> dict:
         'iconURL': BASE_URL + 'icon.png',
         'headerURL': BASE_URL + 'media/header.jpg',
         'featuredApps': [BUNDLE_ID],
-        'sourceURL': BASE_URL + 'source.json',
+        'sourceURL': BASE_URL + 'stable.json',
         'website': BASE_URL,
         'apps': [app],
         'news': [],

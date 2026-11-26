@@ -19,7 +19,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -32,11 +32,14 @@ jobs:
     name: Версия
     runs-on: ubuntu-latest
     outputs:
+      sha: ${{ steps.v.outputs.sha }}
       tag: ${{ steps.v.outputs.tag }}
       version: ${{ steps.v.outputs.version }}
       ios_version: ${{ steps.v.outputs.ios_version }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ format('refs/tags/{0}', inputs.tag || github.ref_name) }}
       - id: v
         env:
           INPUT_TAG: ${{ github.event.inputs.tag }}
@@ -45,6 +48,7 @@ jobs:
           TAG="${INPUT_TAG:-$REF_NAME}"
           python3 scripts/project/version.py tag "$TAG"
           python3 scripts/project/check.py
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
           # CFBundleShortVersionString в iOS допускает только цифры и точки: пред-релизный суффикс отбрасывается
@@ -57,6 +61,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.meta.outputs.sha }}
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -73,6 +79,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.meta.outputs.sha }}
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -158,6 +166,8 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.meta.outputs.sha }}
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -221,6 +231,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          ref: ${{ needs.meta.outputs.sha }}
           fetch-depth: 0
 
       - uses: actions/download-artifact@v5
@@ -284,7 +295,7 @@ jobs:
             gh release create "$TAG" "${FILES[@]}" \
               --title "Journal $TAG" \
               --notes-file notes.md \
-              --target "$GITHUB_SHA" \
+              --verify-tag \
               "${FLAGS[@]}"
           fi
 
