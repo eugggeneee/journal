@@ -8,3 +8,5 @@ iPhone 17 · iOS Simulator · iOS 26.2 · 1206 × 2622 px.
 raw — исходный кадр. framed-light и framed-dark — светлый и тёмный корпус на прозрачном фоне.
 
 ![Journal — расписание, главная и отметки](mockups/overview.webp)
+
+[Версия, номер сборки и дата пересборки](build.json)
