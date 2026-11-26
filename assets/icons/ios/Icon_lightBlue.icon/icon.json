@@ -33,11 +33,19 @@
               }
             }
           ]
-        },
+        }
+      ],
+      "translucency": {
+        "enabled": false,
+        "value": 0.1
+      }
+    },
+    {
+      "layers": [
         {
           "image-name": "dome.png",
           "name": "dome",
-          "glass": false,
+          "glass": true,
           "fill-specializations": [
             {
               "appearance": "dark",
@@ -69,7 +77,7 @@
         {
           "image-name": "lip.png",
           "name": "lip",
-          "glass": true,
+          "glass": false,
           "fill-specializations": [
             {
               "appearance": "dark",

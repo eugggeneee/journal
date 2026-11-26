@@ -1,7 +1,6 @@
 """Собрать значки и палитры из bell.svg и palette.json. Требуются Pillow и resvg-py."""
 
 import json
-import math
 import re
 from io import BytesIO
 from pathlib import Path
@@ -69,29 +68,6 @@ silhouette.resize((432,432), resize).save(drawable / 'ic_mono_shared.png')
 palettes = json.loads(Path('scripts/icons/artwork_palettes.json').read_text(encoding='utf-8'))
 
 
-def relief(mask, shadow, body, highlight, part):
-    # Light comes from the upper left. Use the same highlight and rim on every platform.
-    left, top, right, bottom = mask.getbbox()
-    size = 256
-    field = Image.new('L', (size, size))
-    levels = []
-    for y in range(size):
-        for x in range(size):
-            u = (x * 1024 / size - left) / (right - left)
-            v = (y * 1024 / size - top) / (bottom - top)
-            if part == 'lip':
-                light = .16 + .70 * math.exp(-((v - .31) / .25) ** 2) + .12 * (1 - u)
-            else:
-                light = (.15 + .65 * math.exp(-((u - .32) / .32) ** 2)
-                         + .20 * (1 - v))
-            levels.append(max(0, min(255, round(light * 255))))
-    field.putdata(levels)
-    image = ImageOps.colorize(field.resize(mask.size, Image.Resampling.BICUBIC),
-                              shadow, highlight, mid=body, midpoint=146).convert('RGBA')
-    image.putalpha(mask)
-    return image
-
-
 for theme in themes:
     key = theme['id']
     light = palettes[key]['light']
@@ -108,18 +84,25 @@ for theme in themes:
     picture = Image.new('RGBA', (1024, 1024))
     layers = []
     for name, mask in masks.items():
-        highlight = light['outline'] if name == 'dome' else light['primaryContainer']
-        layer = relief(mask, light['onSurface'], light['onPrimaryContainer'], highlight, name)
-        layer.save(ios / 'Assets' / (name + '.png'))
+        front = light['primary'] if name == 'dome' else light['onPrimaryContainer']
+        edge = light['onSurfaceVariant'] if name == 'dome' else light['onSurface']
+        # Icon Composer lights the layers on-device. Android uses a broad tonal transition.
+        paint(mask, front).save(ios / 'Assets' / (name + '.png'))
+        layer = ImageOps.colorize(ramp, front, edge).convert('RGBA')
+        layer.putalpha(mask)
         picture.alpha_composite(layer)
         dark_fill = surface(dark['onPrimaryContainer'], dark['primary'] if name == 'dome' else dark['onSurfaceVariant'])
         mono = (226, 226, 226) if name == 'lip' else (255, 255, 255)
-        layers.append({'image-name': name + '.png', 'name': name, 'glass': name == 'lip',
+        layers.append({'image-name': name + '.png', 'name': name, 'glass': name == 'dome',
                        'fill-specializations': [
                            {'appearance': 'dark', 'value': dark_fill},
                            {'appearance': 'tinted', 'value': {'solid': srgb(mono)}},
                        ]})
-    doc['groups'] = [{'layers': layers, 'translucency': {'enabled': False, 'value': .1}}]
+    # A separate rear plane gives the clapper native depth under the shell.
+    doc['groups'] = [
+        {'layers': parts, 'translucency': {'enabled': False, 'value': .1}}
+        for parts in (layers[:1], layers[1:])
+    ]
     (ios / 'icon.json').write_text(json.dumps(doc, indent=2) + '\n', encoding='utf-8', newline='\n')
     suffix = re.sub(r'[A-Z]', lambda m: '_' + m[0].lower(), key)
     background.resize((432, 432), resize).save(drawable / f'ic_bg_{suffix}.png')

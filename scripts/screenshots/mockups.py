@@ -109,31 +109,35 @@ def posters(pack, logo, channel):
             def line(x, y, text, size, color=ink, weight='black'):
                 draw.text((x, y), text, font=font(size, weight), fill=color, anchor='lt')
             if name == 'overview':
-                draw.rounded_rectangle((728, 147, 1930, 1100), radius=330, fill=field)
+                # Two broad, concentric turns hold the staggered devices together.
+                draw.rounded_rectangle((728, 114, 1970, 1100), radius=420, fill=quiet)
+                draw.rounded_rectangle((798, 179, 1935, 1035), radius=355, fill=field)
                 line(76, 337, 'Дневник', 153)
                 line(82, 506, 'студента', 130, secondary, 'regular')
                 line(76, 678, 'МГТЭК', 145, accent)
-                device('schedule', (945, 688), 662, 4)
-                device('grades', (1544, 592), 662, -4)
-                device('home-default', (1242, 610), 910)
+                device('schedule', (939, 688), 644, 4)
+                device('grades', (1560, 612), 648, -4)
+                device('home-default', (1246, 610), 878)
             elif name == 'day':
-                ripple(draw, (1252, 515), 509, 26, 8, field)
+                ripple(draw, (1196, 500), 548, 22, 8, quiet)
+                ripple(draw, (1196, 500), 484, 22, 8, field)
                 line(65, 275, 'Ход', 257)
                 line(176, 517, 'дня', 240, accent, 'bolditalic')
-                device('home-default', (1150, 503), 875, -3)
+                device('home-default', (1182, 500), 842, -3)
             elif name == 'schedule':
                 # Three quiet blocks follow the same cadence as lessons in the timetable.
                 for i, (left, right, color) in enumerate([
-                        (-130, 905, quiet), (142, 1245, field), (-110, 915, quiet)]):
-                    top = 462 + 282 * i
-                    draw.rounded_rectangle((left, top, right, top + 236), radius=118, fill=color)
-                line(61, 182, 'Расписание', 170)
-                device('schedule', (600, 918), 1044)
+                        (64, 928, quiet), (224, 1136, field), (64, 928, quiet)]):
+                    top = 474 + 280 * i
+                    draw.rounded_rectangle((left, top, right, top + 208), radius=104, fill=color)
+                line(63, 184, 'Расписание', 160)
+                device('schedule', (600, 903), 1018)
             else:
-                draw.rounded_rectangle((665, 162, 1700, 1250), radius=268, fill=field)
+                draw.rounded_rectangle((680, 114, 1209, 1128), radius=264, fill=quiet)
+                draw.rounded_rectangle((1050, 234, 1576, 1280), radius=263, fill=field)
                 line(58, 451, 'Отметки', 133)
                 line(72, 627, 'и пропуски', 102, secondary, 'regular')
-                device('grades', (911, 592), 809, 2)
-                device('absences', (1324, 837), 809, -2)
+                device('grades', (938, 595), 782, 2)
+                device('absences', (1315, 813), 782, -2)
             brand(canvas, icon, (72, 67), ink, field, scheme['onPrimaryContainer'], channel == 'beta')
             canvas.save(pack / poster_path(name, mode), quality=94, method=4)
