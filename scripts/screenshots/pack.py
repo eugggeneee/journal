@@ -1,4 +1,7 @@
 """Проверка и сборка iOS-галереи стабильного релиза Journal."""
+from datetime import datetime, timezone
+from tempfile import TemporaryDirectory
+import subprocess
 import hashlib
 import json
 import shutil
@@ -13,6 +16,25 @@ from mockups import FINISHES, FRAMES, POSTERS, framed, poster_path, posters
 SCENES = ('home-details date-picker schedule-menu grade-journal absence-calendar absence-journal home-compact schedule lesson mark absence-quick whole-day grades subject grade-form '
           'absences absence-form tasks task-form settings appearance theme-picker layout schedule-settings '
           'group bells-week bells-sat bells-short bell-editor absence-settings behavior data').split()
+
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'release'))
+from altstore_source import verified_info
+
+
+def record_build(output, tag, commit):
+    repo = 'eugggeneee/journal'
+    release = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/releases/tags/{tag}']))
+    filename = f'Journal-{tag}-ios.ipa'
+    with TemporaryDirectory() as tmp:
+        subprocess.run(['gh', 'release', 'download', tag, '--repo', repo, '--pattern', filename,
+                        '--dir', tmp], check=True)
+        _, info = verified_info(release, Path(tmp) / filename)
+    record = {'version': tag[1:], 'buildNumber': str(info['CFBundleVersion']), 'commit': commit,
+              'rebuiltAt': datetime.now(timezone.utc).isoformat(timespec='seconds')}
+    path = output / 'build.json'
+    path.write_text(json.dumps(record, indent=2) + '\n', encoding='utf-8', newline='\n')
+    return digest(path)
 
 
 def digest(path):
@@ -50,7 +72,11 @@ def complete(root, tag, scenes, commit):
         manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
         files = manifest['files']
         expected = media_names(scenes)
+        build = json.loads((root / 'build.json').read_text(encoding='utf-8'))
         return (manifest['tag'] == tag and manifest.get('commit') == commit
+                and manifest.get('buildSHA256') == digest(root / 'build.json')
+                and build['version'] == tag[1:] and build['commit'] == commit
+                and build['buildNumber'].isdigit() and datetime.fromisoformat(build['rebuiltAt']).tzinfo is not None
                 and manifest.get('channel') == os.environ['CHANNEL']
                 and all(manifest.get(k) == v for k, v in recipe_hashes(scenes).items())
                 and manifest.get('spec') == 'gallery-v2' and manifest.get('fixture') == 'trade-0000-v1' and set(manifest['devices']) == {'ios'}
@@ -58,7 +84,7 @@ def complete(root, tag, scenes, commit):
                     'os': '26.2', 'width': 1206, 'height': 2622}
                 and manifest.get('group') == '0000' and manifest['scenes'] == scenes and set(files) == expected
                 and {p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file()}
-                == expected | {'manifest.json', 'README.md'}
+                == expected | {'manifest.json', 'build.json', 'README.md'}
                 and all(digest(root / name) == files[name] for name in expected))
     except (OSError, KeyError, TypeError, ValueError):
         return False
@@ -95,12 +121,13 @@ def make(source, output, app, tag, commit):
                 raise ValueError(f'Рамка {finish} должна иметь прозрачные поля')
     posters(output, app / 'docs/logo.png', os.environ['CHANNEL'])
     files = {key: digest(output / key) for key in sorted(media_names(scenes))}
-    manifest = {**recipe_hashes(scenes), 'spec': 'gallery-v2', 'fixture': 'trade-0000-v1', 'channel': os.environ['CHANNEL'], 'tag': tag, 'commit': commit, 'group': '0000', 'scenes': scenes,
+    manifest = {**recipe_hashes(scenes), 'buildSHA256': record_build(output, tag, commit), 'spec': 'gallery-v2', 'fixture': 'trade-0000-v1', 'channel': os.environ['CHANNEL'], 'tag': tag, 'commit': commit, 'group': '0000', 'scenes': scenes,
                 'devices': {'ios': device}, 'files': files}
     (output / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     lines = [f'# Journal {tag} · iOS', '',
              f"{device['model']} · {device['environment']} · iOS {device['os']} · {size[0]} × {size[1]} px.",
              'Группа 0000. Все записи и имена вымышлены.', '',
+             '[Версия, номер сборки и дата пересборки](build.json)', '',
              '[Светлая тема](ios/light/) · [Тёмная тема](ios/dark/) · [Рамки PNG](frames/) · [Фирменные макеты](mockups/)', '',
              'raw — исходный кадр. framed-light и framed-dark — светлый и тёмный корпус на прозрачном фоне.', '',
              '![Journal — расписание, главная и отметки](mockups/overview.webp)', '']

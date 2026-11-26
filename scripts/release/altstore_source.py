@@ -12,20 +12,26 @@ BUNDLE_ID = 'eugggeneee.journal'
 BASE_URL = 'https://eugggeneee.github.io/journal/ios/'
 
 
-def make_source(release: dict, ipa: Path) -> dict:
+def verified_info(release: dict, ipa: Path) -> tuple[dict, dict]:
     tag = release['tag_name']
-    match = re.fullmatch(r'v(\d+\.\d+\.\d+)', tag)
-    if not match or release['draft'] or release['prerelease']:
-        raise ValueError('Тег и канал выпуска не совпадают')
     name = f'Journal-{tag}-ios.ipa'
     asset = next(a for a in release['assets'] if a['name'] == name)
     if ipa.stat().st_size != asset['size'] or 'sha256:' + hashlib.sha256(ipa.read_bytes()).hexdigest() != asset['digest']:
         raise ValueError('IPA отличается от файла релиза')
     with zipfile.ZipFile(ipa) as archive:
         info = plistlib.loads(archive.read('Payload/Runner.app/Info.plist'))
-    if info['CFBundleIdentifier'] != BUNDLE_ID or info['CFBundleShortVersionString'] != match[1]:
+    if info['CFBundleIdentifier'] != BUNDLE_ID or info['CFBundleShortVersionString'] != tag[1:].split('-')[0]:
         raise ValueError('Идентификатор приложения или версия IPA не совпадают с релизом')
 
+    return asset, info
+
+
+def make_source(release: dict, ipa: Path) -> dict:
+    tag = release['tag_name']
+    match = re.fullmatch(r'v(\d+\.\d+\.\d+)', tag)
+    if not match or release['draft'] or release['prerelease']:
+        raise ValueError('Тег и канал выпуска не совпадают')
+    asset, info = verified_info(release, ipa)
     version = {
         'version': info['CFBundleShortVersionString'],
         'buildVersion': info['CFBundleVersion'],

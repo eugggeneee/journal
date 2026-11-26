@@ -78,26 +78,51 @@ def poster_path(name, mode):
     return f'mockups/{name}{suffix}.webp'
 
 
-def sweep(draw, size, baseline, rise, fill):
-    """A broad ascending curve, shared by the three phones on the cover."""
-    width, height = size
-    points = []
-    for x in range(0, width + 1, 4):
-        phase = math.pi * x / width
-        y = baseline - rise * (.5 - .5 * math.cos(phase))
-        points.append((x, round(y)))
-    draw.polygon([*points, (width, height), (0, height)], fill=fill)
+def page_fan(draw, size, paper, field, edge):
+    # Project a fan of leaves onto the cover. Their lines converge past the crop.
+    w, h = size
+    origin = (-w * .28, h * 1.27)
+    previous = None
+    for i in range(18):
+        t = i / 17
+        end = (w * 1.09, h * (1.62 - 1.52 * t))
+        curve = []
+        for j in range(101):
+            u = j / 100
+            bend = math.sin(math.pi * u)
+            curve.append((origin[0] + (end[0] - origin[0]) * u,
+                          origin[1] + (end[1] - origin[1]) * u - h * (.04 + .31*t) * bend))
+        if previous is not None:
+            draw.polygon(previous + curve[::-1], fill=(field if i % 4 else paper))
+            draw.line(curve, fill=edge, width=3 if i % 4 == 0 else 1)
+        previous = curve
+
+
+def dial(draw, cx, cy, radius, scheme):
+    # Rings and a swept arc read as the same clock at poster and thumbnail sizes.
+    def circle(r):
+        return (cx-r, cy-r, cx+r, cy+r)
+    draw.ellipse(circle(radius), fill=scheme['primaryContainer'])
+    draw.arc(circle(radius-30), 92, 263, fill=scheme['primary'], width=35)
+    draw.arc(circle(radius-89), 118, 260, fill=scheme['surface'], width=4)
+    for minute in range(60):
+        angle = math.radians(minute*6 - 90)
+        major = minute % 5 == 0
+        ends = [(cx+math.cos(angle)*r, cy+math.sin(angle)*r)
+                for r in (radius-101, radius-(137 if major else 115))]
+        draw.line(ends, fill=scheme['onPrimaryContainer'], width=7 if major else 3)
 
 
 def posters(pack, logo, channel):
     (pack / 'mockups').mkdir(exist_ok=True)
-    with Image.open(logo) as source:
-        icon = source.convert('RGBA')
     sizes = {'overview': (1800, 1200), 'day': (1600, 1000),
              'schedule': (1200, 1500), 'journal': (1600, 1360)}
     palettes = Path(__file__).resolve().parents[1] / 'icons/artwork_palettes.json'
     standard = json.loads(palettes.read_text(encoding='utf-8'))['default']
     for mode in FINISHES:
+        alternate = logo.with_name('logo-dark.png')
+        with Image.open(alternate if mode == 'dark' and alternate.is_file() else logo) as source:
+            icon = source.convert('RGBA')
         scheme = standard[mode]
         paper, ink = scheme['surface'], scheme['onSurface']
         accent, field = scheme['primary'], scheme['primaryContainer']
@@ -112,43 +137,46 @@ def posters(pack, logo, channel):
             strong = scheme['onPrimaryContainer'] if mode == 'light' else field
             mid = scheme['primaryContainer'] if mode == 'light' else scheme['secondaryContainer']
             if name == 'overview':
-                # A continuous, rising horizon links the schedule, live day and journal.
-                sweep(draw, size, 873, 400, mid)
-                sweep(draw, size, 1033, 431, strong)
-                line(73, 183, 'Дневник студента', 123)
-                line(1260, 202, 'МГТЭК', 113, accent)
-                device('schedule', (449, 803), 665, 7)
-                device('grades', (1364, 729), 716, -7)
-                device('home-default', (899, 760), 826)
+                page_fan(draw, size, scheme['surfaceContainer'], mid, scheme['outline'])
+                # The masthead has its own clear margin above the centre phone.
+                draw.rounded_rectangle((-144, -186, 1260, 395), radius=174, fill=paper)
+                line(69, 170, 'Дневник', 163)
+                line(796, 198, 'студента', 102, secondary, 'regular')
+                draw.rounded_rectangle((1285, 159, 1732, 318), radius=80, fill=accent)
+                line(1345, 188, 'МГТЭК', 102, scheme['onPrimary'])
+                device('schedule', (448, 768), 712, 9)
+                device('grades', (1366, 744), 714, -9)
+                device('home-default', (906, 759), 824)
             elif name == 'day':
-                # Minute ticks belong to the countdown and stay behind the phone.
-                cx, cy, radius = 1262, 590, 585
-                draw.ellipse((cx-radius, cy-radius, cx+radius, cy+radius), fill=mid)
-                draw.pieslice((cx-radius+68, cy-radius+68, cx+radius-68, cy+radius-68),
-                              106, 278, fill=strong)
-                for angle in range(117, 270, 12):
-                    rad = math.radians(angle)
-                    inside = radius - (58 if (angle - 117) % 36 == 0 else 35)
-                    pts = [(cx + r * math.cos(rad), cy + r * math.sin(rad)) for r in (inside, radius-18)]
-                    draw.line(pts, fill=scheme['onPrimaryContainer'], width=6)
-                line(64, 241, 'Ход', 273)
-                line(173, 534, 'дня', 239, accent, 'bolditalic')
-                device('home-default', (1159, 506), 872, -4)
+                dial(draw, 1210, 560, 595, scheme)
+                line(56, 229, 'Ход', 300)
+                line(143, 540, 'дня', 254, accent, 'bolditalic')
+                device('home-default', (1205, 508), 866, -5)
             elif name == 'schedule':
-                # Broad folded bands cross the page behind the vertical timetable.
-                for top, color in ((646, quiet), (811, mid), (975, strong)):
-                    draw.polygon([(0, top), (1200, top-330), (1200, 1500), (0, 1500)], fill=color)
-                line(63, 196, 'Расписание', 165)
-                device('schedule', (629, 908), 1024, -4)
+                # An accordion fold of timetable columns crosses the full bleed.
+                draw.polygon([(0, 720), (1200, 347), (1200, 1500), (0, 1500)], fill=mid)
+                for i in range(-1, 6):
+                    x = i * 264
+                    top = 758 - x * .31
+                    draw.polygon([(x, top), (x+180, top-102), (x+224, 1500), (x+52, 1500)],
+                                 fill=strong)
+                    draw.line([(x+180, top-102), (x+224, 1500)], fill=accent, width=4)
+                line(62, 181, 'Расписание', 166)
+                device('schedule', (605, 916), 1036, -5)
             else:
-                # Two adjoining leaves of a diary, with a continuous centre seam.
-                draw.rounded_rectangle((62, 343, 1538, 1304), radius=132, fill=mid)
-                draw.rounded_rectangle((800, 343, 1538, 1304), radius=132, fill=strong)
-                draw.rectangle((800, 475, 920, 1304), fill=strong)
-                draw.ellipse((698, 1177, 898, 1377), fill=paper)
-                line(63, 175, 'Отметки', 142)
-                line(732, 198, 'и пропуски', 115, accent, 'regular')
-                device('grades', (465, 820), 827, 3)
-                device('absences', (1134, 819), 827, -3)
+                # A spine and two curved page edges, drawn from the same mirrored profile.
+                cy = 740
+                for side in (-1, 1):
+                    for inset, fill in [(0, quiet), (16, paper), (26, mid), (40, scheme['secondaryContainer'])]:
+                        left, right = 0, 722-inset
+                        curve = [(800 + side*x, 343 + 34*(1-x/722)**3 - 31*math.sin(math.pi*x/722) + inset*.12)
+                                 for x in range(left, right, 4)]
+                        bottom = [(x, 2*cy + 160-y-inset*.55) for x, y in reversed(curve)]
+                        draw.polygon(curve+bottom, fill=fill)
+                draw.line([(800, 382),(800, 1225)], fill=scheme['outline'], width=4)
+                line(66, 168, 'Отметки', 145)
+                line(759, 203, 'и пропуски', 111, accent, 'regular')
+                device('grades', (443, 809), 810, 3)
+                device('absences', (1151, 809), 810, -3)
             brand(canvas, icon, (72, 67), ink, field, scheme['onPrimaryContainer'], channel == 'beta')
             canvas.save(pack / poster_path(name, mode), quality=94, method=4)
