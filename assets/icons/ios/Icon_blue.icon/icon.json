@@ -43,7 +43,8 @@
         }
       ],
       "translucency": {
-        "enabled": false
+        "enabled": false,
+        "value": 0.1
       }
     }
   ],

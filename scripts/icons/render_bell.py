@@ -94,7 +94,7 @@ for theme in themes:
         picture.alpha_composite(layer)
         layers.append({'image-name': name + '.png', 'name': name, 'glass': False,
                        'fill-specializations': [{'appearance':'dark','value':{'solid':srgb(blend(seed, (255, 255, 255), .72 if name == 'lip' else .94))}}]})
-    doc['groups'] = [{'layers': layers, 'translucency': {'enabled': False}}]
+    doc['groups'] = [{'layers': layers, 'translucency': {'enabled': False, 'value': .10}}]
     (ios / 'icon.json').write_text(json.dumps(doc, indent=2) + '\n', encoding='utf-8', newline='\n')
     suffix = re.sub(r'[A-Z]', lambda m: '_' + m[0].lower(), key)
     background.resize((432, 432), resize).save(drawable / f'ic_bg_{suffix}.png')
