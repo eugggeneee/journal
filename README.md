@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/logo.png" width="112" alt="Значок Journal для iOS">
+<img src="docs/logo-dark.png" width="112" alt="Значок Journal для iOS">
 
 # Journal
 
