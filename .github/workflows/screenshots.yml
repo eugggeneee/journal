@@ -85,7 +85,7 @@ jobs:
           bash scripts/icons/select_xcode.sh
           python3 scripts/screenshots/record.py capture-app "$RUNNER_TEMP/frames"
           mkdir -p "$RUNNER_TEMP/frames/fonts"
-          cp "$FLUTTER_ROOT"/bin/cache/artifacts/material_fonts/roboto-{black,bold,bolditalic,medium,regular}.ttf "$RUNNER_TEMP/frames/fonts/"
+          cp "$FLUTTER_ROOT"/bin/cache/artifacts/material_fonts/roboto-{bold,medium}.ttf "$RUNNER_TEMP/frames/fonts/"
       - uses: actions/upload-artifact@v5
         with:
           name: capture-ios
