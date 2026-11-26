@@ -1,4 +1,6 @@
 """iPhone-корпуса и фирменные композиции из подлинных снимков приложения."""
+import math
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -35,14 +37,10 @@ def framed(raw, finish):
 
 
 @lru_cache(maxsize=12)
-def font(size, bold=False):
-    family = 'DejaVuSans-Bold.ttf' if bold else 'DejaVuSans.ttf'
-    for name in (family, 'arialbd.ttf' if bold else 'arial.ttf'):
-        try:
-            return ImageFont.truetype(name, size)
-        except OSError:
-            continue
-    raise RuntimeError('Для фирменных макетов нужен шрифт с кириллицей')
+@lru_cache(maxsize=48)
+def font(size, weight='black'):
+    root = Path(os.environ['JOURNAL_FONT_DIR'])
+    return ImageFont.truetype(str(root / f'roboto-{weight}.ttf'), size)
 
 
 def brand(canvas, icon, position, ink, badge, badge_ink, beta):
@@ -51,12 +49,12 @@ def brand(canvas, icon, position, ink, badge, badge_ink, beta):
     canvas.paste(mark, (x, y), mark)
     draw = ImageDraw.Draw(canvas)
     end = x + 84
-    face = font(46, True)
+    face = font(46, 'bold')
     draw.text((end, y + 32), 'Journal', font=face, fill=ink, anchor='lm')
     if beta:
         left = round(end + draw.textlength('Journal', font=face)) + 20
         draw.rounded_rectangle((left, y + 8, left + 108, y + 58), radius=25, fill=badge)
-        draw.text((left + 54, y + 31), 'бета', font=font(30, True), fill=badge_ink, anchor='mm')
+        draw.text((left + 54, y + 31), 'бета', font=font(30, 'medium'), fill=badge_ink, anchor='mm')
 
 
 def phone(canvas, pack, key, finish, center, height, angle=0):
@@ -80,6 +78,21 @@ def poster_path(name, mode):
     return f'mockups/{name}{suffix}.webp'
 
 
+def ripple(draw, center, radius, amplitude, petals, fill):
+    points = []
+    for step in range(720):
+        theta = math.tau * step / 720
+        r = radius + amplitude * math.cos(theta * petals)
+        points.append((center[0] + r * math.cos(theta), center[1] + r * math.sin(theta)))
+    draw.polygon(points, fill=fill)
+
+
+def wave(draw, start, end, y, height, period, stroke, color):
+    points = [(x, y + height * math.sin((x - start) * math.tau / period))
+              for x in range(start, end + 1, 2)]
+    draw.line(points, fill=color, width=stroke, joint='curve')
+
+
 def posters(pack, logo, channel):
     (pack / 'mockups').mkdir(exist_ok=True)
     with Image.open(logo) as source:
@@ -87,38 +100,70 @@ def posters(pack, logo, channel):
     sizes = {'overview': (1800, 1200), 'day': (1600, 1000),
              'schedule': (1200, 1500), 'journal': (1600, 1360)}
     for mode in FINISHES:
-        if mode == 'light':
-            paper, ink, accent, field = '#f4f4ff', '#202446', '#3645a0', '#dce1ff'
-        else:
-            paper, ink, accent, field = '#141623', '#f0efff', '#c2caff', '#292f50'
+        dark = mode == 'dark'
+        paper = '#211334' if dark else '#f9edff'
+        ink = '#fff0fa' if dark else '#311043'
+        purple = '#794bba' if dark else '#bb99ed'
+        deep = '#3d2359' if dark else '#e6cbf5'
+        mint = '#87dbc5' if dark else '#a4edce'
+        coral = '#ef909c' if dark else '#ffacac'
+        lime = '#cde879' if dark else '#d8f58f'
         for name, size in sizes.items():
             canvas = Image.new('RGB', size, paper)
             draw = ImageDraw.Draw(canvas)
-            width, height = size
-            margin = round(width * .048)
-            def device(scene, center, h):
-                phone(canvas, pack, mode + '/' + scene, mode, center, h)
+            def device(scene, center, h, angle=0):
+                phone(canvas, pack, mode + '/' + scene, mode, center, h, angle)
+            def line(x, y, text, size, color=ink, weight='black'):
+                draw.text((x, y), text, font=font(size, weight), fill=color, anchor='lt')
             if name == 'overview':
-                draw.rounded_rectangle((margin, 349, width-margin, 1151), radius=90, fill=field)
-                device('schedule', (470, 747), 663)
-                device('grades', (1330, 747), 663)
-                device('home-default', (900, 731), 834)
-                title, title_pos, scale = 'Дневник студента МГТЭК', (margin, 166), 94
+                # A staggered group of devices follows the same rising rhythm as a ring.
+                draw.rounded_rectangle((746, -180, 1910, 1370), radius=330, fill=deep)
+                ripple(draw, (1404, 585), 571, 36, 9, purple)
+                for offset in (0, 96, 192):
+                    draw.arc((964 + offset, -522 + offset, 2098 - offset, 612 - offset),
+                             55, 166, fill=mint, width=24)
+                for offset in (0, 63, 126):
+                    wave(draw, -34, 640, 1070 + offset, 42, 380, 26, purple)
+                line(64, 281, 'Дневник', 156)
+                line(82, 448, 'студента', 137, weight='regular')
+                draw.rounded_rectangle((68, 611, 670, 835), radius=112, fill=lime)
+                line(130, 650, 'МГТЭК', 145, '#291438')
+                device('schedule', (949, 752), 670, 5)
+                device('grades', (1578, 615), 690, -5)
+                device('home-default', (1276, 643), 952)
             elif name == 'day':
-                draw.ellipse((750, -215, 2020, 1215), fill=field)
-                device('home-default', (1150, 500), 880)
-                draw.multiline_text((margin, 326), 'Ход\nдня', font=font(143, True), fill=ink, spacing=-15)
-                title = None
+                draw.ellipse((619, -366, 1910, 1320), fill=deep)
+                ripple(draw, (1242, 526), 531, 48, 12, mint)
+                ripple(draw, (1242, 526), 441, 42, 12, purple)
+                for x, y, r in [(532, 354, 45), (589, 294, 29), (630, 249, 17)]:
+                    draw.ellipse((x-r, y-r, x+r, y+r), fill=coral)
+                line(62, 241, 'Ход', 271)
+                line(184, 509, 'дня', 257, weight='bolditalic')
+                wave(draw, -50, 689, 898, 35, 265, 29, purple)
+                device('home-default', (1174, 512), 909, -4)
             elif name == 'schedule':
-                draw.rounded_rectangle((margin, 320, width-margin, 1445), radius=80, fill=field)
-                device('schedule', (600, 880), 1130)
-                title, title_pos, scale = 'Расписание', (margin, 164), 100
+                # Offset slots echo the time grid shown in the screenshot.
+                draw.rounded_rectangle((-145, 252, 1351, 1665), radius=178, fill=deep)
+                for i in range(5):
+                    y = 440 + i * 213
+                    start = -150 if i % 2 == 0 else 38
+                    draw.rounded_rectangle((start, y, 1160 + start, y + 142),
+                                           radius=71, fill=(purple, mint, coral, purple, lime)[i])
+                draw.rounded_rectangle((38, 157, 1156, 368), radius=103, fill=lime)
+                line(89, 188, 'Расписание', 168, '#291438')
+                device('schedule', (600, 932), 1035, -3)
             else:
-                draw.rounded_rectangle((margin, 314, width-margin, 1294), radius=84, fill=field)
-                device('grades', (547, 802), 916)
-                device('absences', (1053, 802), 916)
-                title, title_pos, scale = 'Отметки и пропуски', (margin, 158), 96
-            brand(canvas, icon, (margin, 62), ink, accent, paper, channel == 'beta')
-            if title:
-                draw.text(title_pos, title, font=font(scale, True), fill=ink)
+                draw.rounded_rectangle((658, -125, 1800, 1590), radius=255, fill=deep)
+                ripple(draw, (1177, 850), 570, 33, 8, purple)
+                draw.ellipse((1021, -301, 1740, 417), fill=coral)
+                draw.ellipse((1125, -193, 1636, 309), fill=deep)
+                line(58, 307, 'Отметки', 138)
+                draw.rounded_rectangle((63, 489, 198, 629), radius=68, fill=mint)
+                line(97, 516, 'и', 100, '#291438')
+                line(68, 669, 'пропуски', 132, weight='regular')
+                for y in (1036, 1116, 1196):
+                    wave(draw, -15, 588, y, 38, 330, 24, purple)
+                device('grades', (910, 602), 824, 3)
+                device('absences', (1320, 890), 824, -3)
+            brand(canvas, icon, (70, 62), ink, mint, '#291438', channel == 'beta')
             canvas.save(pack / poster_path(name, mode), quality=94, method=4)

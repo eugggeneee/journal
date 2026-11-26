@@ -84,6 +84,8 @@ jobs:
         run: |
           bash scripts/icons/select_xcode.sh
           python3 scripts/screenshots/record.py capture-app "$RUNNER_TEMP/frames"
+          mkdir -p "$RUNNER_TEMP/frames/fonts"
+          cp "$FLUTTER_ROOT"/bin/cache/artifacts/material_fonts/roboto-{black,bold,bolditalic,medium,regular}.ttf "$RUNNER_TEMP/frames/fonts/"
       - uses: actions/upload-artifact@v5
         with:
           name: capture-ios
@@ -115,7 +117,7 @@ jobs:
       - name: Собрать и проверить кадры iPhone, рамки и макеты
         run: |
           python3 -m pip install --quiet Pillow
-          python3 scripts/screenshots/pack.py build frames "$RUNNER_TEMP/new-pack" capture-app "$TAG" "$SOURCE_SHA"
+          JOURNAL_FONT_DIR=frames/fonts python3 scripts/screenshots/pack.py build frames "$RUNNER_TEMP/new-pack" capture-app "$TAG" "$SOURCE_SHA"
       - name: Заменить предыдущий полный пак
         run: |
           set -euo pipefail
