@@ -160,7 +160,7 @@ void main() {
     await screen(tester, const OnboardingFlow(), scroll: false);
     final bell = find.bySemanticsLabel('Позвонить в колокольчик');
     expect(bell, findsOneWidget);
-    await tester.tap(bell);
+    await tester.tap(find.descendant(of: bell, matching: find.byType(GestureDetector)));
     await tester.pump();
     expect(tester.hasRunningAnimations, isFalse);
     await tester.tap(find.widgetWithText(FilledButton, 'Продолжить'));
