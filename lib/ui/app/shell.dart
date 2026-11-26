@@ -26,7 +26,7 @@ class _ShellState extends State<Shell> {
   static const _items = [
     (Icons.home_outlined, Icons.home_rounded, 'Главная'),
     (Icons.calendar_month_outlined, Icons.calendar_month_rounded, 'Расписание'),
-    (Icons.star_outline_rounded, Icons.star_rounded, 'Оценки'),
+    (Icons.star_outline_rounded, Icons.star_rounded, 'Отметки'),
     (Icons.event_busy_outlined, Icons.event_busy_rounded, 'Пропуски'),
   ];
 
@@ -105,7 +105,7 @@ class _ShellState extends State<Shell> {
             showGradeSheet(context);
           },
           icon: const Icon(Icons.add_rounded),
-          label: const Text('Оценка'),
+          label: const Text('Отметка'),
         );
       case 3:
         return FloatingActionButton.extended(

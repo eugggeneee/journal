@@ -10,7 +10,7 @@ import 'goal_card.dart';
 import 'grade_sheet.dart';
 import 'grades_page.dart';
 
-/// Оценки по одному предмету: средний балл, динамика и список.
+/// Отметки по одному предмету: средний балл, динамика и список.
 class SubjectPage extends StatefulWidget {
   const SubjectPage({super.key, required this.subject});
   final String subject;
@@ -44,7 +44,7 @@ class _SubjectPageState extends State<SubjectPage> {
       final prev = before.fold<int>(0, (a, g) => a + g.value) / before.length;
       final diff = avg! - prev;
       if (diff.abs() >= 0.005) {
-        trend = '${diff > 0 ? '+' : '−'}${fmtAvg(diff.abs())} после последней оценки';
+        trend = '${diff > 0 ? '+' : '−'}${fmtAvg(diff.abs())} после последней отметки';
       }
     }
 
@@ -52,7 +52,7 @@ class _SubjectPageState extends State<SubjectPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showGradeSheet(context, subject: subject),
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Оценка'),
+        label: const Text('Отметка'),
       ),
       body: ContentFrame(
         child: CustomScrollView(
@@ -63,11 +63,11 @@ class _SubjectPageState extends State<SubjectPage> {
                 hasScrollBody: false,
                 child: EmptyState(
                   icon: Icons.star_outline_rounded,
-                  title: 'Оценок нет',
+                  title: 'Отметок нет',
                   message: 'По этому предмету пока ничего не записано.',
                   action: FilledButton.icon(
                     icon: const Icon(Icons.add_rounded),
-                    label: const Text('Добавить оценку'),
+                    label: const Text('Добавить отметку'),
                     onPressed: () => showGradeSheet(context, subject: subject),
                   ),
                 ),
@@ -98,7 +98,7 @@ class _SubjectPageState extends State<SubjectPage> {
                 ),
                 const SizedBox(height: 12),
                 GoalCard(subject: subject, values: [for (final g in grades) g.value], store: store),
-                const SectionHeader('Все оценки'),
+                const SectionHeader('Все отметки'),
                 for (var i = 0; i < grades.length; i++)
                   Reveal(
                     key: ValueKey('gr-${grades[i].id}'),

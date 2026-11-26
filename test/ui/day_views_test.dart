@@ -155,6 +155,20 @@ void main() {
     }
   });
 
+  testWidgets('колокольчик доступен при отключённом движении на первом запуске', (tester) async {
+    store.settings.group = '';
+    await screen(tester, const OnboardingFlow(), scroll: false);
+    final bell = find.bySemanticsLabel('Позвонить в колокольчик');
+    expect(bell, findsOneWidget);
+    await tester.tap(bell);
+    await tester.pump();
+    expect(tester.hasRunningAnimations, isFalse);
+    await tester.tap(find.widgetWithText(FilledButton, 'Продолжить'));
+    await tester.pumpAndSettle();
+    expect(find.text('Отметки'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('выбор звонков доступен на узком экране и завершает обязательную настройку', (tester) async {
     await screen(tester, const OnboardingFlow(), width: 320, height: 640, scale: 2, scroll: false);
     FilledButton next() => tester.widget(find.widgetWithText(FilledButton, 'Продолжить'));
@@ -242,7 +256,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    await tap('Оценка');
+    await tap('Отметка');
     await tap('8');
     await tap('Сохранить');
     expect(store.grades.single.subject, slots.first.subject);
@@ -267,7 +281,7 @@ void main() {
     await tester.tap(tile);
     await tester.pumpAndSettle();
     expect(find.text('История'), findsWidgets);
-    expect(find.text('Добавить оценку по предмету'), findsOneWidget);
+    expect(find.text('Добавить отметку по предмету'), findsOneWidget);
   });
 
   testWidgets('обе причины доступны при крупном шрифте на узком телефоне', (tester) async {
@@ -446,12 +460,12 @@ void main() {
     }
   });
 
-  testWidgets('первая оценка сразу обновляет сводку и доступное описание графика', (tester) async {
+  testWidgets('первая отметка сразу обновляет сводку и доступное описание графика', (tester) async {
     store.putSchedule(DaySchedule(date: today(), group: store.settings.group, slots: slots, fetchedAt: now));
     const early = BellProfile(slots: {2: BellSlot(start: 0, end: 60)});
     store.setBellProfile(store.bellKeyOn(today()), early);
     await screen(tester, const GradesPage(), width: 320, scale: 2, scroll: false);
-    await tester.tap(find.text('Добавить оценку'));
+    await tester.tap(find.text('Добавить отметку'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('9').last);
     await tester.tap(find.text('9').last);
@@ -460,8 +474,8 @@ void main() {
     await tester.tap(find.text('Сохранить'));
     await tester.pumpAndSettle();
     expect(store.grades.single.value, 9);
-    expect(find.text('Распределение оценок'), findsOneWidget);
-    expect(find.bySemanticsLabel('Оценка 9, 1 оценка'), findsOneWidget);
+    expect(find.text('Распределение отметок'), findsOneWidget);
+    expect(find.bySemanticsLabel('Отметка 9, 1 отметка'), findsOneWidget);
   });
 
   testWidgets('в календаре тон меняется только при смене предмета', (tester) async {
@@ -552,7 +566,7 @@ void main() {
     expect(find.text('Практика'), findsOneWidget);
     await tester.tap(find.text('Курс 5'));
     await tester.pumpAndSettle();
-    expect(find.text('Добавить оценку по предмету'), findsOneWidget);
+    expect(find.text('Добавить отметку по предмету'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -583,7 +597,7 @@ void main() {
     await screen(tester, timeline, brightness: Brightness.light);
     await tester.tap(find.text('Высшая математика'));
     await tester.pumpAndSettle();
-    expect(find.text('Добавить оценку по предмету'), findsOneWidget);
+    expect(find.text('Добавить отметку по предмету'), findsOneWidget);
   });
 
   testWidgets('главная обновляет расписание при смене группы', (tester) async {
@@ -611,7 +625,7 @@ void main() {
     expect(find.text('Предмет ИС-31'), findsNothing);
     await tester.pumpWidget(const SizedBox());
   });
-  testWidgets('оценка и пропуск сохраняются с выбранной пары', (tester) async {
+  testWidgets('отметка и пропуск сохраняются с выбранной пары', (tester) async {
     await screen(tester, DayTimeline(date: now, slots: slots, store: store, now: now));
     await tester.tap(find.byTooltip('Отметить пропуск').first);
     await tester.pumpAndSettle();
@@ -620,7 +634,7 @@ void main() {
     expect(store.absenceFor(now, 2)?.excused, isTrue);
     await tester.tap(find.text('Высшая математика').first);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Добавить оценку по предмету'));
+    await tester.tap(find.text('Добавить отметку по предмету'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('9').last);
     await tester.pumpAndSettle();

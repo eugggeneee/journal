@@ -82,7 +82,7 @@ class EmptyState extends StatelessWidget {
   );
 }
 
-/// Скруглённый значок с цифрой/текстом (номер пары, оценка). Цвет меняется плавно.
+/// Скруглённый значок с цифрой/текстом (номер пары, отметка). Цвет меняется плавно.
 class NumberBadge extends StatelessWidget {
   const NumberBadge(this.text, {super.key, required this.tone, this.size = 48, this.round = true});
   final String text;

@@ -377,7 +377,7 @@ class _LessonActions extends StatelessWidget {
     final actions = <(IconData, String, VoidCallback)>[
       (
         Icons.star_outline_rounded,
-        'Оценка',
+        'Отметка',
         () =>
             showGradeSheet(context, date: date, subject: store.absenceFor(date, slot.number)?.subject ?? slot.subject),
       ),

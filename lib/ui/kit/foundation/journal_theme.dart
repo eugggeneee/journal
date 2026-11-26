@@ -40,14 +40,14 @@ SystemUiOverlayStyle overlayForSurface(Color surface) {
   );
 }
 
-/// Пара цветов «фон — текст» для оценок и статусов.
+/// Пара цветов «фон — текст» для отметок и статусов.
 class Tone {
   const Tone(this.bg, this.fg);
   final Color bg;
   final Color fg;
 }
 
-/// Один акцент для пиктограмм. Семантические шкалы оценок и часов независимы.
+/// Один акцент для пиктограмм. Семантические шкалы отметок и часов независимы.
 Tone iconTone(ColorScheme scheme) {
   final dark = scheme.brightness == Brightness.dark;
   return Tone(

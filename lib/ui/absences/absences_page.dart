@@ -193,7 +193,7 @@ class _AbsencesPageState extends State<AbsencesPage> with WidgetsBindingObserver
   }
 }
 
-/// Карточка предмета в обзоре пропусков: устроена так же, как карточка предмета в оценках.
+/// Карточка предмета в обзоре пропусков: устроена так же, как карточка предмета в отметках.
 class _SubjectCard extends StatelessWidget {
   const _SubjectCard({
     required this.name,

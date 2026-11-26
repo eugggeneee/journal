@@ -152,24 +152,24 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   Widget _welcome(BuildContext context) {
     final cs = context.cs;
     return _fit([
-      TweenAnimationBuilder<double>(
-        tween: Tween<double>(begin: 0.55, end: 1),
-        duration: Motion.ms(900),
-        curve: Motion.spring,
-        builder: (context, v, child) => Opacity(opacity: v.clamp(0.0, 1.0).toDouble(), child: Transform.scale(scale: v, child: child)),
-        child: Container(
-          width: 112, height: 112, alignment: Alignment.center,
-          decoration: BoxDecoration(color: iconTone(cs).bg, borderRadius: BorderRadius.circular(32)),
-          child: _BellSwing(size: 68, color: iconTone(cs).fg),
+      Container(
+        width: 148, height: 132, alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: cs.primaryContainer,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(66), topRight: Radius.circular(66),
+            bottomLeft: Radius.circular(36), bottomRight: Radius.circular(36),
+          ),
         ),
+        child: _BellSwing(active: _page == 0, size: 86, color: cs.onPrimaryContainer),
       ),
       const SizedBox(height: 32),
       Text('Journal', textAlign: TextAlign.center, style: context.tt.displaySmall?.copyWith(fontWeight: JournalType.heading)),
       const SizedBox(height: 4),
-      Text('МГТЭК · Дневник', textAlign: TextAlign.center, style: context.tt.titleMedium?.copyWith(color: cs.primary, fontWeight: FontWeight.w600)),
+      Text('Дневник студента МГТЭК', textAlign: TextAlign.center, style: context.tt.titleMedium?.copyWith(color: cs.primary, fontWeight: FontWeight.w600)),
       const SizedBox(height: 12),
       Text(
-        'Расписание, оценки и пропуски — всё в одном месте.',
+        'Расписание вашей группы, отметки и пропуски.',
         textAlign: TextAlign.center,
         style: context.tt.titleMedium?.copyWith(height: 1.4, color: cs.onSurfaceVariant, fontWeight: FontWeight.w400),
       ),
@@ -182,9 +182,22 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     ]);
   }
 
-  Widget _info(BuildContext context, String title, String subtitle, Widget rows) => ListView(
+  Widget _info(BuildContext context, String title, String subtitle, IconData icon, Widget rows) => ListView(
     padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
     children: [
+      Align(child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: 1),
+        duration: context.motion(Motion.medium),
+        curve: Motion.decelerate,
+        builder: (_, t, child) => Transform.translate(
+          offset: Offset(context.reduceMotion ? 0 : (1 - t) * 18, 0), child: child),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
+          decoration: ShapeDecoration(shape: const StadiumBorder(), color: context.cs.secondaryContainer),
+          child: Icon(icon, size: 36, color: context.cs.onSecondaryContainer),
+        ),
+      )),
+      const SizedBox(height: 20),
       _title(context, title, subtitle),
       const SizedBox(height: 24),
       rows,
@@ -192,14 +205,14 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   );
 
   Widget _features(BuildContext context) => _info(context, 'Всё под рукой',
-    'Три вещи, ради которых вы открываете дневник.', const GuideRows([
+    'Расписание и записи об учёбе.', Icons.menu_book_rounded, const GuideRows([
       (Icons.calendar_month_rounded, 'Расписание', 'Расписание группы на любую дату. Загруженные дни доступны без интернета.'),
-      (Icons.star_rounded, 'Оценки', 'Оценки по 10-балльной шкале и средний балл по каждому предмету.'),
+      (Icons.star_rounded, 'Отметки', 'Отметки по 10-балльной шкале и средний балл по каждому предмету.'),
       (Icons.event_busy_rounded, 'Пропуски', 'Пропуск одним нажатием на пару или сразу на весь день.'),
     ]));
 
   Widget _gestures(BuildContext context) => _info(context, 'Жесты',
-    'Несколько движений, которые экономят время.', const GestureGuide());
+    'Как открыть действия пары и сменить день.', Icons.swipe_rounded, const GestureGuide());
 
   Widget _group(BuildContext context, AppStore store) {
     final cs = context.cs;
@@ -250,7 +263,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                         ),
                       ]),
                     ),
-                    Icon(Icons.expand_less_rounded, color: has ? cs.onPrimaryContainer : cs.onSurfaceVariant),
+                    Icon(Icons.expand_more_rounded, color: has ? cs.onPrimaryContainer : cs.onSurfaceVariant),
                   ]),
                 ),
               ),
@@ -348,28 +361,46 @@ class _Backdrop extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
-    return Stack(children: [
-      Positioned(top: -140, left: -100, child: _Orb(320, cs.primaryContainer.withValues(alpha: context.isDark ? .14 : .9))),
-      Positioned(top: 220, right: -160, child: _Orb(340, cs.tertiaryContainer.withValues(alpha: context.isDark ? .12 : .8))),
-      Positioned(bottom: -140, left: -80, child: _Orb(320, cs.secondaryContainer.withValues(alpha: context.isDark ? .14 : .9))),
-    ]);
+    return CustomPaint(painter: _BellWaves(
+      cs.primaryContainer.withValues(alpha: .46),
+      cs.tertiaryContainer.withValues(alpha: .58),
+    ));
   }
 }
 
-class _Orb extends StatelessWidget {
-  const _Orb(this.size, this.color);
-  final double size;
-  final Color color;
+class _BellWaves extends CustomPainter {
+  const _BellWaves(this.primary, this.accent);
+  final Color primary;
+  final Color accent;
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
-        ),
-      );
+  void paint(Canvas canvas, Size size) {
+    final unit = math.min(size.width, 640.0);
+    final center = Offset(size.width - unit * .04, -unit * .18);
+    final paint = Paint()..style = PaintingStyle.stroke;
+    for (var i = 0; i < 3; i++) {
+      paint
+        ..strokeWidth = unit * .05
+        ..color = i == 1 ? accent : primary;
+      canvas.drawCircle(center, unit * (.34 + i * .12), paint);
+    }
+    paint
+      ..color = primary
+      ..strokeWidth = unit * .035
+      ..strokeCap = StrokeCap.round;
+    final wave = Path()..moveTo(-unit * .06, size.height * .72);
+    for (var i = 0; i < 3; i++) {
+      wave.relativeQuadraticBezierTo(unit * .055, -unit * .1, unit * .11, 0);
+      wave.relativeQuadraticBezierTo(unit * .055, unit * .1, unit * .11, 0);
+    }
+    canvas.save();
+    canvas.clipRect(Rect.fromLTWH(0, 0, unit * .11, size.height));
+    canvas.drawPath(wave, paint);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_BellWaves old) => old.primary != primary || old.accent != accent;
 }
 
 class _Dots extends StatelessWidget {
@@ -403,7 +434,8 @@ class _Dots extends StatelessWidget {
 
 /// Колокольчик приветствия: после появления один раз «звонит» и затихает, по нажатию звонит снова.
 class _BellSwing extends StatefulWidget {
-  const _BellSwing({required this.size, required this.color});
+  const _BellSwing({required this.active, required this.size, required this.color});
+  final bool active;
   final double size;
   final Color color;
 
@@ -412,51 +444,79 @@ class _BellSwing extends StatefulWidget {
 }
 
 class _BellSwingState extends State<_BellSwing> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: Motion.ms(1700));
+  late final AnimationController _swing = AnimationController(vsync: this);
   Timer? _start;
+  bool _introduced = false;
 
   @override
-  void initState() {
-    super.initState();
-    if (!Motion.off) {
-      _start = Timer(Motion.ms(650), () {
-        if (mounted) _c.forward();
-      });
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(_BellSwing oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _sync();
+  }
+
+  void _sync() {
+    if (!widget.active || context.reduceMotion || Motion.off) {
+      _start?.cancel();
+      _swing.reset();
+      return;
     }
+    if (!_introduced) {
+      _introduced = true;
+      _start = Timer(Motion.ms(300), _play);
+    }
+  }
+
+  void _play() {
+    if (!mounted || !widget.active || context.reduceMotion || Motion.off) return;
+    _swing.duration = Motion.ms(1250);
+    _swing.forward(from: 0);
   }
 
   @override
   void dispose() {
     _start?.cancel();
-    _c.dispose();
+    _swing.dispose();
     super.dispose();
   }
 
-  void _ring() {
-    Haptics.selection();
-    if (!Motion.off) _c.forward(from: 0);
-  }
-
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) {
+    Widget layer(String name) => Image.asset(
+      'assets/icons/$name.png', height: widget.size, color: widget.color,
+      filterQuality: FilterQuality.medium, excludeFromSemantics: true,
+    );
+    final dome = layer('bell');
+    final clapper = layer('clapper');
+    return Semantics(
+      button: true, label: 'Позвонить в колокольчик',
+      child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: _ring,
+        onTap: () {
+          Haptics.selection();
+          _start?.cancel();
+          _play();
+        },
         child: AnimatedBuilder(
-          animation: _c,
-          child: Image.asset(
-            'assets/icons/bell.png',
-            height: widget.size,
-            color: widget.color,
-            colorBlendMode: BlendMode.srcIn,
-            filterQuality: FilterQuality.medium,
-            excludeFromSemantics: true,
-          ),
-          builder: (context, child) {
-            final t = _c.value;
-            // Затухающее покачивание: амплитуда падает к нулю вместе с временем.
-            final angle = 0.34 * math.sin(t * math.pi * 5) * math.pow(1 - t, 2).toDouble();
-            return Transform.rotate(angle: angle, alignment: const Alignment(0, -0.75), child: child);
+          animation: _swing,
+          builder: (context, _) {
+            final t = _swing.value;
+            final amplitude = Motion.level == 1 ? .17 : .38;
+            final angle = amplitude * math.sin(t * math.pi * 5) * (1 - t) * (1 - t);
+            final lag = ((t - .05) / .95).clamp(0.0, 1.0);
+            final response = amplitude * math.sin(lag * math.pi * 5) * (1 - lag) * (1 - lag);
+            return Stack(alignment: Alignment.center, children: [
+              Transform.rotate(angle: response, alignment: const Alignment(0, -.55), child: clapper),
+              Transform.rotate(angle: angle, alignment: const Alignment(0, -.84), child: dome),
+            ]);
           },
         ),
-      );
+      ),
+    );
+  }
 }

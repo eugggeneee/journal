@@ -52,7 +52,7 @@ class DataSettingsPage extends StatelessWidget {
     final ok = await confirmDialog(
       context,
       title: 'Восстановить данные?',
-      message: 'Текущие оценки, пропуски, пометки, задания и звонки будут заменены данными из копии.',
+      message: 'Текущие отметки, пропуски, пометки, задания и звонки будут заменены данными из копии.',
       confirmLabel: 'Восстановить',
       destructive: true,
     );
@@ -68,7 +68,7 @@ class DataSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tiles = <(IconData, String, String, ValueChanged<BuildContext>)>[
-      (Icons.ios_share_rounded, 'Сохранить в файл', 'Файл .json: оценки, пропуски, пометки, задания и звонки', _exportFile),
+      (Icons.ios_share_rounded, 'Сохранить в файл', 'Файл .json: отметки, пропуски, пометки, задания и звонки', _exportFile),
       (Icons.folder_open_rounded, 'Восстановить из файла', 'Выбрать файл .json с копией', _importFile),
       (Icons.content_copy_rounded, 'Скопировать в буфер обмена', 'Копия текстом, если файл не подходит', _exportClipboard),
       (Icons.content_paste_rounded, 'Вставить из буфера обмена', 'Восстановить из скопированного текста', _importClipboard),
@@ -84,7 +84,7 @@ class DataSettingsPage extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 16, 12, 0),
           child: Text(
-            'Оценки, пропуски и пометки хранятся только на этом устройстве. Расписание берётся с сайта bseumtc.by.',
+            'Отметки, пропуски и пометки хранятся только на этом устройстве. Расписание берётся с сайта bseumtc.by.',
             style: context.tt.bodySmall?.copyWith(color: context.cs.onSurfaceVariant, height: 1.4),
           ),
         ),

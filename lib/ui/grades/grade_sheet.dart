@@ -14,7 +14,7 @@ import '../kit/sheets/sheet.dart';
 
 const _kinds = ['Ответ', 'Контрольная', 'Лабораторная', 'Практическая', 'Самостоятельная', 'Тест', 'Зачёт', 'Экзамен'];
 
-/// Добавление и правка оценки.
+/// Добавление и правка отметки.
 Future<void> showGradeSheet(BuildContext context, {Grade? edit, String? subject, DateTime? date}) =>
     showAdaptiveSheet<void>(context, (_) => _GradeForm(edit: edit, subject: subject, date: date));
 
@@ -43,8 +43,8 @@ class _GradeFormState extends State<_GradeForm> {
     super.didChangeDependencies();
     if (_seeded) return;
     _seeded = true;
-    // Новая оценка: предмет уже выбран (идущая или последняя пара дня, иначе предмет прошлой оценки),
-    // поэтому нужно только нажать оценку и «Сохранить».
+    // Новая отметка: предмет уже выбран (идущая или последняя пара дня, иначе предмет прошлой отметки),
+    // поэтому нужно только нажать отметку и «Сохранить».
     if (widget.edit == null && subject.isEmpty) subject = _guessSubject();
   }
 
@@ -99,7 +99,7 @@ class _GradeFormState extends State<_GradeForm> {
     Navigator.of(context).pop();
     showUndo(
       messenger,
-      old == null ? 'Оценка добавлена: $what' : 'Оценка изменена: $what',
+      old == null ? 'Отметка добавлена: $what' : 'Отметка изменена: $what',
       () => old == null ? store.deleteGrade(g.id) : store.saveGrade(old),
     );
   }
@@ -111,10 +111,10 @@ class _GradeFormState extends State<_GradeForm> {
     store.deleteGrade(g.id);
     Haptics.medium();
     Navigator.of(context).pop();
-    showUndo(messenger, 'Оценка удалена', () => store.saveGrade(g));
+    showUndo(messenger, 'Отметка удалена', () => store.saveGrade(g));
   }
 
-  /// Превью: большая оценка, предмет и дата — меняют цвет вместе с выбранной оценкой.
+  /// Превью: большая отметка, предмет и дата — меняют цвет вместе с выбранной отметкой.
   Widget _preview(BuildContext context, AppStore store) {
     final cs = context.cs;
     final v = value;
@@ -175,12 +175,12 @@ class _GradeFormState extends State<_GradeForm> {
 
 
     return SheetScaffold(
-      title: editing ? 'Изменить оценку' : 'Новая оценка',
+      title: editing ? 'Изменить отметку' : 'Новая отметка',
       subtitle: _added > 0 ? 'Добавлено подряд: $_added' : (editing ? 'Редактирование' : 'Запись в журнал'),
       leading: IconBox(icon: Icons.star_rounded, size: 52),
       trailing: editing
           ? IconButton(
-              tooltip: 'Удалить оценку',
+              tooltip: 'Удалить отметку',
               icon: Icon(Icons.delete_outline_rounded, color: iconTone(context.cs).fg),
               onPressed: _delete,
             )
@@ -193,7 +193,7 @@ class _GradeFormState extends State<_GradeForm> {
               : Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Text(
-                    subject.isEmpty && value == null ? 'Выберите оценку и предмет' : (subject.isEmpty ? 'Выберите предмет' : 'Выберите оценку'),
+                    subject.isEmpty && value == null ? 'Выберите отметку и предмет' : (subject.isEmpty ? 'Выберите предмет' : 'Выберите отметку'),
                     style: context.tt.bodySmall?.copyWith(color: context.cs.onSurfaceVariant),
                   ),
                 ),
@@ -221,7 +221,7 @@ class _GradeFormState extends State<_GradeForm> {
       ]),
       children: [
         _preview(context, store),
-        const FieldLabel('Оценка', top: 20),
+        const FieldLabel('Отметка', top: 20),
         GradePad(value: value, onChanged: (v) => setState(() => value = v)),
         const SizedBox(height: 20),
         SubjectPicker(selected: subject, suggested: suggested, onSelect: (s) => setState(() => subject = s)),

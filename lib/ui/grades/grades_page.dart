@@ -38,7 +38,7 @@ class _GradesPageState extends State<GradesPage> {
     _freshSubjects.sync(stats.subjects.map((s) => s.subject));
 
     return LargePage(
-      title: 'Оценки',
+      title: 'Отметки',
       actions: const [SettingsButton(), SizedBox(width: 4)],
       slivers: empty
           ? [
@@ -100,7 +100,7 @@ class _GradesPageState extends State<GradesPage> {
         onTap: () => showSelectSheet<String>(
           context,
           title: 'Предмет',
-          subtitle: 'Показать оценки только по одному предмету',
+          subtitle: 'Показать отметки только по одному предмету',
           value: filter ?? '',
           options: [
             const MenuOption('', 'Все предметы', icon: Icons.apps_rounded),
@@ -126,7 +126,7 @@ class _GradesPageState extends State<GradesPage> {
   }
 }
 
-/// Итоговая карточка: средний балл и распределение оценок.
+/// Итоговая карточка: средний балл и распределение отметок.
 class GradesHero extends StatelessWidget {
   const GradesHero({super.key, required this.stats});
   final GradeStats stats;
@@ -142,13 +142,13 @@ class GradesHero extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Оценок пока нет',
+              'Отметок пока нет',
               style: context.tt.headlineSmall?.copyWith(color: tone.fg, fontWeight: JournalType.emphasis),
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Добавить оценку'),
+              label: const Text('Добавить отметку'),
               onPressed: () => showGradeSheet(context),
             ),
           ],
@@ -172,7 +172,7 @@ class GradesHero extends StatelessWidget {
             aside: [gradesText(stats.count), subjectsText(stats.subjects.length)],
           ),
           const SizedBox(height: 16),
-          Text('Распределение оценок', style: context.tt.labelLarge?.copyWith(color: tone.fg)),
+          Text('Распределение отметок', style: context.tt.labelLarge?.copyWith(color: tone.fg)),
           const SizedBox(height: 8),
           SizedBox(
             height: 64 + MediaQuery.textScalerOf(context).scale(16),
@@ -183,7 +183,7 @@ class GradesHero extends StatelessWidget {
                   Expanded(
                     child: Semantics(
                       container: true,
-                      label: 'Оценка ${i + 1}, ${gradesText(stats.distribution[i])}',
+                      label: 'Отметка ${i + 1}, ${gradesText(stats.distribution[i])}',
                       excludeSemantics: true,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -270,7 +270,7 @@ class _SubjectCard extends StatelessWidget {
   }
 }
 
-/// Мини-график оценок по порядку.
+/// Мини-график отметок по порядку.
 class Spark extends StatelessWidget {
   const Spark({super.key, required this.grades, this.height = 28, this.barWidth = 8});
   final List<Grade> grades;
@@ -333,7 +333,7 @@ class GradeTile extends StatelessWidget {
         final m = ScaffoldMessenger.of(context);
         store.deleteGrade(grade.id);
         Haptics.medium();
-        showUndo(m, 'Оценка удалена', () => store.saveGrade(grade));
+        showUndo(m, 'Отметка удалена', () => store.saveGrade(grade));
       },
       onTap: () => showGradeSheet(context, edit: grade),
       badge: NumberBadge('${grade.value}', tone: tone, size: 46, round: false),

@@ -28,7 +28,7 @@ import 'day_metrics.dart';
 import 'hero_surface.dart';
 
 /// Главная: один цельный экран. Сверху цветной блок на всю ширину с приветствием и состоянием дня (что идёт,
-/// сколько осталось, что дальше), ниже без карточек и рамок: показатели, завтра, неделя и последние оценки,
+/// сколько осталось, что дальше), ниже без карточек и рамок: показатели, завтра, неделя и последние отметки,
 /// разделённые тонкими линиями. Любой блок открывает нужный раздел одним нажатием.
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.onTab, required this.onDay});
@@ -143,7 +143,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         ),
         if (!hasLessonActions)
           IconButton(
-            tooltip: 'Добавить оценку',
+            tooltip: 'Добавить отметку',
             color: fg,
             icon: const Icon(Icons.add_rounded),
             onPressed: () => showGradeSheet(context),
@@ -457,7 +457,7 @@ class _Week extends StatelessWidget {
   }
 }
 
-/// Последние оценки: три записи, нажатие открывает вкладку «Оценки». Без оценок: приглашение добавить первую.
+/// Последние отметки: три записи, нажатие открывает вкладку «Отметки». Без отметок: приглашение добавить первую.
 class _Recent extends StatelessWidget {
   const _Recent({required this.store, required this.onTab});
   final AppStore store;
@@ -467,11 +467,11 @@ class _Recent extends StatelessWidget {
   Widget build(BuildContext context) {
     if (store.grades.isEmpty) {
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const SectionHeader('Оценки'),
+        const SectionHeader('Отметки'),
         JournalRow(
       padding: const EdgeInsets.symmetric(vertical: 10),
           leading: IconBox(icon: Icons.add_rounded),
-          title: 'Добавьте первую оценку',
+          title: 'Добавьте первую отметку',
           subtitle: 'Приложение посчитает средний балл по каждому предмету',
           onTap: () => showGradeSheet(context),
         ),
@@ -483,7 +483,7 @@ class _Recent extends StatelessWidget {
       });
     final shown = list.take(3).toList();
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      SectionHeader('Последние оценки', trailing: gradesText(store.grades.length)),
+      SectionHeader('Последние отметки', trailing: gradesText(store.grades.length)),
       for (final g in shown)
         JournalRow(
       padding: const EdgeInsets.symmetric(vertical: 10),

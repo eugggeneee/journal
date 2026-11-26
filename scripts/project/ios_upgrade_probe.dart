@@ -26,7 +26,7 @@ Future<void> main() async {
     final store = await AppStore.load();
     if (store.settings.group != '0000' || store.settings.themeColor != 'teal' ||
         store.grades.single.id != 'upgrade-grade' || store.grades.single.value != 9) {
-      throw StateError('Группа, оформление или оценка после запуска отличаются');
+      throw StateError('Группа, оформление или отметка после запуска отличаются');
     }
     await journal.main();
     await WidgetsBinding.instance.endOfFrame;

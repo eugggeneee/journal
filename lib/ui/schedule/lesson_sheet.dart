@@ -18,7 +18,7 @@ import '../tasks/task_sheet.dart';
 import '../tasks/task_tile.dart';
 import 'marks.dart';
 
-/// Действия с парой: пропуск (причина и часы), снять пропуск, добавить оценку.
+/// Действия с парой: пропуск (причина и часы), снять пропуск, добавить отметку.
 Future<void> showLessonSheet(BuildContext context, DateTime date, LessonSlot slot) =>
     showAdaptiveSheet<void>(context, (_) => _LessonSheet(date: date, slot: slot));
 
@@ -144,7 +144,7 @@ class _LessonSheetState extends State<_LessonSheet> {
         width: double.infinity,
         child: FilledButton.tonalIcon(
           icon: const Icon(Icons.star_rounded),
-          label: const Text('Добавить оценку по предмету'),
+          label: const Text('Добавить отметку по предмету'),
           onPressed: () {
             final host = Navigator.of(context).context;
             Navigator.of(context).pop();

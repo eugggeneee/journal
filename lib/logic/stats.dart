@@ -9,7 +9,7 @@ class SubjectStat {
   double get average => grades.fold<int>(0, (a, g) => a + g.value) / grades.length;
   Grade get last => grades.last;
 
-  /// Как последняя оценка изменила средний балл (null, если оценка одна).
+  /// Как последняя отметка изменила средний балл (null, если отметка одна).
   double? get lastImpact {
     if (grades.length < 2) return null;
     final before = grades.sublist(0, grades.length - 1);
@@ -24,7 +24,7 @@ class GradeStats {
   final double? average;
   final List<SubjectStat> subjects;
 
-  /// Сколько оценок каждого достоинства: индекс 0 — «1», индекс 9 — «10».
+  /// Сколько отметок каждого достоинства: индекс 0 — «1», индекс 9 — «10».
   final List<int> distribution;
 
   static GradeStats of(List<Grade> grades) {

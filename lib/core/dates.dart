@@ -92,7 +92,7 @@ String pairsText(int n) => '$n ${plural(n, 'пара', 'пары', 'пар')}';
 /// 8.5 → «8,50»
 String fmtAvg(double v) => v.toStringAsFixed(2).replaceAll('.', ',');
 
-String gradesText(int n) => '$n ${plural(n, 'оценка', 'оценки', 'оценок')}';
+String gradesText(int n) => '$n ${plural(n, 'отметка', 'отметки', 'отметок')}';
 String subjectsText(int n) => '$n ${plural(n, 'предмет', 'предмета', 'предметов')}';
 String daysText(int n) => '$n ${plural(n, 'день', 'дня', 'дней')}';
 String absencesText(int n) => '$n ${plural(n, 'пропуск', 'пропуска', 'пропусков')}';

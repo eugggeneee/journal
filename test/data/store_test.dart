@@ -70,7 +70,7 @@ void main() {
     expect(store.absences.map((a) => a.lesson), [2]);
   });
 
-  test('оценки: сохранение, статистика и влияние последней', () {
+  test('отметки: сохранение, статистика и влияние последней', () {
     store.saveGrade(Grade(id: 'a', subject: 'M', value: 6, date: DateTime(2026, 10, 1)));
     store.saveGrade(Grade(id: 'b', subject: 'M', value: 10, date: DateTime(2026, 10, 2)));
     final st = GradeStats.of(store.grades);

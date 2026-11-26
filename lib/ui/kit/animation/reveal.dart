@@ -4,7 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import 'motion.dart';
 
-/// Запоминает, какие записи (оценки, пропуски) появились уже после первого показа списка —
+/// Запоминает, какие записи (отметки, пропуски) появились уже после первого показа списка —
 /// именно они должны плавно «въезжать», а не все сразу при открытии страницы.
 class FreshTracker {
   static final DateTime _epoch = DateTime.fromMillisecondsSinceEpoch(0);

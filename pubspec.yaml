@@ -1,5 +1,5 @@
 name: journal
-description: "Journal — МГТЭК · Дневник: расписание, оценки и пропуски."
+description: "Journal — МГТЭК · Дневник: расписание, отметки и пропуски."
 publish_to: none
 version: 1.0.2-beta.2+20
 

@@ -356,7 +356,7 @@ class KindPicker extends StatelessWidget {
 
 // ───────────────────────── кнопки-«квадраты» ─────────────────────────
 
-/// Круглая/квадратная кнопка с цифрой (оценка, номер пары): выбранная превращается из «квадрата» в круг.
+/// Круглая/квадратная кнопка с цифрой (отметка, номер пары): выбранная превращается из «квадрата» в круг.
 class ChoiceSquare extends StatelessWidget {
   const ChoiceSquare({
     super.key,
@@ -437,7 +437,7 @@ class ChoiceSquare extends StatelessWidget {
   }
 }
 
-/// Клавиатура оценок 1–10: две строки по пять, цвет каждой кнопки соответствует оценке.
+/// Клавиатура отметок 1–10: две строки по пять, цвет каждой кнопки соответствует отметке.
 class GradePad extends StatelessWidget {
   const GradePad({super.key, required this.value, required this.onChanged});
   final int? value;
@@ -454,7 +454,7 @@ class GradePad extends StatelessWidget {
               for (var v = from; v < from + 5; v++)
                 ChoiceSquare(
                   label: '$v',
-                  semantics: 'Оценка $v',
+                  semantics: 'Отметка $v',
                   size: size,
                   selected: value == v,
                   tone: gradeTone(context, v),

@@ -18,7 +18,7 @@ class HomeLayoutPage extends StatelessWidget {
     kBlockTasks: (Icons.task_alt_rounded, 'Задания', 'Домашнее задание и заметки со сроком'),
     kBlockTomorrow: (Icons.event_rounded, 'Завтра', 'Сколько пар и когда начало'),
     kBlockWeek: (Icons.view_week_rounded, 'Эта неделя', 'Число пар по дням'),
-    kBlockRecent: (Icons.star_rounded, 'Последние оценки', 'Три последние записи'),
+    kBlockRecent: (Icons.star_rounded, 'Последние отметки', 'Три последние записи'),
   };
 
   @override

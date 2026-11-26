@@ -181,7 +181,7 @@ class _SchedulePageState extends State<SchedulePage> with WidgetsBindingObserver
     final allAbsent = slots.isNotEmpty && slots.every((s) => store.absenceFor(date, s.number) != null);
     final options = <(String, IconData, String, VoidCallback)>[
       if (!week) ...[
-        ('Добавить оценку', Icons.star_outline_rounded, 'На выбранную дату', () => showGradeSheet(context, date: date)),
+        ('Добавить отметку', Icons.star_outline_rounded, 'На выбранную дату', () => showGradeSheet(context, date: date)),
         (
           'Пометка на день',
           Icons.bookmark_add_outlined,

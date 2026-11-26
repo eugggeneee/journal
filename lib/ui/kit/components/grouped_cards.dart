@@ -193,7 +193,7 @@ class _Disc extends StatelessWidget {
   );
 }
 
-/// Значок в цветном квадрате: тот же размер и скругление, что у номеров пар и оценок. Основа строк списков.
+/// Значок в цветном квадрате: тот же размер и скругление, что у номеров пар и отметок. Основа строк списков.
 class IconBox extends StatelessWidget {
   const IconBox({super.key, required this.icon, this.size = 44, this.glyphSize = 24});
   final IconData icon;

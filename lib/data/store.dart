@@ -122,7 +122,7 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ───────────────────────── оценки ─────────────────────────
+  // ───────────────────────── отметки ─────────────────────────
 
   void saveGrade(Grade g) {
     final i = grades.indexWhere((x) => x.id == g.id);
@@ -141,7 +141,7 @@ class AppStore extends ChangeNotifier {
 
   List<Grade> gradesOf(String subject) => grades.where((g) => g.subject == subject).toList();
 
-  /// Предмет последней по дате оценки — удобная подсказка при добавлении новой.
+  /// Предмет последней по дате отметки — удобная подсказка при добавлении новой.
   String? get lastGradeSubject {
     if (grades.isEmpty) return null;
     final sorted = [...grades]..sort((a, b) {
@@ -478,7 +478,7 @@ class AppStore extends ChangeNotifier {
 
   String subjectName(String key) => builtinSubjectNames[key] ?? key;
 
-  /// Все известные предметы: из расписания, оценок, пропусков и добавленные вручную.
+  /// Все известные предметы: из расписания, отметок, пропусков и добавленные вручную.
   List<String> knownSubjects() {
     final set = <String>{};
     for (final s in schedulesFor(settings.group)) {

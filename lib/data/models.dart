@@ -87,7 +87,7 @@ class DaySchedule {
   }
 }
 
-/// Оценка (белорусская 10-балльная шкала).
+/// Отметка (белорусская 10-балльная шкала).
 class Grade {
   Grade({
     required this.id,

@@ -109,7 +109,7 @@ void main() {
               for (var g = 1; g <= 10; g++) {
                 final levels = [gradeTone(context, g).bg.computeLuminance(),
                   gradeAccent(context, g).computeLuminance()]..sort();
-                expect((levels.last + .05) / (levels.first + .05), greaterThanOrEqualTo(3), reason: 'Оценка $g, $b');
+                expect((levels.last + .05) / (levels.first + .05), greaterThanOrEqualTo(3), reason: 'Отметка $g, $b');
               }
               final tones = [
                 for (var g = 1; g <= 10; g++) gradeTone(context, g),

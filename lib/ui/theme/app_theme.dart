@@ -49,7 +49,7 @@ class AppTheme {
   static final Map<Brightness, ThemeData> _lastTheme = {};
 
   /// ThemeData для темы; пока схема не изменилась, возвращается один и тот же объект
-  /// (не пересобирается при каждом изменении оценок и пропусков).
+  /// (не пересобирается при каждом изменении отметок и пропусков).
   static ThemeData themeFor(String id, Brightness b) {
     final s = schemeFor(id, b);
     final prev = _lastScheme[b];

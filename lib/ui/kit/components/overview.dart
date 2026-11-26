@@ -7,7 +7,7 @@ import '../foundation/journal_theme.dart';
 import '../inputs/pickers.dart';
 import 'widgets.dart';
 
-// Общий «скелет» страниц «Оценки» и «Пропуски»: итоговая карточка, переключатель режимов,
+// Общий «скелет» страниц «Отметки» и «Пропуски»: итоговая карточка, переключатель режимов,
 // фильтр, карточки предметов и строки журнала. Страницы отличаются только данными и цветами.
 
 /// Итоговая карточка страницы: тональная поверхность с общей формой и внутренними отступами.
@@ -45,7 +45,7 @@ class HeroHeader extends StatelessWidget {
   final Color fg;
   final String? unit;
 
-  /// Одна-две строки справа («12 оценок», «5 предметов»).
+  /// Одна-две строки справа («12 отметок», «5 предметов»).
   final List<String> aside;
 
   @override
@@ -210,7 +210,7 @@ class EntryTile extends StatelessWidget {
   }
 }
 
-/// Переключатель «Предметы / Журнал» — одинаковый на страницах оценок и пропусков.
+/// Переключатель «Предметы / Журнал» — одинаковый на страницах отметок и пропусков.
 class ModeSwitch extends StatelessWidget {
   const ModeSwitch({super.key, required this.value, required this.onChanged});
   final int value;
