@@ -52,6 +52,7 @@ def gallery(site, temp, tag, commit, ref):
             image.thumbnail((1200, 800), Image.Resampling.LANCZOS)
             image.convert('RGB').save(media / f'header-{mode}.jpg', quality=94)
     shutil.copyfile(media / 'header-light.jpg', site / 'media/header.jpg')
+    shutil.copyfile(media / 'header-dark.jpg', site / 'media/header-dark.jpg')
     cards, figures = [], []
     for view, label in VIEWS:
         pair = {}

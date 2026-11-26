@@ -62,7 +62,10 @@ gh attestation verify Journal-vX.Y.Z-android.apk --repo eugggeneee/journal
 
 ## Скриншоты интерфейса
 
-![Journal на трёх iPhone: расписание, отсчёт до конца пары и журнал отметок](https://eugggeneee.github.io/journal/ios/media/header.jpg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://eugggeneee.github.io/journal/ios/media/header-dark.jpg">
+  <img src="https://eugggeneee.github.io/journal/ios/media/header.jpg" alt="Дневник студента МГТЭК. Главная, расписание и отметки на трёх iPhone">
+</picture>
 
 [Стабильная галерея](https://github.com/eugggeneee/journal/tree/screenshots/pack/stable) и [галерея последней снятой беты](https://github.com/eugggeneee/journal/tree/screenshots/pack/beta) содержат одинаковые экраны iPhone в двух режимах оформления и главную во всех 20 цветовых темах. Для каждого кадра доступны светлый и тёмный корпус на прозрачном фоне. [Фирменные макеты Journal](https://github.com/eugggeneee/journal/tree/screenshots/pack/stable/mockups) и [обе рамки PNG](https://github.com/eugggeneee/journal/tree/screenshots/pack/stable/frames) можно скачать отдельно. Каждый из четырёх макетов доступен в светлой и тёмной теме. На бета-макетах рядом с Journal стоит плашка «бета». На каждом снимке вымышленные данные группы 0000. [Скачать ZIP с исходниками и рамками](https://github.com/eugggeneee/journal/archive/refs/heads/screenshots.zip). [Как собрать новый пак](docs/screenshots/README.md)
 
