@@ -18,87 +18,83 @@ class TabSwitcher extends StatefulWidget {
 }
 
 class _TabSwitcherState extends State<TabSwitcher> with SingleTickerProviderStateMixin {
-  /// Насколько страница смещается при въезде и уходе: доля ширины, остальное достраивает прозрачность.
-  static const double _travel = 0.1;
-
-  late final AnimationController _c = AnimationController(vsync: this, duration: Motion.page, value: 1)
-    ..addStatusListener(_onStatus);
-  late final Animation<double> _slide = _c.drive(CurveTween(curve: Motion.emphasized));
-  late final Animation<double> _fadeIn = _c.drive(CurveTween(curve: const Interval(0.2, 0.95, curve: Curves.easeOut)));
-  late final Animation<double> _fadeOut = _c.drive(CurveTween(curve: const Interval(0.0, 0.4, curve: Curves.easeIn))).drive(Tween<double>(begin: 1, end: 0));
-
-  late int _from = widget.index;
-  Animation<Offset> _enter = const AlwaysStoppedAnimation<Offset>(Offset.zero);
-  Animation<Offset> _leave = const AlwaysStoppedAnimation<Offset>(Offset.zero);
-
-  void _onStatus(AnimationStatus status) {
-    // Переход закончился: страницы возвращаются в обычное состояние без обёрток движения.
-    if (status == AnimationStatus.completed && mounted) setState(() {});
-  }
+  late final AnimationController _controller = AnimationController(vsync: this, value: 1)
+    ..addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted) setState(() {});
+    });
+  late final _progress = _controller.drive(CurveTween(curve: Motion.decelerate));
+  static const _atRest = AlwaysStoppedAnimation<Offset>(Offset.zero);
+  List<Animation<double>> _opacity = [];
+  List<Animation<Offset>> _position = [];
 
   @override
   void didUpdateWidget(TabSwitcher old) {
     super.didUpdateWidget(old);
-    if (old.index == widget.index) return;
-    _from = old.index;
-    final dir = widget.index > old.index ? 1.0 : -1.0;
-    _enter = _slide.drive(Tween<Offset>(begin: Offset(dir * _travel, 0), end: Offset.zero));
-    _leave = _slide.drive(Tween<Offset>(begin: Offset.zero, end: Offset(-dir * _travel, 0)));
-    if (Motion.off) {
-      _c.value = 1;
+    if (widget.index == old.index && widget.children.length == old.children.length) return;
+    final active = _controller.isAnimating;
+    final distance = Motion.level == 1 ? .025 : .075;
+    final direction = widget.index >= old.index ? 1 : -1;
+    final alpha = <Animation<double>>[];
+    final offsets = <Animation<Offset>>[];
+    for (var i = 0; i < widget.children.length; i++) {
+      final incoming = i == widget.index;
+      final wasVisible = active && i < _opacity.length;
+      final from = wasVisible ? _opacity[i].value : (i == old.index ? 1.0 : 0.0);
+      if (from == 0 && !incoming) {
+        alpha.add(kAlwaysDismissedAnimation);
+        offsets.add(_atRest);
+        continue;
+      }
+      final entry = Offset(distance * direction, 0);
+      final origin = wasVisible && from > 0 ? _position[i].value : (incoming ? entry : Offset.zero);
+      alpha.add(_progress.drive(Tween<double>(begin: from, end: incoming ? 1 : 0)));
+      offsets.add(_progress.drive(Tween<Offset>(begin: origin, end: incoming ? Offset.zero : -entry)));
+    }
+    _opacity = alpha;
+    _position = offsets;
+    if (context.reduceMotion) {
+      _controller.value = 1;
     } else {
-      _c.duration = Motion.page;
-      _c.forward(from: 0);
+      _controller.duration = Motion.page;
+      _controller.forward(from: 0);
     }
   }
 
   @override
   void dispose() {
-    _c.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final running = _c.status == AnimationStatus.forward;
+    final running = !context.reduceMotion && _controller.isAnimating;
     return Stack(fit: StackFit.expand, children: [
-      for (var i = 0; i < widget.children.length; i++) _page(i, running),
-    ]);
-  }
-
-  Widget _page(int i, bool running) {
-    final isTo = i == widget.index;
-    final isFrom = running && i == _from && !isTo;
-    final visible = isTo || isFrom;
-    final Animation<double> opacity;
-    final Animation<Offset> position;
-    if (running && isTo) {
-      opacity = _fadeIn;
-      position = _enter;
-    } else if (isFrom) {
-      opacity = _fadeOut;
-      position = _leave;
-    } else {
-      opacity = kAlwaysCompleteAnimation;
-      position = const AlwaysStoppedAnimation<Offset>(Offset.zero);
-    }
-    // Состав обёрток всегда один и тот же, иначе страница потеряла бы своё состояние.
-    return Offstage(
-      key: ValueKey('tab-$i'),
-      offstage: !visible,
-      child: TickerMode(
-        enabled: visible,
-        child: IgnorePointer(
-          ignoring: !isTo,
-          child: FadeTransition(
-            opacity: opacity,
-            child: SlideTransition(
-              position: position,
-              child: RepaintBoundary(child: widget.children[i]),
+      for (var i = 0; i < widget.children.length; i++)
+        Offstage(
+          key: ValueKey('tab-$i'),
+          offstage: i != widget.index && (!running || _opacity[i] == kAlwaysDismissedAnimation),
+          child: TickerMode(
+            enabled: i == widget.index,
+            child: ExcludeFocus(
+              excluding: i != widget.index,
+              child: ExcludeSemantics(
+                excluding: i != widget.index,
+                child: IgnorePointer(
+                  ignoring: i != widget.index,
+                  child: FadeTransition(
+                    opacity: running ? _opacity[i] : kAlwaysCompleteAnimation,
+                    child: SlideTransition(
+                      position: running ? _position[i] : _atRest,
+                      textDirection: Directionality.of(context),
+                      child: RepaintBoundary(child: widget.children[i]),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
-      ),
-    );
+    ]);
   }
 }

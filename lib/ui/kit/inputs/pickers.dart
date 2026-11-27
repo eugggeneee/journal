@@ -4,6 +4,7 @@ import '../../../core/dates.dart';
 import '../../../core/haptics.dart';
 import '../../app/scope.dart';
 import '../animation/motion.dart';
+import '../animation/selection_mark.dart';
 import '../animation/reveal.dart';
 import '../foundation/journal_theme.dart';
 import '../components/widgets.dart';
@@ -302,13 +303,13 @@ class SubjectPicker extends StatelessWidget {
       label: label,
       icon: Icons.menu_book_rounded,
       value: selected.isEmpty ? null : selected,
-      valueLabel: selected.isEmpty ? null : store.subjectName(selected),
+      valueLabel: selected.isEmpty ? null : selected,
       placeholder: 'Выберите предмет',
       sheetTitle: 'Выбор предмета',
       options: [
-        for (final s in first) MenuOption(s, store.subjectName(s), icon: Icons.event_note_rounded, section: 'По расписанию'),
+        for (final s in first) MenuOption(s, s, icon: Icons.event_note_rounded, section: 'По расписанию'),
         for (final s in rest)
-          MenuOption(s, store.subjectName(s), icon: Icons.menu_book_outlined, section: first.isEmpty ? null : 'Все предметы'),
+          MenuOption(s, s, icon: Icons.menu_book_outlined, section: first.isEmpty ? null : 'Все предметы'),
       ],
       onSelected: onSelect,
       actions: [
@@ -536,7 +537,7 @@ class ExcuseTile extends StatelessWidget {
                 Row(children: [
                   IconBox(icon: excused ? Icons.verified_rounded : Icons.event_busy_rounded, size: 40, glyphSize: 22),
                   const Spacer(),
-                  PopIn(child: selected ? const IconBox(icon: Icons.check_rounded, size: 24, glyphSize: 16) : null),
+                  SelectionMark(selected: selected, color: tone.fg, size: 24),
                 ]),
                 const SizedBox(height: 12),
                 Text(title, style: context.tt.titleSmall?.copyWith(color: tone.fg, fontWeight: JournalType.heading)),

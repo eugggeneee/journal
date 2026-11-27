@@ -102,7 +102,7 @@ class LessonCard extends StatelessWidget {
             ),
             for (final subject in slot.subjects) ...[
               Text(
-                store.subjectName(subject),
+                subject,
                 style: tt.titleMedium?.copyWith(color: fg, fontWeight: JournalType.heading, height: 1.12),
               ),
               for (final entry in slot.entries.where((e) => e.subject == subject))

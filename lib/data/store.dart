@@ -7,7 +7,6 @@ import '../core/dates.dart';
 import '../logic/bells.dart';
 import '../logic/limits.dart';
 import '../logic/release_updates.dart';
-import '../logic/subject_names.dart';
 import 'models.dart';
 
 /// Всё состояние приложения + сохранение на устройстве.
@@ -476,8 +475,6 @@ class AppStore extends ChangeNotifier {
 
   // ───────────────────────── предметы ─────────────────────────
 
-  String subjectName(String key) => builtinSubjectNames[key] ?? key;
-
   /// Все известные предметы: из расписания, отметок, пропусков и добавленные вручную.
   List<String> knownSubjects() {
     final set = <String>{};
@@ -495,8 +492,7 @@ class AppStore extends ChangeNotifier {
       if (a.subject.isNotEmpty) set.add(a.subject);
     }
     set.addAll(settings.extraSubjects);
-    final list = set.toList()..sort((a, b) => subjectName(a).compareTo(subjectName(b)));
-    return list;
+    return set.toList()..sort();
   }
 
   // ───────────────────────── резервная копия ─────────────────────────

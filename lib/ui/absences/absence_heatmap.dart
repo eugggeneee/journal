@@ -53,7 +53,7 @@ class _AbsenceHeatmapState extends State<AbsenceHeatmap> {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                 decoration: BoxDecoration(color: ctx.cs.surfaceContainerHigh, borderRadius: BorderRadius.circular(20)),
                 child: Row(children: [
-                  Expanded(child: Text(widget.store.subjectName(e.key), style: ctx.tt.titleSmall?.copyWith(fontWeight: JournalType.emphasis))),
+                  Expanded(child: Text(e.key, style: ctx.tt.titleSmall?.copyWith(fontWeight: JournalType.emphasis))),
                   const SizedBox(width: 12),
                   Text(hoursText(e.value), style: ctx.tt.labelLarge?.copyWith(color: ctx.cs.onSurfaceVariant, fontWeight: JournalType.emphasis)),
                 ]),

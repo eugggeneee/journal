@@ -28,7 +28,7 @@ import 'package:journal/ui/tasks/tasks_page.dart';
 import 'package:journal/ui/tasks/task_sheet.dart';
 
 final day = DateTime(2026, 11, 18);
-const subjects = ['Математика', 'Товароведение продовольственных товаров', 'Экономика организации', 'Товароведение непродовольственных товаров'];
+const subjects = ['Математика', 'ТоварПродТов', 'ЭкономикаОрган', 'ТоварНепрТов'];
 const teachers = ['И. И. Иванова', 'А. С. Миронова', 'Н. В. Ларина', 'М. П. Соколов'];
 
 class DemoService extends ScheduleService {

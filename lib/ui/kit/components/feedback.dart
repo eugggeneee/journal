@@ -1,6 +1,12 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/haptics.dart';
+import '../animation/motion.dart';
+
+AnimationStyle _feedbackTiming(BuildContext context) => context.reduceMotion
+    ? AnimationStyle.noAnimation
+    : AnimationStyle(duration: Motion.short, reverseDuration: Motion.press);
+
 
 /// Сообщение с кнопкой «Отменить». Возвращает управление, когда действие уже выполнено.
 void showUndo(ScaffoldMessengerState m, String message, VoidCallback onUndo) {
@@ -17,10 +23,11 @@ void showUndo(ScaffoldMessengerState m, String message, VoidCallback onUndo) {
         onUndo();
       },
     ),
-  ));
+  ), snackBarAnimationStyle: _feedbackTiming(m.context));
 }
 
 void showNote(ScaffoldMessengerState m, String message) {
   m.hideCurrentSnackBar();
-  m.showSnackBar(SnackBar(content: Text(message), persist: false, duration: const Duration(seconds: 3)));
+  m.showSnackBar(SnackBar(content: Text(message), persist: false, duration: const Duration(seconds: 3)),
+    snackBarAnimationStyle: _feedbackTiming(m.context));
 }

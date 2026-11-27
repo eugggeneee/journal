@@ -57,7 +57,7 @@ class _SubjectPageState extends State<SubjectPage> {
       body: ContentFrame(
         child: CustomScrollView(
           slivers: [
-            SubHeader(store.subjectName(subject), maxLines: 2),
+            SubHeader(subject, maxLines: 2),
             if (grades.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,

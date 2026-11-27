@@ -168,7 +168,7 @@ class _AbsencesPageState extends State<AbsencesPage> with WidgetsBindingObserver
     final entries = stats.bySubjectHours.entries.toList()
       ..sort((a, b) {
         final c = b.value.compareTo(a.value);
-        return c != 0 ? c : store.subjectName(a.key).compareTo(store.subjectName(b.key));
+        return c != 0 ? c : a.key.compareTo(b.key);
       });
     final maxV = entries.isEmpty ? 1 : entries.first.value;
     return [
@@ -179,7 +179,7 @@ class _AbsencesPageState extends State<AbsencesPage> with WidgetsBindingObserver
             key: ValueKey('subj-${entries[i].key}'),
             animate: _freshSubjects.isFresh(entries[i].key),
             child: _SubjectCard(
-              name: entries[i].key.isEmpty ? 'Без предмета' : store.subjectName(entries[i].key),
+              name: entries[i].key.isEmpty ? 'Без предмета' : entries[i].key,
               hours: entries[i].value,
               records: stats.bySubjectCount[entries[i].key] ?? 0,
               last: stats.lastBySubject[entries[i].key],
@@ -391,7 +391,7 @@ class _AbsenceTile extends StatelessWidget {
       },
       onTap: () => showAbsenceSheet(context, edit: a),
       badge: NumberBadge(a.lesson > 0 ? '${a.lesson}' : '–', tone: tone, size: 46, round: false),
-      title: a.subject.isEmpty ? 'Без предмета' : store.subjectName(a.subject),
+      title: a.subject.isEmpty ? 'Без предмета' : a.subject,
       subtitle: sub,
       trailing: '${a.hours} ч',
     );

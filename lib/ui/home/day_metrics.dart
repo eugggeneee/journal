@@ -5,6 +5,7 @@ import '../../data/store.dart';
 import '../../logic/limits.dart';
 import '../../logic/stats.dart';
 import '../kit/components/widgets.dart';
+import '../kit/animation/reveal.dart';
 import '../kit/foundation/journal_theme.dart';
 import '../tasks/tasks_page.dart';
 
@@ -68,14 +69,14 @@ class DayMetrics extends StatelessWidget {
                         flex: 2,
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: Text(
-                            items[i].$2,
+                          child: Swap(alignment: Alignment.center, child: Text(
+                            items[i].$2, key: ValueKey(items[i].$2),
                             style: (compact ? context.tt.titleLarge : context.tt.headlineSmall)?.copyWith(
                               color: tone.fg,
                               height: 1.1,
                               fontWeight: JournalType.heading,
                             ),
-                          ),
+                          )),
                         ),
                       ),
                       if (!compact) Text(items[i].$3, style: context.tt.labelSmall?.copyWith(color: tone.fg)),

@@ -25,6 +25,13 @@ void main() {
     expect(slots[3].entries.single.room, '201');
   });
 
+  test('написание и видимые пробелы внутри названия совпадают с ячейкой', () {
+    final decoded = ScheduleParser.parse(
+      '<p>│6312│1│ ФаЁ.&nbsp;&nbsp;<b>И/зД.</b>&amp; │201│Иванов И.И.│</p>',
+    );
+    expect(decoded.rows.single.entry.subject, 'ФаЁ.  И/зД.&');
+  });
+
   test('subgroups are merged into one slot', () {
     final slots = ScheduleParser.slotsFor(page, '6492');
     final first = slots.firstWhere((s) => s.number == 1);

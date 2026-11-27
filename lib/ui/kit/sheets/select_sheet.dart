@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/haptics.dart';
 import '../animation/motion.dart';
+import '../animation/selection_mark.dart';
 import '../foundation/journal_theme.dart';
 import 'sheet.dart';
 
@@ -81,11 +82,8 @@ class OptionTile extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (selected)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Icon(Icons.check_rounded, size: 20, color: cs.onSecondaryContainer),
-                      ),
+                    const SizedBox(width: 8),
+                    SelectionMark(selected: selected, color: cs.onSecondaryContainer),
                   ],
                 ),
               ),

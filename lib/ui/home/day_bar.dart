@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
 import '../../data/models.dart';
+import '../kit/animation/motion.dart';
 
 /// Номера пар, перерывы и метка часов используют одну шкалу в минутах.
 class DayBar extends StatelessWidget {
@@ -66,8 +67,9 @@ class DayBar extends StatelessWidget {
                     fit: StackFit.expand,
                     children: [
                       ColoredBox(color: fg.withValues(alpha: .12)),
-                      if (done > 0)
-                        Positioned(
+                      AnimatedPositioned(
+                          duration: context.motion(Motion.medium),
+                          curve: Motion.standard,
                           left: 0,
                           bottom: 0,
                           width: width * done,
@@ -147,7 +149,10 @@ class DayBar extends StatelessWidget {
           }
           if (active && !compact) {
             children.add(
-              Positioned(
+              AnimatedPositioned(
+                key: const ValueKey('time-line'),
+                duration: context.motion(Motion.medium),
+                curve: Motion.standard,
                 left: markerX.clamp(0.0, math.max(0.0, box.maxWidth - 2)),
                 top: 18,
                 height: 12,
@@ -156,7 +161,10 @@ class DayBar extends StatelessWidget {
               ),
             );
             children.add(
-              Positioned(
+              AnimatedPositioned(
+                key: const ValueKey('time-badge'),
+                duration: context.motion(Motion.medium),
+                curve: Motion.standard,
                 left: (markerX - badgeWidth / 2).clamp(0.0, box.maxWidth - badgeWidth),
                 top: 0,
                 width: badgeWidth,

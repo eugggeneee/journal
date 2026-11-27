@@ -23,7 +23,7 @@ class DayTimeline extends StatelessWidget {
     final timed = numbered.where((s) => profile[s.number] != null).toList()
       ..sort((a, b) => profile[a.number]!.start.compareTo(profile[b.number]!.start));
     final next = timed.where((s) => minute != null && profile[s.number]!.start > minute).firstOrNull;
-    final darker = darkerLessons(slots, store);
+    final darker = darkerLessons(slots);
     final rows = <Widget>[];
     for (var i = 0; i < timed.length; i++) {
       final slot = timed[i];

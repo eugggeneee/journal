@@ -62,7 +62,7 @@ class _GradesPageState extends State<GradesPage> {
 
   List<Widget> _subjects(BuildContext context, AppStore store, GradeStats stats) {
     final list = [...stats.subjects]
-      ..sort((a, b) => store.subjectName(a.subject).compareTo(store.subjectName(b.subject)));
+      ..sort((a, b) => a.subject.compareTo(b.subject));
     return [
       Inset(
         top: 8,
@@ -81,7 +81,7 @@ class _GradesPageState extends State<GradesPage> {
 
   List<Widget> _journal(BuildContext context, AppStore store, GradeStats stats) {
     final subjects = [...stats.subjects.map((s) => s.subject)]
-      ..sort((a, b) => store.subjectName(a).compareTo(store.subjectName(b)));
+      ..sort();
     final filter = (_filter != null && subjects.contains(_filter)) ? _filter : null;
     final sorted = store.grades.where((g) => filter == null || g.subject == filter).toList()
       ..sort((a, b) {
@@ -94,7 +94,7 @@ class _GradesPageState extends State<GradesPage> {
     }
     return [
       SliverFilterRow(
-        label: filter == null ? 'Все предметы' : store.subjectName(filter),
+        label: filter == null ? 'Все предметы' : filter,
         active: filter != null,
         onClear: () => setState(() => _filter = null),
         onTap: () => showSelectSheet<String>(
@@ -104,7 +104,7 @@ class _GradesPageState extends State<GradesPage> {
           value: filter ?? '',
           options: [
             const MenuOption('', 'Все предметы', icon: Icons.apps_rounded),
-            for (final s in subjects) MenuOption(s, store.subjectName(s), icon: Icons.menu_book_outlined),
+            for (final s in subjects) MenuOption(s, s, icon: Icons.menu_book_outlined),
           ],
           onSelected: (v) => setState(() => _filter = v.isEmpty ? null : v),
         ),
@@ -243,7 +243,7 @@ class _SubjectCard extends StatelessWidget {
     return OverviewCard(
       index: index,
       count: count,
-      title: store.subjectName(stat.subject),
+      title: stat.subject,
       subtitle: '${gradesText(stat.count)} · последняя ${stat.last.value}',
       bottom: Spark(grades: last),
       trailing: Column(
@@ -323,7 +323,7 @@ class GradeTile extends StatelessWidget {
       if (showSubject && grade.kind.isNotEmpty) grade.kind,
       if (grade.note.isNotEmpty) grade.note,
     ].join(' · ');
-    final title = showSubject ? store.subjectName(grade.subject) : (grade.kind.isEmpty ? 'Без пометки' : grade.kind);
+    final title = showSubject ? grade.subject : (grade.kind.isEmpty ? 'Без пометки' : grade.kind);
     final subtitle = showSubject ? sub : grade.note;
     return EntryTile(
       index: index,

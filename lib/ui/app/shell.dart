@@ -155,6 +155,7 @@ class _ShellState extends State<Shell> {
         bottomNavigationBar: wide
             ? null
             : NavigationBar(
+                animationDuration: context.motion(Motion.medium),
                 selectedIndex: _tab,
                 onDestinationSelected: _select,
                 destinations: [

@@ -157,7 +157,7 @@ class _QuickAbsenceState extends State<_QuickAbsence> {
     String title;
     String? subtitle;
     if (single != null) {
-      title = single.subjects.map(store.subjectName).join(' / ');
+      title = single.subjects.join(' / ');
       subtitle = '${single.number} пара · ${dayCaption(date)}';
     } else if (widget.wholeDay) {
       title = 'Пропуск всего дня';
@@ -214,7 +214,7 @@ class _QuickAbsenceState extends State<_QuickAbsence> {
         if (single != null && single.subjects.length > 1) ...[
           const FieldLabel('Какой предмет?', top: 8),
           ChoiceList<String>(
-            options: [for (final s in single.subjects) MenuOption(s, store.subjectName(s))],
+            options: [for (final s in single.subjects) MenuOption(s, s)],
             value: subjectPick ?? single.subject,
             onChanged: (s) => setState(() => subjectPick = s),
           ),
@@ -274,7 +274,7 @@ class _QuickAbsenceState extends State<_QuickAbsence> {
     final cs = context.cs;
     final names = [
       for (final s in sched.slots)
-        if (picked.contains(s.number)) store.subjectName(s.subject),
+        if (picked.contains(s.number)) s.subject,
     ].join(', ');
     return [
       const FieldLabel('Что пропустили'),

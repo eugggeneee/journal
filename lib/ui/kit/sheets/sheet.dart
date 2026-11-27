@@ -12,8 +12,13 @@ const double _wideBreakpoint = 700;
 /// На телефоне — модальная шторка снизу, на планшете и ПК — диалог по центру.
 Future<T?> showAdaptiveSheet<T>(BuildContext context, WidgetBuilder builder) {
   final size = MediaQuery.sizeOf(context);
+  final timing = context.reduceMotion ? AnimationStyle.noAnimation : AnimationStyle(
+    duration: Motion.page, reverseDuration: Motion.short,
+    curve: Motion.decelerate, reverseCurve: Motion.accelerate,
+  );
   if (size.width >= _wideBreakpoint) {
     return showDialog<T>(
+      animationStyle: timing,
       context: context,
       builder: (ctx) => Dialog(
         backgroundColor: ctx.cs.surfaceContainerLow,
@@ -32,12 +37,7 @@ Future<T?> showAdaptiveSheet<T>(BuildContext context, WidgetBuilder builder) {
     useSafeArea: true,
     constraints: const BoxConstraints(maxWidth: 640),
     // Шторка выезжает быстро и мягко останавливается, а уходит плавным разгоном.
-    sheetAnimationStyle: AnimationStyle(
-      duration: Motion.ms(380),
-      curve: Motion.decelerate,
-      reverseDuration: Motion.short,
-      reverseCurve: Motion.accelerate,
-    ),
+    sheetAnimationStyle: timing,
     builder: builder,
   );
 }

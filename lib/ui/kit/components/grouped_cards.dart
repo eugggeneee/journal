@@ -76,6 +76,7 @@ class _SegmentCardState extends State<SegmentCard> {
       valueListenable: _swipe,
       builder: (context, progress, child) {
         final t = (progress / 0.4).clamp(0.0, 1.0).toDouble();
+        if (context.reduceMotion) return child!;
         return Opacity(
           opacity: t,
           child: Transform.scale(scale: 0.6 + 0.4 * Motion.spring.transform(t), child: child),
@@ -113,6 +114,8 @@ class _SegmentCardState extends State<SegmentCard> {
       body = Dismissible(
         key: widget.dismissKey!,
         direction: widget.onSwipeRight != null ? DismissDirection.horizontal : DismissDirection.endToStart,
+        movementDuration: context.motion(Motion.medium),
+        resizeDuration: context.reduceMotion ? null : Motion.short,
         onUpdate: _onUpdate,
         background: _swipeBackground(
           bg: cs.primaryContainer,

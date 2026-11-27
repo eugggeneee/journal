@@ -86,7 +86,7 @@ class _GradeFormState extends State<_GradeForm> {
     );
     store.saveGrade(g);
     Haptics.medium();
-    final what = '${g.value} · ${store.subjectName(g.subject)}';
+    final what = '${g.value} · ${g.subject}';
     if (another) {
       setState(() {
         value = null;
@@ -152,7 +152,7 @@ class _GradeFormState extends State<_GradeForm> {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
             Text(
-              subject.isEmpty ? 'Предмет не выбран' : store.subjectName(subject),
+              subject.isEmpty ? 'Предмет не выбран' : subject,
               style: context.tt.titleMedium?.copyWith(color: tone.fg, fontWeight: JournalType.heading),
             ),
             const SizedBox(height: 2),

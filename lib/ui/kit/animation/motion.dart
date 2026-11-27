@@ -21,22 +21,22 @@ class Motion {
   static Duration ms(int value) => off ? Duration.zero : Duration(microseconds: (value * 1000 * _scale).round());
 
   /// Шаг каскада: на сколько позже появляется следующий элемент списка.
-  static Duration get stagger => ms(45);
+  static Duration get stagger => ms(30);
 
   /// Нажатие: быстрое «вдавливание».
-  static Duration get press => ms(110);
+  static Duration get press => ms(100);
 
   /// Мелкие отклики: смена цвета, значка, галочки.
-  static Duration get short => ms(220);
+  static Duration get short => ms(180);
 
   /// Основное движение: появление блоков, смена режима, раскрытие.
-  static Duration get medium => ms(320);
+  static Duration get medium => ms(280);
 
   /// Крупные элементы: итоговые карточки, счётчики, шкалы.
-  static Duration get long => ms(480);
+  static Duration get long => ms(420);
 
   /// Переход между вкладками и крупные смены экрана.
-  static Duration get page => ms(450);
+  static Duration get page => ms(340);
 
   /// Обычное движение: мгновенный отклик и очень мягкая остановка (стандартная кривая Material 3).
   static const Curve standard = Cubic(0.2, 0.0, 0.0, 1.0);
@@ -52,10 +52,10 @@ class Motion {
 
   /// Мягкая «пружинка» для маленьких элементов, которые появляются на месте: перелёт около 5 %,
   /// без резкого отскока. Значение может ненамного выходить за 1, прозрачность ограничивают отдельно.
-  static const Curve spring = Cubic(0.3, 1.4, 0.5, 1.0);
+  static Curve get spring => level == 1 ? standard : const Cubic(0.3, 1.4, 0.5, 1.0);
 
   /// Отпускание нажатой карточки: то же мягкое возвращение с едва заметным перелётом.
-  static const Curve release = Cubic(0.3, 1.25, 0.5, 1.0);
+  static Curve get release => level == 1 ? standard : const Cubic(0.3, 1.25, 0.5, 1.0);
 
   /// Проявление нового содержимого: чуть позже старта движения, чтобы оно не мелькало до того,
   /// как займёт место.

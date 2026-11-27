@@ -160,7 +160,9 @@ void main() {
     await screen(tester, const OnboardingFlow(), scroll: false);
     final bell = find.bySemanticsLabel('Позвонить в колокольчик');
     expect(bell, findsOneWidget);
-    await tester.tap(find.descendant(of: bell, matching: find.byType(GestureDetector)));
+    final target = find.descendant(of: bell, matching: find.byType(GestureDetector)).hitTestable();
+    expect(target, findsOneWidget);
+    await tester.tap(target);
     await tester.pump();
     expect(tester.hasRunningAnimations, isFalse);
     await tester.tap(find.widgetWithText(FilledButton, 'Продолжить'));
@@ -490,8 +492,10 @@ void main() {
       slot(4, ['химия', 'Физика']),
       slot(5, ['АнглЯз']),
     ];
-    expect(darkerLessons(day.reversed, store), {3, 4});
+    expect(darkerLessons(day.reversed), {3, 4});
     await screen(tester, DayTimeline(date: now, slots: day, store: store, now: now));
+    expect(find.text('АнглЯз'), findsNWidgets(2));
+    expect(find.text('Английский язык'), findsOneWidget);
     final fills = {
       for (final element in find.byType(LessonCard).evaluate())
         (element.widget as LessonCard).slot.number: tester

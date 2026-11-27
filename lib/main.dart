@@ -28,7 +28,11 @@ class JournalApp extends StatelessWidget {
 
   static const _modes = [ThemeMode.system, ThemeMode.light, ThemeMode.dark];
 
-  Widget _scope(BuildContext context, Widget? child) => AnnotatedRegion<SystemUiOverlayStyle>(
+  Widget _scope(BuildContext context, Widget? child) {
+    final media = MediaQuery.of(context);
+    return MediaQuery(
+      data: media.copyWith(disableAnimations: media.disableAnimations || store.settings.motion >= 2),
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
     value: overlayForSurface(context.cs.surface),
     child: IconSync(
       desired: store.settings.followThemeIcon
@@ -36,7 +40,9 @@ class JournalApp extends StatelessWidget {
           : null,
       child: StoreScope(store: store, repo: repo, child: child ?? const SizedBox.shrink()),
     ),
-  );
+      ),
+    );
+  }
 
   /// Приветствие, пока оно не пройдено или не выбрана группа; затем — оболочка с вкладками.
   Widget _home() => ListenableBuilder(
@@ -66,8 +72,8 @@ class JournalApp extends StatelessWidget {
               theme: AppTheme.themeFor(color, Brightness.light),
               darkTheme: AppTheme.themeFor(color, Brightness.dark),
               // Смена темы — плавное перетекание всех цветов, а не мгновенная перекраска.
-              themeAnimationDuration: AppTheme.switchDuration,
-              themeAnimationCurve: AppTheme.switchCurve,
+              themeAnimationDuration: context.motion(Motion.long),
+              themeAnimationCurve: Motion.standard,
               builder: _scope,
               home: _home(),
             );

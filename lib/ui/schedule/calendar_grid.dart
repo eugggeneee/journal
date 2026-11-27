@@ -6,14 +6,14 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/dates.dart';
 import '../../data/models.dart';
-import '../../data/store.dart';
+import '../../logic/subject_names.dart';
 import '../kit/foundation/journal_theme.dart';
 
 const double calendarGutter = 48;
 
 /// Чередование начинается заново в каждом дне. Смена кабинета или порядка
 /// подгрупп не меняет тон двух одинаковых занятий подряд.
-Set<int> darkerLessons(Iterable<LessonSlot> slots, AppStore store) {
+Set<int> darkerLessons(Iterable<LessonSlot> slots) {
   final ordered = slots.toList()..sort((a, b) => a.number.compareTo(b.number));
   List<String>? previous;
   var darker = false;
@@ -23,7 +23,7 @@ Set<int> darkerLessons(Iterable<LessonSlot> slots, AppStore store) {
         slot.subjects
             .map(
               (s) =>
-                  store.subjectName(s.trim()).toLowerCase().replaceAll('ё', 'е').replaceAll(RegExp(r'\s+'), ' ').trim(),
+                  (calendarSubjectAliases[s.trim()] ?? s).toLowerCase().replaceAll('ё', 'е').replaceAll(RegExp(r'\s+'), ' ').trim(),
             )
             .toSet()
             .toList()

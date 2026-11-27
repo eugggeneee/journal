@@ -266,7 +266,7 @@ class _FadeInSliversState extends State<FadeInSlivers> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) => SliverFadeTransition(
-    opacity: _fade,
+    opacity: context.reduceMotion ? kAlwaysCompleteAnimation : _fade,
     sliver: SliverMainAxisGroup(slivers: widget.slivers),
   );
 }

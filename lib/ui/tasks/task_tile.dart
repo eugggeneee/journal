@@ -5,6 +5,7 @@ import '../../core/haptics.dart';
 import '../../data/models.dart';
 import '../../data/store.dart';
 import '../kit/animation/motion.dart';
+import '../kit/animation/selection_mark.dart';
 import '../kit/components/feedback.dart';
 import '../kit/components/widgets.dart';
 import '../kit/foundation/journal_theme.dart';
@@ -73,12 +74,8 @@ class TaskCheck extends StatelessWidget {
                 color: done ? cs.primary : Colors.transparent,
                 border: Border.all(color: done ? cs.primary : cs.outline, width: 2),
               ),
-              child: AnimatedScale(
-                scale: done ? 1 : 0,
-                duration: context.motion(Motion.short),
-                curve: Motion.spring,
-                child: Icon(Icons.check_rounded, size: 18, color: cs.onPrimary),
-              ),
+              alignment: Alignment.center,
+              child: SelectionMark(selected: done, color: cs.onPrimary, size: 18),
             ),
           ),
         ),
@@ -155,7 +152,7 @@ class TaskSummary extends StatelessWidget {
                       if (showKind) Text(task.homework ? 'Домашнее задание' : 'Заметка', style: context.tt.labelMedium),
                       if (task.subject.isNotEmpty)
                         Text(
-                          store.subjectName(task.subject),
+                          task.subject,
                           style: context.tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                         ),
                     ],

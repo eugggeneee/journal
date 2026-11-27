@@ -98,7 +98,7 @@ class _WeekViewState extends State<WeekView> {
     final todayIndex = days.indexWhere((d) => sameDay(d, now));
     final minute = now.hour * 60 + now.minute;
     final slots = [for (final d in days) _states[d]?.schedule?.slots ?? <LessonSlot>[]];
-    final darker = [for (final day in slots) darkerLessons(day, store)];
+    final darker = [for (final day in slots) darkerLessons(day)];
     final bells = [
       for (var i = 0; i < days.length; i++)
         for (final s in slots[i]) ?store.bellFor(days[i], s.number),
@@ -174,7 +174,7 @@ class _WeekViewState extends State<WeekView> {
           ),
         for (final s in slots[i].where((s) => store.bellFor(date, s.number) == null))
           entry(
-            '${s.number} · ${s.subjects.map(store.subjectName).join(' / ')}',
+            '${s.number} · ${s.subjects.join(' / ')}',
             () => showLessonSheet(context, date, s),
             background: lessonSurface(context, darker[i].contains(s.number)),
           ),
@@ -284,7 +284,7 @@ class _WeekEvent extends StatelessWidget {
     final absence = store.absenceFor(date, slot.number);
     final mark = store.markFor(date, slot.number);
     final tasks = store.tasksForLesson(date, slot.number);
-    final name = slot.subjects.map(store.subjectName).join(' / ');
+    final name = slot.subjects.join(' / ');
     final time = shortRange(bell.start, bell.end);
     final rooms = slot.entries.map((e) => LessonCard.roomText(e.room)).where((r) => r.isNotEmpty).toSet().join(' / ');
     final bg = lessonSurface(context, darker);

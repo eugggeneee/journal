@@ -44,16 +44,41 @@ def font(size, weight='bold'):
 
 def brand(canvas, icon, position, ink, badge, badge_ink, beta):
     x, y = position
-    mark = ImageOps.contain(icon, (66, 66), Image.Resampling.LANCZOS)
+    # Keep the wordmark and channel legible at the same gallery preview width.
+    unit = canvas.width / 360
+    mark_size = round(15 * unit)
+    mark = ImageOps.contain(icon, (mark_size, mark_size), Image.Resampling.LANCZOS)
     canvas.paste(mark, (x, y), mark)
     draw = ImageDraw.Draw(canvas)
-    end = x + 84
-    face = font(46, 'bold')
-    draw.text((end, y + 32), 'Journal', font=face, fill=ink, anchor='lm')
+    start = x + mark_size + round(4 * unit)
+    middle = y + mark_size / 2
+    face = font(round(11 * unit), 'bold')
+    # Centre the visible lettering, including the ascending stroke in «бета».
+    def label(left, text, face, color):
+        _, top, _, bottom = face.getbbox(text, anchor='ls')
+        draw.text((left, round(middle - (top + bottom) / 2)), text,
+                  font=face, fill=color, anchor='ls')
+    label(start, 'Journal', face, ink)
     if beta:
-        left = round(end + draw.textlength('Journal', font=face)) + 20
-        draw.rounded_rectangle((left, y + 8, left + 108, y + 58), radius=25, fill=badge)
-        draw.text((left + 54, y + 31), 'бета', font=font(30, 'medium'), fill=badge_ink, anchor='mm')
+        left = round(start + face.getlength('Journal') + 5 * unit)
+        caption = font(round(8 * unit), 'medium')
+        pad, radius = round(4 * unit), round(6.5 * unit)
+        right = left + pad * 2 + round(caption.getlength('бета'))
+        draw.rounded_rectangle((left, middle-radius, right, middle+radius), radius, fill=badge)
+        label(left + pad, 'бета', caption, badge_ink)
+
+
+def headline(draw, origin, text, size, ink):
+    face = font(size, 'black')
+    x, cap_top = origin
+    baseline = cap_top - face.getbbox('Н', anchor='ls')[1]
+    # Preserve pair kerning while gently tightening large Cyrillic display type.
+    for line in text.splitlines():
+        for i, char in enumerate(line):
+            end = face.getlength(line[:i + 1])
+            left = x + end - face.getlength(char) - i * size * .025
+            draw.text((round(left), baseline), char, font=face, fill=ink, anchor='ls')
+        baseline += round(.83 * size)
 
 
 def phone(canvas, pack, key, finish, center, height):
@@ -94,14 +119,14 @@ def posters(pack, logo, channel):
     # Each composition shares a 16 px grid and a single upright headline.
     # Position fields as (x, y) centres to keep phone pairs optically balanced.
     layouts = {
-        'overview': ((1800, 1200), 'Дневник студента МГТЭК', (96, 184), 128, [
+        'overview': ((1800, 1200), 'Дневник студента МГТЭК', (96, 178), 136, [
             ('schedule', (464, 752), 704), ('home-default', (900, 752), 832),
             ('grades', (1336, 752), 704)]),
-        'day': ((1600, 1000), 'Ход дня', (80, 432), 160, [
+        'day': ((1600, 1000), 'Ход\nдня', (80, 256), 288, [
             ('home-default', (1136, 500), 832)]),
-        'schedule': ((1200, 1500), 'Расписание', (64, 180), 144, [
+        'schedule': ((1200, 1500), 'Расписание', (64, 172), 188, [
             ('schedule', (600, 896), 1040)]),
-        'journal': ((1600, 1360), 'Отметки и пропуски', (80, 180), 128, [
+        'journal': ((1600, 1360), 'Отметки и пропуски', (80, 174), 154, [
             ('grades', (532, 824), 896), ('absences', (1068, 824), 896)]),
     }
     palettes = Path(__file__).resolve().parents[1] / 'icons/artwork_palettes.json'
@@ -148,7 +173,7 @@ def posters(pack, logo, channel):
                 ], [(1616, 1376)], accent)
             for scene, center, height in devices:
                 phone(canvas, pack, f'{mode}/{scene}', mode, center, height)
-            draw.text(origin, title, font=font(font_size), fill=scheme['onSurface'], anchor='lt')
+            headline(draw, origin, title, font_size, scheme['onSurface'])
             brand(canvas, icon, (origin[0], 64), scheme['onSurface'], field,
                   scheme['onPrimaryContainer'], channel == 'beta')
             canvas.save(pack / poster_path(name, mode), quality=94, method=4)

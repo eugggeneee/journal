@@ -70,7 +70,7 @@ class ScheduleParser {
     final paragraphs = <String>[];
     for (final chunk in s.split(_pOpen)) {
       var t = chunk.replaceAll(_tags, '');
-      t = _decodeEntities(t).replaceAll('\u00a0', ' ').replaceAll(_spaces, ' ').trim();
+      t = _decodeEntities(t.replaceAll(_spaces, ' ')).replaceAll('\u00a0', ' ').trim();
       if (t.isNotEmpty) paragraphs.add(t);
     }
 
@@ -89,7 +89,7 @@ class ScheduleParser {
       if (parts.isNotEmpty && parts.last.isEmpty) parts.removeLast();
       if (parts.length != 5) continue;
 
-      final g = parts[0], n = parts[1], subj = parts[2], room = parts[3], teacher = parts[4];
+      final g = parts[0], n = parts[1], subj = parts[2], room = parts[3].replaceAll(_spaces, ' '), teacher = parts[4].replaceAll(_spaces, ' ');
       if (g.isNotEmpty && !_groupCell.hasMatch(g)) continue; // шапка таблицы
       if (n.isNotEmpty && !_numCell.hasMatch(n)) continue;
 

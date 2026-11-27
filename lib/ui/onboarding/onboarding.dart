@@ -488,7 +488,7 @@ class _BellSwingState extends State<_BellSwing> with SingleTickerProviderStateMi
   @override
   Widget build(BuildContext context) {
     Widget layer(String name) => Image.asset(
-      'assets/icons/$name.png', height: widget.size, color: widget.color,
+      'assets/icons/$name.png', height: widget.size, width: widget.size, color: widget.color,
       filterQuality: FilterQuality.medium, excludeFromSemantics: true,
     );
     final dome = layer('bell');

@@ -10,10 +10,6 @@ import 'page_transitions.dart';
 class AppTheme {
   AppTheme._();
 
-  /// Длительность и кривая плавной смены темы (цвета всего интерфейса перетекают друг в друга).
-  static const Duration switchDuration = Duration(milliseconds: 600);
-  static const Curve switchCurve = Curves.easeInOutCubicEmphasized;
-
   /// Есть ли на устройстве динамические цвета (Material You). Обновляется при запуске.
   static final ValueNotifier<bool> dynamicAvailable = ValueNotifier<bool>(false);
 

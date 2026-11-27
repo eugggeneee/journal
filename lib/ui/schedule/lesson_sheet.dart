@@ -137,7 +137,7 @@ class _LessonSheetState extends State<_LessonSheet> {
     final tone = neutralTone(context);
 
     return SheetScaffold(
-      title: slot.subjects.map(store.subjectName).join(' / '),
+      title: slot.subjects.join(' / '),
       subtitle: '${slot.number} пара · ${dayCaption(date)}',
       leading: NumberBadge('${slot.number}', tone: tone, size: 52, round: false),
       footer: SizedBox(
@@ -162,7 +162,7 @@ class _LessonSheetState extends State<_LessonSheet> {
                   children: [
                     const FieldLabel('Какой предмет?', top: 12),
                     ChoiceList<String>(
-                      options: [for (final s in slot.subjects) MenuOption(s, store.subjectName(s))],
+                      options: [for (final s in slot.subjects) MenuOption(s, s)],
                       value: subject,
                       onChanged: (s) => setState(() => subject = s),
                     ),

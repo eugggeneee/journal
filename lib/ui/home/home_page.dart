@@ -374,7 +374,7 @@ class _Tomorrow extends StatelessWidget {
       final first = [...sched.slots]..sort((a, b) => a.number.compareTo(b.number));
       final bell = profile[first.first.number];
       title = 'Завтра · ${pairsText(sched.slots.length)}';
-      final name = first.first.subjects.map(store.subjectName).join(' / ');
+      final name = first.first.subjects.join(' / ');
       sub = [if (bell != null) 'с ${fmtMin(bell.start)}', name].join(' · ');
     }
     return JournalRow(
@@ -488,7 +488,7 @@ class _Recent extends StatelessWidget {
         JournalRow(
       padding: const EdgeInsets.symmetric(vertical: 10),
           leading: NumberBadge('${g.value}', tone: gradeTone(context, g.value), size: 46, round: false),
-          title: store.subjectName(g.subject),
+          title: g.subject,
           subtitle: [longDate(g.date), if (g.kind.isNotEmpty) g.kind].join(' · '),
           onTap: () => onTab(2),
         ),

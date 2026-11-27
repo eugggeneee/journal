@@ -60,6 +60,12 @@ class _RevealState extends State<Reveal> with SingleTickerProviderStateMixin {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (context.reduceMotion) _c.value = 1;
+  }
+
+  @override
   void dispose() {
     _c.dispose();
     super.dispose();
@@ -144,6 +150,7 @@ class PopIn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = child;
+    if (context.reduceMotion) return c ?? const SizedBox.shrink();
     return AnimatedSwitcher(
       duration: Motion.ms(340),
       reverseDuration: Motion.short,
@@ -183,7 +190,7 @@ class AnimatedNumber extends StatelessWidget {
 }
 
 /// Мягкое появление элемента при первом показе: проявляется и всплывает снизу.
-/// Элементы списка появляются каскадом — чем ниже, тем чуть позже ([index], не больше 7 шагов).
+/// Элементы списка появляются каскадом — чем ниже, тем чуть позже ([index], не больше 4 шагов).
 /// Если в системе отключены анимации, элемент показывается сразу.
 class Appear extends StatefulWidget {
   const Appear({super.key, required this.child, this.index = 0, this.offset = 0.12});
@@ -213,13 +220,22 @@ class _AppearState extends State<Appear> with SingleTickerProviderStateMixin {
       _c.value = 1;
       return;
     }
-    final step = widget.index < 0 ? 0 : (widget.index > 7 ? 7 : widget.index);
+    final step = widget.index.clamp(0, 4);
     if (step == 0) {
       _c.forward();
     } else {
       _timer = Timer(Motion.stagger * step, () {
         if (mounted) _c.forward();
       });
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (context.reduceMotion) {
+      _timer?.cancel();
+      _c.value = 1;
     }
   }
 

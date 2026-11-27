@@ -37,7 +37,7 @@ class DayCard extends StatelessWidget {
   final VoidCallback onOpenDay;
   final Widget Function(Color fg, bool hasLessonActions) header;
 
-  String _title(LessonSlot slot) => slot.subjects.map(store.subjectName).join(' / ');
+  String _title(LessonSlot slot) => slot.subjects.join(' / ');
   String _place(LessonSlot slot) {
     final rooms = <String, Set<String>>{};
     for (final entry in slot.entries) {

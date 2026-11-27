@@ -105,7 +105,7 @@ class _MarkSheetState extends State<_MarkSheet> {
     String? lessonName;
     if (lesson > 0 && sched != null) {
       for (final s in sched.slots) {
-        if (s.number == lesson) lessonName = s.subjects.map(store.subjectName).join(' / ');
+        if (s.number == lesson) lessonName = s.subjects.join(' / ');
       }
     }
 
