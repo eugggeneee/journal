@@ -110,7 +110,7 @@ jobs:
         with:
           ref: ${{ needs.plan.outputs.sha }}
           path: capture-app
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: capture-ios
           path: frames
