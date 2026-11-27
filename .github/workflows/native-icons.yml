@@ -33,7 +33,7 @@ jobs:
           set -euo pipefail
           mkdir -p build/icon-review/preview
           bash scripts/icons/export_ios.sh
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: icon-composer
           path: build/icon-review/
@@ -58,7 +58,7 @@ jobs:
         run: bash scripts/icons/check_iphone.sh 26-0 build/ios/iphonesimulator/Runner.app
       - name: Проверить установку и значок на iOS 26.2
         run: bash scripts/icons/check_iphone.sh 26-2 build/ios/iphonesimulator/Runner.app
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: iphone-icons
@@ -91,7 +91,7 @@ jobs:
           target: google_apis
           disable-animations: true
           script: bash scripts/icons/check_launcher.sh
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: android-icons
