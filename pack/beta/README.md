@@ -1,4 +1,4 @@
-# Journal v1.0.2-beta.3 · iOS
+# Journal v1.0.2-beta.4 · iOS
 
 iPhone 17 · iOS Simulator · iOS 26.2 · 1206 × 2622 px.
 Группа 0000. Все записи и имена вымышлены.
