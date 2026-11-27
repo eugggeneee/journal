@@ -2,4 +2,4 @@
 
 [stable · v1.0.1](stable/)
 
-[beta · v1.0.2-beta.2](beta/)
+[beta · v1.0.2-beta.3](beta/)
