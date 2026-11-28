@@ -1,7 +1,7 @@
 name: journal
 description: "Journal — МГТЭК · Дневник: расписание, отметки и пропуски."
 publish_to: none
-version: 1.0.2-beta.4+22
+version: 1.0.2+23
 
 environment:
   sdk: '>=3.13.0 <4.0.0'
